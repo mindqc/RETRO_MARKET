@@ -1,0 +1,59 @@
+# ==============================================================================
+# RETRO MARKET (izithrift) - Root .gitignore
+# ==============================================================================
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.iml
+
+# Environment & Secret Files (Keep safe .env.example)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.jks
+*.keystore
+
+# Antigravity Scratch & Stray Files
+/scratch/
+*.tmp
+*.bak
+backend/toArray())
+
+# Logs & Framework Runtime Artifacts
+*.log
+.phpunit.result.cache
+
+# Sub-module Specific Exclusions (Fallback guards)
+/backend/vendor/
+/backend/node_modules/
+/backend/public/storage/
+/backend/public/hot
+/backend/public/build
+/mobile/.dart_tool/
+/mobile/build/
+/mobile/.flutter-plugins-dependencies
+/mobile/.pub-cache/
+/mobile/.pub/
+/mobile/android/local.properties
+/mobile/android/.gradle/
+/mobile/ios/Flutter/ephemeral/
+/mobile/ios/Pods/

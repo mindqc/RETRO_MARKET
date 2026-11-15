@@ -1,0 +1,65 @@
+# 03. ADMIN SYSTEM, CATALOG, AUCTION, ORDER, LEDGER & DEVTOOLS UI SPECIFICATION – RETRO MARKET (izithrift)
+
+- **Document ID:** `DOC-P306C-ADMIN-MANAGEMENT-UI`
+- **Version:** `1.0.0 (HIGH-FIDELITY FULL SPECIFICATION)`
+- **Status:** `SELF-VERIFIED & READY FOR PO REVIEW`
+- **Project Codename:** `RETRO MARKET`
+- **Application Brand Name:** `izithrift`
+- **Phase:** `Phase 03 – Task P3-06 (Group 3: Core Management & Ledger Screens)`
+- **Screen IDs Covered:** `A-PR-01`, `A-CT-01`, `A-AC-01`, `A-AC-02`, `A-AC-03`, `A-OR-01`, `A-OR-02`, `A-PM-01`, `A-ES-01`, `A-US-01`, `A-US-02`, `A-ST-01`, `A-AD-01`, `A-DT-01` (14 Screens)
+- **Compliance Ref:** `AFW-04..06`, `AFW-08..10`, `FR-AD-02..06`, `BR-FN-07`, `BR-AD-01..02`, `DEC-02`, `DEC-04`, `ADR-03..05`
+
+---
+
+## Chương 1. Quy Chuẩn Bảng Dữ Liệu & Bộ Lọc Quản Trị (`Admin Data Table & Filter Standards – CMP-ADM-03`)
+
+Toàn bộ các màn hình tra cứu danh sách trên Admin Dashboard tuân thủ chuẩn hiển thị đồng nhất:
+1. **Thanh Công Cụ Lọc (`Filter Panel Card`):** Nền `#FFFFFF`, viền `1px solid #D8CBB8`, `radius.md = 12px`, padding `16px 20px`, xếp ngang trên lưới 12 cột: `[Ô tìm kiếm từ khóa]` + `[2–3 Dropdown lọc trạng thái/vai trò]` + Nút Primary `[🔍 Lọc dữ liệu]` (`#294638`) + Nút Tertiary `[Đặt lại]`.
+2. **Bảng Dữ Liệu Chuẩn Kế Toán (`Data Table`):**
+   - Header: Nền `Warm Cream #F4EBDD`, chữ `12px SemiBold #302D2A`, padding `12px 16px`, viền dưới `1px solid #D8CBB8`.
+   - Dòng dữ liệu: Chiều cao tối thiểu `54px`, nền `#FFFFFF`, khi di chuột (`:hover`) đổi nền sang `#FBF9F5`.
+   - Căn lề chuẩn: **Văn bản & Huy hiệu căn trái**; **Số tiền & Số lượng căn phải (`text-right tabular-nums`)**; **Mã định danh (`#ORD-...`, `ETX-...`) dùng font `JetBrains Mono 13px`**.
+3. **Thanh Phân Trang (`Pagination Footer`):** Hiển thị *"Hiển thị 1–20 trên tổng số X bản ghi"* ở bên trái và cụm nút phân trang `[< 1 2 3 ... >]` ở bên phải.
+
+---
+
+## Chương 2. Đặc Tả High-Fidelity 14 Màn Hình Quản Lý Hệ Thống (`A-PR-01` – `A-DT-01`)
+
+### 2.1. Nhóm Quản Lý Sản Phẩm & Danh Mục (`A-PR-01`, `A-CT-01`)
+
+| Mã MH & Route | Quyền Truy Cập | Cấu Trúc Giao Diện & Thành Phần Chi Tiết | Thao Tác Quản Trị & Ràng Buộc |
+| :--- | :---: | :--- | :--- |
+| **`A-PR-01`**<br>**All Products Management**<br>`GET /admin/products` | `Admin`, `Moderator` | - **Filter Panel:** Tìm tên/mã `#PRD-...`, Lọc theo 7 trạng thái (`APPROVED`, `PENDING_REVIEW`, `REJECTED`, `DRAFT`, `SOLD`, `HIDDEN`, `ARCHIVED`), Loại bán (`FIXED_PRICE` / `AUCTION`), Danh mục.<br>- **Data Table (7 cột):** Ảnh `44x44px` + Tên sản phẩm \| Loại bán \| Người bán \| Giá / Giá cao nhất \| Tình trạng (`condition`) \| Trạng thái duyệt (`Status Badge`) \| Thao tác. | - **`[Ẩn bài đăng (`Hide`)]`** (Chuyển `APPROVED` $\rightarrow$ `HIDDEN` – `PERM-PR-08`): Mở Modal nhập lý do bắt buộc.<br>- **`[Khôi phục (`Unhide`)]`** (`HIDDEN` $\rightarrow$ `APPROVED`).<br>- Ghi `audit_logs` (`BR-AD-02`). |
+| **`A-CT-01`**<br>**Category & Brand Management**<br>`GET/POST /admin/catalog` | `Admin` *(CRUD)*<br>`Moderator` *(Read-Only)* | - **Bố cục 2 Tab lớn:** `Tab 1: Danh mục Sản phẩm (Categories)` & `Tab 2: Thương hiệu (Brands)`.<br>- Ở góc phải (chỉ hiện với `Admin`): Nút **`[+ Thêm Danh mục / Thương hiệu mới]`** mở Modal Form (`Tên *`, `Slug`, `Mô tả`, `Trạng thái Active/Inactive`).<br>- **Data Table:** ID \| Tên \| Slug (`JetBrains Mono`) \| Số sản phẩm đang gắn \| Trạng thái \| Nút `[✏️ Sửa]` & `[Bật/Tắt]`. | - Không cho phép xóa vật lý Danh mục/Thương hiệu đã có sản phẩm liên kết (`NFR-REL-04`), chỉ cho phép chuyển sang `Inactive`. |
+
+---
+
+### 2.2. Nhóm Quản Lý & Giám Sát Đấu Giá (`A-AC-01`, `A-AC-02`, `A-AC-03`)
+
+| Mã MH & Route | Quyền Truy Cập | Cấu Trúc Giao Diện & Thành Phần Chi Tiết | Thao Tác Quản Trị & Ràng Buộc |
+| :--- | :---: | :--- | :--- |
+| **`A-AC-01`**<br>**Daily Auction Sessions Config**<br>`GET/POST /admin/auctions/sessions` | `Admin Only` | - **Form Tạo Khung Giờ Phiên Mới (Top Card 12 cột):** Nhập `Tên phiên *` (ví dụ: *Phiên Tối Vàng*), `Giờ mở phiên *`, `Giờ đóng phiên *`, `Bước giá tối thiểu mặc định *`, nút `[+ Tạo Khung Giờ Phiên]`.<br>- **Data Table Danh sách Phiên:** Tên phiên \| Khung giờ \| Số sản phẩm đăng ký \| Trạng thái (`ACTIVE` / `INACTIVE`) \| Thao tác `[Sửa]` / `[Tạm ngưng]`. | - `PERM-AC-08`, `AF-01`. Cấm sửa giờ bắt đầu của phiên đang có sản phẩm `LIVE`. |
+| **`A-AC-02`**<br>**Auctions Monitor List**<br>`GET /admin/auctions` | `Admin` *(Full)*<br>`Moderator` *(Read-Only)* | - **4 Thẻ Thống kê Nhanh:** `Đang LIVE` \| `Sắp mở (SCHEDULED)` \| `Đã hoàn tất (COMPLETED)` \| `Bỏ cọc quá hạn (WINNER_DEFAULTED - DEC-02)`.<br>- **Data Table:** Mã phiên `#AUC-...` \| Sản phẩm & Người bán \| Giá khởi điểm \| Giá cao nhất hiện tại \| Số lượt Bid \| Gia hạn Anti-Sniping (`extended_count`) \| Trạng thái \| Nút **`[🔍 Kiểm tra Bid]`** ($\rightarrow$ `A-AC-03`). | - Cảnh báo màu đỏ `#A62B2B` nếu phát hiện 1 tài khoản trả giá liên tục bất thường hoặc có lịch sử `WINNER_DEFAULTED >= 2`. |
+| **`A-AC-03`**<br>**Auction Bid Inspector & Anti-Fraud Cancel**<br>`GET/POST /admin/auctions/{id}` | `Admin Only` *(Cancel)* | - **Bố cục Split-Pane 2 Cột (7 cột Trái / 5 cột Phải):**<br>  - *Cột Trái:* Bảng toàn bộ **Lịch sử Trả giá (`auction_bids`)** chi tiết đến từng giây (`HH:mm:ss.SSS`), tên & email người đặt giá, mức giá (`tabular-nums`), số lần bỏ cọc trước đó của từng bidder.<br>  - *Cột Phải (Sticky):* Thông tin cấu hình phiên (`starting_price`, `reserve_price`, `auction_ends_at`) + **Hộp Hủy Phiên Bất Thường (`PERM-AC-09`)**: Ô nhập `Lý do hủy phiên bắt buộc *` + Nút Destructive **`[🚫 Hủy Phiên Đấu Giá Gian Lận]`**. | - Khi bấm Hủy phiên: Chuyển `auction.status = CANCELLED`, ẩn sản phẩm (`HIDDEN`), ghi `audit_logs` (`BR-AD-02`) và thông báo cho các bên (`AF-10`). |
+
+---
+
+### 2.3. Nhóm Giám Sát Đơn Hàng, Thanh Toán QR & Sổ Cái Escrow Bất Biến (`A-OR-01`, `A-OR-02`, `A-PM-01`, `A-ES-01`)
+
+| Mã MH & Route | Quyền Truy Cập | Cấu Trúc Giao Diện & Thành Phần Chi Tiết | Ràng Buộc Tài Chính & Bảo Mật |
+| :--- | :---: | :--- | :--- |
+| **`A-OR-01`**<br>**Orders Management List**<br>`GET /admin/orders` | `Admin` *(All)*<br>`Support` *(Assigned)* | - **Filter Panel:** Tìm theo Mã đơn `#ORD-...`, Email Buyer/Seller, Lọc theo `order_status`, `escrow_status`, `dispute_status`.<br>- **Data Table (Hiển thị đủ 4 trạng thái độc lập `ADR-03`):**<br>  `Mã đơn (#ORD)` \| `Loại (Fixed/Auction)` \| `Buyer & Seller` \| `Tiền hàng (item_subtotal)` \| `Phí bảo vệ` \| `Tổng thanh toán` \| **`4 Huy hiệu Trạng thái`** (`Order` / `Payment` / `Escrow` / `Dispute`) \| Nút `[Xem Snapshot -> A-OR-02]`. | - `PERM-OR-04`. Support Staff chỉ thấy các đơn được phân công hỗ trợ. |
+| **`A-OR-02`**<br>**Order Snapshot & Timeline Detail**<br>`GET /admin/orders/{id}` | `Admin`, `Support` | - **Bố cục 2 Cột (7 cột Trái / 5 cột Phải):**<br>  - *Cột Trái:* Bảng **Sản phẩm Snapshot lúc mua (`order_items` – `BR-OR-02`)**, Lịch sử Vận chuyển (`shipments`: Hãng vận chuyển, `tracking_code`, `delivered_at`, mốc đóng băng `auto_complete_at`), và Bảng các bút toán Escrow gắn với đơn.<br>  - *Cột Phải:* Thẻ 4 Trạng thái Độc lập + Bảng kê chi tiết tiền tệ (`item_subtotal`, `shipping_fee = 0đ`, `buyer_protection_fee`, `total_amount`) + Lịch sử yêu cầu hủy đơn (`DEC-06`). | - Hoàn toàn **Read-Only** đối với dữ liệu snapshot và số tiền (`NFR-REL-04`). |
+| **`A-PM-01`**<br>**QR Payment Sessions Monitor**<br>`GET /admin/payments` | `Admin Only` | - **Data Table Phiên Thanh toán QR (`payments`):** Mã tham chiếu `payment_reference` (`JetBrains Mono`) \| Mã đơn `#ORD-...` \| Người thanh toán \| Số tiền `total_amount` \| Trạng thái (`PAID` `#236343`, `PENDING` `#945814`, `FAILED` `#A62B2B`, `EXPIRED`) \| Thời điểm thanh toán (`paid_at`). | - `PERM-FN-06`, `FR-AD-03`. |
+| **`A-ES-01`**<br>**Immutable Escrow & Wallet Ledger Monitor**<br>`GET /admin/escrow` | `Admin Only`<br>*(Strict Read-Only)* | - **Header Banner Khóa Chỉnh Sửa (`Bg #DDF0F0`, `Border 1px #1C5858`, `Padding 12px 16px`):**<br>  *"🔒 SỔ CÁI TÀI CHÍNH BẤT BIẾN (APPEND-ONLY READ-ONLY LEDGER – `BR-FN-07` & `PERM-FN-07`): Mọi bút toán đều được sinh tự động từ các giao dịch nguyên tử. Hệ thống cấm tuyệt đối thao tác sửa hoặc xóa trực tiếp số dư."*<br>- **4 Thẻ Cân Bằng Kế Toán (`Ledger Invariant Cards` – `OF-10`):**<br>  1. `Tổng tiền đang giữ (ESCROW HELD)`<br>  2. `Tổng đã giải ngân cho Seller (100% item_subtotal)`<br>  3. `Tổng đã hoàn trả cho Buyer (REFUNDED)`<br>  4. `Tổng Phí bảo vệ người mua nền tảng thu được`<br>- **2 Tabs Bảng Sổ Cái:**<br>  - `Tab 1: Sổ cái Trung gian (escrow_transactions)` (`ETX-...` \| Mã đơn \| Loại `HOLD`/`RELEASE`/`REFUND` \| Tổng tiền \| Phần giải ngân Seller \| Phần hoàn Buyer \| Phí bảo vệ giữ lại \| Thời gian).<br>  - `Tab 2: Sổ cái Ví Người bán (wallet_transactions)` (`WTX-...` \| Người bán \| Đơn liên quan \| `+CREDIT` \| Số dư sau GD \| Thời gian). | - Tuyệt đối không có nút `Edit` hoặc `Delete` trên bảng (`BR-FN-07`). |
+
+---
+
+### 2.4. Nhóm Quản Trị Người Dùng, Cấu Hình Nền Tảng, Audit Logs & Developer Tools (`A-US-01..02`, `A-ST-01`, `A-AD-01`, `A-DT-01`)
+
+| Mã MH & Route | Quyền Truy Cập | Cấu Trúc Giao Diện & Thành Phần Chi Tiết | Ràng Buộc Nghiệp Vụ & Audit Trail |
+| :--- | :---: | :--- | :--- |
+| **`A-US-01` & `A-US-02`**<br>**User Management & Fraud Inspector**<br>`GET /admin/users`<br>`GET/POST /admin/users/{id}` | `Admin Only` | - **`A-US-01` (Danh sách):** Bảng hiển thị ID \| Họ tên & Email \| Vai trò (`Registered User`, `Moderator`, `Support Staff`, `Admin`) \| Số đơn mua/bán \| Điểm uy tín \| **Cảnh báo rủi ro** (Số lần bỏ cọc đấu giá `auction_default_count`, số lần thua khiếu nại) \| Trạng thái (`ACTIVE` / `SUSPENDED` / `BANNED`) \| Nút `[Quản lý -> A-US-02]`.<br>- **`A-US-02` (Chi tiết & Thao tác):**<br>  - *Khối 1 – Phân quyền Vai trò (`PERM-US-07`):* Dropdown đổi Role (`registered_user`, `moderator`, `support`, `admin`) + Nút `[Cập nhật Vai trò]`.<br>  - *Khối 2 – Khóa / Mở khóa Tài khoản (`PERM-US-06`, `BR-AC-04`):* Chọn trạng thái (`ACTIVE` / `SUSPENDED` / `BANNED`), nhập `Lý do bắt buộc *` và nhấn **`[Áp dụng Trạng thái Tài khoản]`** (Tự động thu hồi toàn bộ Sanctum Token và ẩn sản phẩm chưa bán nếu khóa). | - Cấm Admin tự khóa chính tài khoản của mình; mọi thay đổi đều ghi vào `audit_logs` (`BR-AD-02`). |
+| **`A-ST-01`**<br>**Platform Settings**<br>`GET/POST /admin/settings` | `Admin Only` | - **Form 2 Khối (`Bg #FFFFFF`, `Border 1px #D8CBB8`, `Radius 12px`, `Padding 24px`):**<br>  - **Khối 1 – Phí Bảo Vệ Người Mua & Chính Sách Vận Chuyển (`DEC-04`, `BR-FN-02`):**<br>    - `Phí vận chuyển trên ứng dụng:` `0 VNĐ` *(Read-Only Fixed)* \| `Hoa hồng Người bán:` `0%` *(Read-Only Fixed – Seller nhận 100%)*.<br>    - `Tỷ lệ % Phí bảo vệ người mua (protection_fee_rate) *`: Input số (`5.0` – `8.0%`, mặc định `6.0`).<br>    - `Phí bảo vệ cố định (protection_fixed_fee) *`: Input số (`5.000` – `10.000 VNĐ`, mặc định `7.000`).<br>  - **Khối 2 – Tham Số Thời Gian (`Production Mode` vs `Demo Mode` – `ADR-05`):**<br>    - Bảng nhập thông số cho cả 2 chế độ: *Hạn thanh toán đấu giá (`30 phút` / `2 phút`)*, *Tự hoàn tất đơn sau `DELIVERED` (`24 giờ` / `2 phút`)*, *Vùng & thời gian cộng Anti-Sniping (`120 giây` / `30 giây`)*.<br>  - Nút Primary: **`[💾 Lưu Cấu Hình Hệ Thống & Ghi Audit Log]`**. | - `PERM-AD-02`, `FR-AD-04`. Thay đổi chỉ áp dụng cho giao dịch mới, không ảnh hưởng đơn cũ. |
+| **`A-AD-01`**<br>**Admin Activity Audit Logs**<br>`GET /admin/audit-logs` | `Admin Only` | - **Data Table Nhật Ký Kiểm Toán Bất Biến (`audit_logs` – `FR-AD-06`):**<br>  `Thời gian (DD/MM/YYYY HH:mm:ss)` \| `Nhân sự thực hiện (Tên + Role)` \| `Hành động (Action Badge)` \| `Đối tượng (Target Type & ID)` \| `Dữ liệu thay đổi (Xem diff old_values -> new_values JSON)` \| `IP Address`. | - `PERM-AD-03`, `BR-AD-02`. Chỉ đọc tuyệt đối. |
+| **`A-DT-01`**<br>**Developer Tools (Demo Mode Control Panel)**<br>`GET/POST /admin/dev-tools` | `Admin Only`<br>+ `DEMO_MODE=true` | - **3 Thẻ Tác Vụ Trình Diễn Đồ Án (`CMP-ADM-06` – `FR-AD-05`, `BR-AD-01`, `ADR-05`):**<br>  1. **Card 1 – Đóng Phiên Đấu Giá & Tạo Đơn Cho Người Thắng:** Dropdown chọn phiên đang `LIVE` (hoặc tất cả phiên quá hạn) + Nút **`[⚡ Run: Force Close Expired Auctions]`**.<br>  2. **Card 2 – Hủy Đơn Đấu Giá Quá Hạn Thanh Toán (`DEC-02`):** Hiển thị số đơn đấu giá chưa thanh toán quá hạn + Nút **`[⚡ Run: Expire Unpaid Auction Orders]`** (Đánh dấu `WINNER_DEFAULTED` & mở khóa cho Seller đăng lại).<br>  3. **Card 3 – Tự Động Hoàn Tất Đơn Đã Giao & Giải Ngân Escrow (`DEC-04`):** Hiển thị số đơn đang `DELIVERED` không có tranh chấp + Nút **`[⚡ Run: Auto Complete Delivered Orders & Release Escrow]`**.<br>- **Khung Log Kết Quả Thực Thi Trực Tiếp:** Hiển thị thông báo chi tiết số lượng bản ghi vừa được xử lý sau khi bấm nút. | - Tuyệt đối trả về `403/404` nếu `DEMO_MODE=false` (`NFR-ENV-02`).<br>- Đảm bảo tính **Lũy đẳng (`Idempotent`)** khi bấm nhiều lần (`BR-AD-01`) và ghi `audit_logs`. |
