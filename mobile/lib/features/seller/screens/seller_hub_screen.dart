@@ -97,7 +97,7 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
         _buildWalletCard(data),
         const SizedBox(height: 16),
 
-        // 3. Prominent Stadium CTA: Đăng bán sản phẩm mới
+        // 3. Prominent Stadium CTAs: Đăng bán sản phẩm mới & Tạo phiên đấu giá
         SizedBox(
           width: double.infinity,
           height: 52,
@@ -119,6 +119,29 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
               shape: const StadiumBorder(),
             ),
             onPressed: () => context.push(AppRoutes.sellerCreateListing),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton.icon(
+            key: const Key('btn_create_new_auction'),
+            icon: const Icon(Icons.gavel_rounded, size: 18),
+            label: const Text(
+              'Tạo phiên đấu giá đồ hiếm',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.pineDeep,
+              backgroundColor: AppColors.surfaceCard,
+              side: const BorderSide(color: AppColors.pineBanner, width: 1.3),
+              shape: const StadiumBorder(),
+            ),
+            onPressed: () => context.push(AppRoutes.sellerCreateAuction),
           ),
         ),
         const SizedBox(height: 22),
@@ -291,10 +314,8 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
                   side: BorderSide(
                     color: AppColors.creamBadgeBg.withValues(alpha: 0.5),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: const StadiumBorder(),
@@ -461,9 +482,8 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
           decoration: BoxDecoration(
             borderRadius: DesignTokens.borderRadiusLg,
             border: Border.all(
-              color: isAlert
-                  ? AppColors.priceCrimsonBorder
-                  : AppColors.borderWarm,
+              color:
+                  isAlert ? AppColors.priceCrimsonBorder : AppColors.borderWarm,
             ),
             boxShadow: DesignTokens.cardElevation,
           ),
@@ -509,9 +529,8 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
               Text(
                 title,
                 style: AppTypography.bodySmall.copyWith(
-                  color: isAlert
-                      ? AppColors.priceCrimson
-                      : AppColors.textCharcoal,
+                  color:
+                      isAlert ? AppColors.priceCrimson : AppColors.textCharcoal,
                   fontWeight: isAlert ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 12.5,
                 ),
@@ -577,49 +596,42 @@ class _SellerHubScreenState extends ConsumerState<SellerHubScreen> {
   Widget _buildQuickMenu(SellerDashboardModel data) {
     return Container(
       decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
         borderRadius: DesignTokens.borderRadiusBanner,
+        border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
-      child: Material(
-        color: AppColors.surfaceCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: DesignTokens.borderRadiusBanner,
-          side: const BorderSide(color: AppColors.borderWarm),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            _buildQuickMenuTile(
-              icon: Icons.inventory_2_outlined,
-              title: 'Quản lý kho đồ đăng bán',
-              subtitle:
-                  'Xem bài đăng theo 7 trạng thái, ẩn/hiện hoặc gửi duyệt lại',
-              onTap: () => context.push(AppRoutes.sellerListings),
-            ),
-            const Divider(height: 1, indent: 64, color: AppColors.borderSubtle),
-            _buildQuickMenuTile(
-              icon: Icons.account_balance_wallet_outlined,
-              title: 'Sổ cái ví & Giao dịch ký quỹ',
-              subtitle: 'Lịch sử biến động số dư, đối soát giao dịch bán hàng',
-              onTap: () => context.push(AppRoutes.sellerWallet),
-            ),
-            const Divider(height: 1, indent: 64, color: AppColors.borderSubtle),
-            _buildQuickMenuTile(
-              icon: Icons.storefront_outlined,
-              title: 'Xem cửa hàng công khai',
-              subtitle: 'Trải nghiệm trang tiệm từ góc nhìn người mua đồ si',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Đang hiển thị chế độ xem thử cửa hàng công khai',
-                    ),
+      child: Column(
+        children: [
+          _buildQuickMenuTile(
+            icon: Icons.inventory_2_outlined,
+            title: 'Quản lý kho đồ đăng bán',
+            subtitle: 'Xem bài đăng theo 7 trạng thái, ẩn/hiện hoặc gửi duyệt lại',
+            onTap: () => context.push(AppRoutes.sellerListings),
+          ),
+          const Divider(height: 1, indent: 64, color: AppColors.borderSubtle),
+          _buildQuickMenuTile(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Sổ cái ví & Giao dịch ký quỹ',
+            subtitle: 'Lịch sử biến động số dư, đối soát giao dịch bán hàng',
+            onTap: () => context.push(AppRoutes.sellerWallet),
+          ),
+          const Divider(height: 1, indent: 64, color: AppColors.borderSubtle),
+          _buildQuickMenuTile(
+            icon: Icons.storefront_outlined,
+            title: 'Xem cửa hàng công khai',
+            subtitle: 'Trải nghiệm trang tiệm từ góc nhìn người mua đồ si',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Đang hiển thị chế độ xem thử cửa hàng công khai',
                   ),
-                );
-              },
-            ),
-          ],
-        ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/error/api_exception.dart';
 import '../../../core/error/error_code_enum.dart';
 import '../../../core/services/lifecycle_polling_controller.dart';
@@ -16,6 +17,7 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
   final AuctionRepository repository;
   final int? currentUserId;
   final bool enablePolling;
+  final RetroDemoMarketplaceStore? demoStore;
 
   AuctionDetailModel? _auction;
   LifecyclePollingController? _pollingController;
@@ -24,6 +26,7 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
   bool _isClosingEarly = false;
   bool _isRelisting = false;
   bool _justTriggeredAntiSniping = false;
+  bool _isUsingDemoFallback = false;
   OutbidConflictStateModel? _outbidConflict;
   String? _bidErrorMessage;
 
@@ -32,6 +35,7 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
     required this.repository,
     this.currentUserId,
     this.enablePolling = true,
+    this.demoStore,
   }) {
     if (enablePolling) {
       _pollingController = LifecyclePollingController(
@@ -47,6 +51,7 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
   bool get isClosingEarly => _isClosingEarly;
   bool get isRelisting => _isRelisting;
   bool get justTriggeredAntiSniping => _justTriggeredAntiSniping;
+  bool get isUsingDemoFallback => _isUsingDemoFallback;
   OutbidConflictStateModel? get outbidConflict => _outbidConflict;
   String? get bidErrorMessage => _bidErrorMessage;
   LifecyclePollingController? get pollingController => _pollingController;
@@ -54,24 +59,51 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
   /// Loads full auction room detail initially and starts polling if live
   Future<void> loadAuction() async {
     setLoading();
+
+    final demoAuction = demoStore?.getDemoAuctionDetail(auctionId);
+    if (demoAuction != null) {
+      _isUsingDemoFallback = true;
+      _auction = demoAuction;
+      setSuccess(demoAuction);
+      return;
+    }
+
     try {
-      final res = await repository.fetchAuctionDetail(auctionId, currentUserId: currentUserId);
-      _auction = res;
-      setSuccess(res);
+      final res = await repository.fetchAuctionDetail(
+        auctionId,
+        currentUserId: currentUserId,
+      );
+      _isUsingDemoFallback = false;
+      final locallyRegistered =
+          demoStore?.isAuctionRegistered(auctionId) ?? false;
+      _auction = locallyRegistered && !res.isWatching
+          ? res.copyWith(isWatching: true)
+          : res;
+      setSuccess(_auction!);
 
       if (enablePolling && res.isLive) {
         _pollingController?.start();
       }
     } catch (e) {
+      final fallback = demoStore?.getDemoAuctionDetail(auctionId);
+      if (fallback != null) {
+        _isUsingDemoFallback = true;
+        _auction = fallback;
+        setSuccess(fallback);
+        return;
+      }
       setError(e.toString());
     }
   }
 
   /// Background polling cycle without triggering full screen loading indicator
   Future<void> _pollAuctionRoom() async {
-    if (_auction == null) return;
+    if (_auction == null || _isUsingDemoFallback) return;
     try {
-      final updated = await repository.fetchAuctionDetail(auctionId, currentUserId: currentUserId);
+      final updated = await repository.fetchAuctionDetail(
+        auctionId,
+        currentUserId: currentUserId,
+      );
 
       // Detect Anti-Sniping extension triggered during polling
       if (updated.extendedCount > _auction!.extendedCount) {
@@ -98,10 +130,44 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
     _outbidConflict = null;
     notifyListeners();
 
+    if (_isUsingDemoFallback && demoStore != null && _auction != null) {
+      if (bidAmount < _auction!.minimumNextBid) {
+        _isSubmittingBid = false;
+        _bidErrorMessage = 'Mức giá phải đạt tối thiểu theo bước giá quy định.';
+        notifyListeners();
+        return false;
+      }
+
+      final previousExtCount = _auction!.extendedCount;
+      final updated = demoStore!.placeLocalDemoBid(
+        auctionId: auctionId,
+        bidAmount: bidAmount,
+        bidderId: currentUserId ?? 999,
+      );
+      _isSubmittingBid = false;
+      if (updated != null) {
+        if (updated.extendedCount > previousExtCount) {
+          _justTriggeredAntiSniping = true;
+        }
+        _auction = updated;
+        setSuccess(updated);
+        notifyListeners();
+        return true;
+      }
+      _bidErrorMessage = 'Không thể đặt giá cho phiên đấu giá này.';
+      notifyListeners();
+      return false;
+    }
+
     try {
-      final result = await repository.placeBid(auctionId, bidAmount, currentUserId: currentUserId);
+      final result = await repository.placeBid(
+        auctionId,
+        bidAmount,
+        currentUserId: currentUserId,
+      );
       final updatedAuction = result['auction'] as AuctionDetailModel;
-      final triggeredAntiSniping = result['triggered_anti_sniping'] as bool? ?? false;
+      final triggeredAntiSniping =
+          result['triggered_anti_sniping'] as bool? ?? false;
 
       _auction = updatedAuction;
       if (triggeredAntiSniping) {
@@ -114,10 +180,13 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
       return true;
     } on ApiException catch (e) {
       _isSubmittingBid = false;
-      if (e.errorCodeEnum == ErrorCodeEnum.auctionOutbidConflict || e.statusCode == 409) {
+      if (e.errorCodeEnum == ErrorCodeEnum.auctionOutbidConflict ||
+          e.statusCode == 409) {
         // Extract 409 Conflict latest_state
         if (e.latestState != null) {
-          final conflictState = OutbidConflictStateModel.fromJson(e.latestState!);
+          final conflictState = OutbidConflictStateModel.fromJson(
+            e.latestState!,
+          );
           _outbidConflict = conflictState;
 
           // Merge latest state into local auction model
@@ -161,11 +230,22 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
     notifyListeners();
   }
 
-  /// Toggles watch status
-  Future<void> toggleWatch() async {
-    if (_auction == null) return;
+  /// Toggles watch / seat reservation status
+  Future<bool> toggleWatch() async {
+    if (_auction == null) return false;
     final oldWatching = _auction!.isWatching;
     final newWatching = !oldWatching;
+
+    if (_isUsingDemoFallback && demoStore != null) {
+      final nowRegistered = demoStore!.toggleLocalAuctionRegistration(
+        auctionId,
+      );
+      _auction =
+          demoStore!.getDemoAuctionDetail(auctionId) ??
+          _auction!.copyWith(isWatching: nowRegistered);
+      setSuccess(_auction!);
+      return nowRegistered;
+    }
 
     _auction = _auction!.copyWith(isWatching: newWatching);
     setSuccess(_auction!);
@@ -176,9 +256,25 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
         _auction = _auction!.copyWith(isWatching: actual);
         setSuccess(_auction!);
       }
+      if (demoStore != null &&
+          demoStore!.isAuctionRegistered(auctionId) != actual) {
+        demoStore!.toggleLocalAuctionRegistration(auctionId);
+      }
+      return actual;
     } catch (_) {
+      if (demoStore != null) {
+        final localStatus = demoStore!.toggleLocalAuctionRegistration(
+          auctionId,
+        );
+        if (_auction!.isWatching != localStatus) {
+          _auction = _auction!.copyWith(isWatching: localStatus);
+          setSuccess(_auction!);
+        }
+        return localStatus;
+      }
       _auction = _auction!.copyWith(isWatching: oldWatching);
       setSuccess(_auction!);
+      return oldWatching;
     }
   }
 
@@ -188,7 +284,10 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
     notifyListeners();
 
     try {
-      final res = await repository.closeEarly(auctionId, currentUserId: currentUserId);
+      final res = await repository.closeEarly(
+        auctionId,
+        currentUserId: currentUserId,
+      );
       _auction = res;
       setSuccess(res);
       _pollingController?.pause();
@@ -246,14 +345,19 @@ class LiveAuctionViewModel extends BaseViewModel<AuctionDetailModel> {
 
 /// Riverpod family provider for LiveAuctionViewModel
 final liveAuctionViewModelProvider =
-    ChangeNotifierProvider.autoDispose.family<LiveAuctionViewModel, int>((ref, auctionId) {
-  final repo = ref.watch(auctionRepositoryProvider);
-  final authVm = ref.watch(authViewModelProvider);
-  final vm = LiveAuctionViewModel(
-    auctionId: auctionId,
-    repository: repo,
-    currentUserId: authVm.currentUser?.id,
-  );
-  vm.loadAuction();
-  return vm;
-});
+    ChangeNotifierProvider.autoDispose.family<LiveAuctionViewModel, int>((
+      ref,
+      auctionId,
+    ) {
+      final repo = ref.watch(auctionRepositoryProvider);
+      final authVm = ref.watch(authViewModelProvider);
+      final demoStore = ref.read(retroDemoStoreProvider);
+      final vm = LiveAuctionViewModel(
+        auctionId: auctionId,
+        repository: repo,
+        currentUserId: authVm.currentUser?.id,
+        demoStore: demoStore,
+      );
+      vm.loadAuction();
+      return vm;
+    });

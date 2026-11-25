@@ -43,6 +43,7 @@ import '../../features/orders/screens/submit_counter_evidence_screen.dart';
 import '../../features/auctions/screens/scheduled_auction_hub_screen.dart';
 import '../../features/auctions/screens/my_auctions_screen.dart';
 import '../../features/auctions/screens/live_bidding_room_screen.dart';
+import '../../features/auctions/screens/create_auction_screen.dart';
 import '../../features/engagement/screens/conversation_inbox_screen.dart';
 import '../../features/engagement/screens/chat_room_screen.dart';
 import '../../features/engagement/screens/notification_center_screen.dart';
@@ -105,6 +106,10 @@ class AppRouter {
 
       // Catalog & Discovery Standalone Routes
       GoRoute(
+        path: AppRoutes.discover,
+        builder: (context, state) => const CategoryTaxonomyScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.search,
         builder: (context, state) =>
             ProductSearchScreen(initialKeyword: state.uri.queryParameters['q']),
@@ -136,11 +141,17 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.sellerListings,
-        builder: (context, state) => const SellerListingsScreen(),
+        builder: (context, state) => SellerListingsScreen(
+          initialStatus: state.uri.queryParameters['status'],
+        ),
       ),
       GoRoute(
         path: AppRoutes.sellerCreateListing,
         builder: (context, state) => const CreateListingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.sellerCreateAuction,
+        builder: (context, state) => const CreateAuctionScreen(),
       ),
       GoRoute(
         path: AppRoutes.sellerEditListing,
@@ -384,13 +395,13 @@ class AppRouter {
         },
       ),
 
-      // 5-Tab Bottom Navigation Shell (NAV-DEC-01)
+      // 5-Destination Bottom Navigation Shell (Home | Messages | + Sell | Auctions | Profile)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainNavigationShell(navigationShell: navigationShell);
         },
         branches: [
-          // Branch 1: Home (Trang chủ - M-HM-01)
+          // Branch 0: Home (Trang chủ - M-HM-01)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -400,27 +411,7 @@ class AppRouter {
             ],
           ),
 
-          // Branch 2: Discover (Khám phá - M-DS-01)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.discover,
-                builder: (context, state) => const CategoryTaxonomyScreen(),
-              ),
-            ],
-          ),
-
-          // Branch 3: Auctions (Đấu giá - M-AC-01)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.auctions,
-                builder: (context, state) => const ScheduledAuctionHubScreen(),
-              ),
-            ],
-          ),
-
-          // Branch 4: Messages (Tin nhắn - M-CM-01)
+          // Branch 1: Messages (Tin nhắn - M-CM-01)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -430,7 +421,17 @@ class AppRouter {
             ],
           ),
 
-          // Branch 5: Profile (Cá nhân & Kênh người bán - M-PF-01)
+          // Branch 2: Auctions (Đấu giá - M-AC-01)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.auctions,
+                builder: (context, state) => const ScheduledAuctionHubScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 3: Profile (Cá nhân & Kênh người bán - M-PF-01)
           StatefulShellBranch(
             routes: [
               GoRoute(

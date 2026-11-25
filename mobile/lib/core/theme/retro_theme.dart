@@ -49,7 +49,7 @@ class RetroTheme {
       splashFactory: InkRipple.splashFactory,
 
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.canvasParchment,
+        backgroundColor: AppColors.surfaceCard,
         foregroundColor: AppColors.textCharcoal,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -76,7 +76,7 @@ class RetroTheme {
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.pineBanner,
+          backgroundColor: AppColors.pineDeep,
           foregroundColor: AppColors.textLight,
           disabledBackgroundColor: AppColors.borderWarm,
           disabledForegroundColor: AppColors.textMuted,
@@ -116,7 +116,7 @@ class RetroTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.pineBanner,
+          foregroundColor: AppColors.pineDeep,
           textStyle: AppTypography.buttonMedium,
           shape: pillShape,
         ),
@@ -152,7 +152,7 @@ class RetroTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
-            color: AppColors.pineBanner,
+            color: AppColors.pineDeep,
             width: DesignTokens.borderMedium,
           ),
         ),
@@ -173,9 +173,9 @@ class RetroTheme {
       ),
 
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.priceCrimson,
+        labelColor: AppColors.pineDeep,
         unselectedLabelColor: AppColors.textMuted,
-        indicatorColor: AppColors.priceCrimson,
+        indicatorColor: AppColors.pineDeep,
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: AppColors.borderWarm,
         labelStyle: AppTypography.labelMedium.copyWith(
@@ -190,8 +190,8 @@ class RetroTheme {
 
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceCard,
-        selectedColor: AppColors.creamBadgeBg,
-        secondarySelectedColor: AppColors.creamBadgeBg,
+        selectedColor: AppColors.primaryForestGreenLight,
+        secondarySelectedColor: AppColors.primaryForestGreenLight,
         labelStyle: AppTypography.caption.copyWith(
           color: AppColors.textCharcoal,
           fontWeight: FontWeight.w600,
@@ -214,14 +214,14 @@ class RetroTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return AppTypography.caption.copyWith(
-            color: selected ? AppColors.priceCrimson : AppColors.textCharcoal,
+            color: selected ? AppColors.pineDeep : AppColors.textMuted,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? AppColors.priceCrimson : AppColors.textCharcoal,
+            color: selected ? AppColors.pineDeep : AppColors.textMuted,
           );
         }),
       ),

@@ -386,7 +386,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verify product code and title
       expect(find.text('PRD-201'), findsOneWidget);
@@ -432,7 +433,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Buyer buttons must NOT be present
       expect(find.text('Thêm vào giỏ'), findsNothing);
@@ -477,17 +479,42 @@ void main() {
       expect(find.text('Phiếu Kiểm Định Đồ Si'), findsOneWidget);
       expect(find.text('Thang Chuẩn Tình Trạng Đồ Si (5 Mức)'), findsOneWidget);
 
+      final modalScrollable = find
+          .descendant(
+            of: find.byType(DefectVerificationModal),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+
       // Verify top tiers are visible
       expect(find.text('Mới còn tag (New With Tags)'), findsOneWidget);
       expect(find.text('Như mới (Like New 95% - 99%)'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Tốt (Good)'),
+        100,
+        scrollable: modalScrollable,
+      );
       expect(find.text('Tốt (Good)'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Sản phẩm này'),
+        100,
+        scrollable: modalScrollable,
+      );
       expect(find.text('Sản phẩm này'), findsOneWidget);
 
       // Scroll to reveal remaining condition tiers
-      await tester.scrollUntilVisible(find.text('Trung bình (Fair)'), 100);
+      await tester.scrollUntilVisible(
+        find.text('Trung bình (Fair)'),
+        100,
+        scrollable: modalScrollable,
+      );
       expect(find.text('Trung bình (Fair)'), findsOneWidget);
 
-      await tester.scrollUntilVisible(find.text('Vintage sờn rách tự nhiên (Vintage Worn)'), 100);
+      await tester.scrollUntilVisible(
+        find.text('Vintage sờn rách tự nhiên (Vintage Worn)'),
+        100,
+        scrollable: modalScrollable,
+      );
       expect(find.text('Vintage sờn rách tự nhiên (Vintage Worn)'), findsOneWidget);
     });
 
@@ -598,22 +625,26 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Guest clicks 'Thêm vào giỏ' -> triggers DEC-01 guest prompt dialog
       await tester.tap(find.text('Thêm vào giỏ'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Yêu cầu đăng nhập'), findsOneWidget);
       expect(find.text('Đăng nhập ngay'), findsOneWidget);
 
       // Close dialog
       await tester.tap(find.text('Để sau'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Guest clicks Favorite icon -> also triggers DEC-01 guest prompt dialog
       await tester.tap(find.byTooltip('Yêu thích'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Yêu cầu đăng nhập'), findsOneWidget);
     });

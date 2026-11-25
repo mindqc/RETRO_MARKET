@@ -5,12 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/widgets/retro_design_primitives.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/conversation_model.dart';
 import '../viewmodels/chat_view_model.dart';
 
-/// M-CM-01: Conversation Inbox Screen (Tab 4 Root: /messages)
+/// M-CM-01: Conversation Inbox Screen (Messages Tab: /messages)
+/// Features standardized Global Upper Navigation, live conversation search,
+/// online indicators, unread counters, and product context thumbnails.
 class ConversationInboxScreen extends ConsumerStatefulWidget {
   const ConversationInboxScreen({super.key});
 
@@ -21,6 +24,9 @@ class ConversationInboxScreen extends ConsumerStatefulWidget {
 
 class _ConversationInboxScreenState
     extends ConsumerState<ConversationInboxScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -30,94 +36,185 @@ class _ConversationInboxScreenState
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ConversationModel> _filterConversations(List<ConversationModel> items) {
+    final q = _searchQuery.trim().toLowerCase();
+    if (q.isEmpty) return items;
+    return items.where((c) {
+      final name = c.partnerName.toLowerCase();
+      final preview = (c.lastMessagePreview ?? '').toLowerCase();
+      final product = (c.contextProduct?.title ?? '').toLowerCase();
+      return name.contains(q) || preview.contains(q) || product.contains(q);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatVm = ref.watch(chatViewModelProvider);
+    final filteredConversations = _filterConversations(chatVm.conversations);
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Row(
-          children: [
-            const Flexible(
-              child: RetroBrandWordmark(titleText: 'izithrift • Tin nhắn'),
-            ),
-            if (chatVm.totalUnreadCount > 0) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.priceCrimson,
-                  borderRadius: DesignTokens.borderRadiusFull,
+      appBar: const IzithriftGlobalAppBar(),
+      body: Column(
+        children: [
+          // Clean Header + Conversation Search Bar
+          Container(
+            color: AppColors.surfaceCard,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Tin nhắn',
+                      style: AppTypography.headingMedium.copyWith(
+                        fontSize: 20,
+                        color: AppColors.textCharcoal,
+                      ),
+                    ),
+                    if (chatVm.totalUnreadCount > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.ctaTerracotta,
+                          borderRadius: DesignTokens.borderRadiusFull,
+                        ),
+                        child: Text(
+                          '${chatVm.totalUnreadCount} mới',
+                          style: AppTypography.caption.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                child: Text(
-                  '${chatVm.totalUnreadCount}',
-                  style: AppTypography.caption.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  style: AppTypography.bodyMedium.copyWith(fontSize: 13.5),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm người bán, nội dung hoặc món đồ...',
+                    hintStyle: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: AppColors.textMuted,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.canvasParchment,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      borderSide: const BorderSide(color: AppColors.borderWarm),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      borderSide: const BorderSide(color: AppColors.borderWarm),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      borderSide: const BorderSide(
+                        color: AppColors.pineDeep,
+                        width: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          RetroHeaderIconButton(
-            icon: Icons.notifications_none_rounded,
-            tooltip: 'Thông báo',
-            onPressed: () => context.push('/notifications'),
+              ],
+            ),
           ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: Builder(
-        builder: (context) {
-          if (chatVm.isLoading && chatVm.conversations.isEmpty) {
-            return _buildShimmerLoading();
-          }
+          const Divider(height: 1, color: AppColors.borderWarm),
 
-          if (chatVm.isError && chatVm.conversations.isEmpty) {
-            return RetroErrorRetryView(
-              errorMessage: chatVm.errorMessage ?? 'Không thể tải tin nhắn',
-              onRetry: () => chatVm.loadInbox(),
-            );
-          }
+          Expanded(
+            child: Builder(
+              builder: (context) {
+                if (chatVm.isLoading && chatVm.conversations.isEmpty) {
+                  return _buildShimmerLoading();
+                }
 
-          if (chatVm.conversations.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () => chatVm.loadInbox(),
-              color: AppColors.pineDeep,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.18),
-                  const RetroEmptyStateView(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: 'Chưa có cuộc trò chuyện nào',
-                    message:
-                        'Bắt đầu trao đổi với người bán ngay trên món đồ vintage bạn ưng ý!',
+                if (chatVm.isError && chatVm.conversations.isEmpty) {
+                  return RetroErrorRetryView(
+                    errorMessage:
+                        chatVm.errorMessage ?? 'Không thể tải tin nhắn',
+                    onRetry: () => chatVm.loadInbox(),
+                  );
+                }
+
+                if (filteredConversations.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: () => chatVm.loadInbox(),
+                    color: AppColors.pineDeep,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.14,
+                        ),
+                        RetroEmptyStateView(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          title: _searchQuery.isNotEmpty
+                              ? 'Không tìm thấy cuộc trò chuyện'
+                              : 'Chưa có cuộc trò chuyện nào',
+                          message: _searchQuery.isNotEmpty
+                              ? 'Hãy thử tìm bằng từ khóa hoặc tên shop khác.'
+                              : 'Bắt đầu trao đổi với người bán ngay trên món đồ vintage bạn ưng ý!',
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () => chatVm.loadInbox(),
+                  color: AppColors.pineDeep,
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: filteredConversations.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) => _buildConversationTile(
+                      context,
+                      filteredConversations[index],
+                    ),
                   ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => chatVm.loadInbox(),
-            color: AppColors.pineDeep,
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              itemCount: chatVm.conversations.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) =>
-                  _buildConversationTile(context, chatVm.conversations[index]),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -127,7 +224,7 @@ class _ConversationInboxScreenState
     final hasUnread = item.unreadCount > 0;
 
     return Material(
-      color: hasUnread ? AppColors.surfaceSection : AppColors.surfaceCard,
+      color: AppColors.surfaceCard,
       borderRadius: DesignTokens.borderRadiusLg,
       child: InkWell(
         borderRadius: DesignTokens.borderRadiusLg,
@@ -144,7 +241,7 @@ class _ConversationInboxScreenState
             borderRadius: DesignTokens.borderRadiusLg,
             border: Border.all(
               color: hasUnread
-                  ? AppColors.creamBadgeBorder
+                  ? AppColors.pineDeep.withValues(alpha: 0.35)
                   : AppColors.borderWarm,
               width: hasUnread ? 1.3 : 1,
             ),
@@ -153,7 +250,7 @@ class _ConversationInboxScreenState
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar
+              // Avatar + Online / Blocked Status Dot
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -164,24 +261,26 @@ class _ConversationInboxScreenState
                       border: Border.all(
                         color: hasUnread
                             ? AppColors.ctaTerracotta
-                            : AppColors.creamBadgeBorder,
+                            : AppColors.borderWarm,
                         width: 1.5,
                       ),
                     ),
                     child: CircleAvatar(
                       radius: 24,
-                      backgroundColor: AppColors.categoryCircleStart,
-                      backgroundImage: (otherUser.avatarUrl != null &&
+                      backgroundColor: AppColors.primaryForestGreenLight,
+                      backgroundImage:
+                          (otherUser.avatarUrl != null &&
                               otherUser.avatarUrl!.isNotEmpty)
                           ? NetworkImage(otherUser.avatarUrl!)
                           : null,
-                      child: (otherUser.avatarUrl == null ||
+                      child:
+                          (otherUser.avatarUrl == null ||
                               otherUser.avatarUrl!.isEmpty)
                           ? Text(
                               otherUser.displayName.isNotEmpty
                                   ? otherUser.displayName
-                                      .substring(0, 1)
-                                      .toUpperCase()
+                                        .substring(0, 1)
+                                        .toUpperCase()
                                   : 'U',
                               style: AppTypography.headingSmall.copyWith(
                                 color: AppColors.pineDeep,
@@ -192,18 +291,32 @@ class _ConversationInboxScreenState
                   ),
                   if (item.isBlocked)
                     Positioned(
-                      bottom: -2,
-                      right: -2,
+                      bottom: -1,
+                      right: -1,
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: const BoxDecoration(
-                          color: AppColors.priceCrimson,
+                          color: AppColors.statusDanger,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.block,
-                          size: 12,
+                          size: 11,
                           color: Colors.white,
+                        ),
+                      ),
+                    )
+                  else if (item.isOnline)
+                    Positioned(
+                      bottom: 1,
+                      right: 1,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: AppColors.statusSuccess,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
                     ),
@@ -235,10 +348,11 @@ class _ConversationInboxScreenState
                           item.formattedTime,
                           style: AppTypography.caption.copyWith(
                             color: hasUnread
-                                ? AppColors.priceCrimson
+                                ? AppColors.ctaTerracotta
                                 : AppColors.textMuted,
-                            fontWeight:
-                                hasUnread ? FontWeight.w700 : FontWeight.normal,
+                            fontWeight: hasUnread
+                                ? FontWeight.w700
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -269,7 +383,7 @@ class _ConversationInboxScreenState
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.priceCrimson,
+                              color: AppColors.ctaTerracotta,
                               borderRadius: DesignTokens.borderRadiusFull,
                             ),
                             child: Text(
@@ -289,26 +403,15 @@ class _ConversationInboxScreenState
               ),
 
               // Pinned Product Context Thumbnail
-              if (item.contextProduct != null &&
-                  item.contextProduct!.thumbnailUrl != null) ...[
+              if (item.contextProduct != null) ...[
                 const SizedBox(width: 10),
                 ClipRRect(
                   borderRadius: DesignTokens.borderRadiusSm,
-                  child: Image.network(
-                    item.contextProduct!.thumbnailUrl!,
-                    width: 46,
-                    height: 46,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 46,
-                      height: 46,
-                      color: AppColors.surfaceWarm,
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        size: 20,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
+                  child: RetroProductImage(
+                    imageUrl: item.contextProduct!.thumbnailUrl,
+                    title: item.contextProduct!.title,
+                    width: 48,
+                    height: 48,
                   ),
                 ),
               ],

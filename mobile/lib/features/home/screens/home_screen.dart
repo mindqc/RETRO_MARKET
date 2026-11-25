@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/utils/product_image_resolver.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/seasonal_animations.dart';
 import '../../../core/widgets/state_feedback_views.dart';
+import '../../catalog/models/product_summary_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
 import '../models/auction_summary_model.dart';
 import '../models/featured_seller_model.dart';
@@ -31,6 +34,7 @@ const Map<String, IconData> _kCategoryIcons = {
   'Túi xách': Icons.shopping_bag_outlined,
   'Phụ kiện': Icons.watch_outlined,
   'Điện tử': Icons.camera_alt_outlined,
+  'Đồ cổ': Icons.photo_camera_outlined,
   'Sách': Icons.menu_book_outlined,
   'Nội thất': Icons.chair_outlined,
   'Đồ chơi': Icons.album_outlined,
@@ -40,7 +44,12 @@ const Map<String, IconData> _kCategoryIcons = {
 };
 
 /// M-HM-01: Home Discovery Feed Screen (Tab 1 Root)
-/// Master implementation of the approved Cozy Vintage Editorial design language.
+/// Hierarchy:
+/// 1. Header / Greeting / Search + Quick Sell ("Đăng bán đồ") entry
+/// 2. Categories strip
+/// 3. Featured Auctions (Horizontally scrollable carousel, ~1.5–2 cards visible)
+/// 4. New Arrivals ("Hàng mới lên kệ" — Horizontally scrollable product carousel)
+/// 5. Nearby Popular Secondhand Stores ("Tiệm đồ si được yêu thích gần bạn" — 2-column vertical marketplace grid)
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -49,6 +58,16 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String _selectedSecondhandFilter = 'Tất cả';
+
+  static const List<String> _secondhandFilters = [
+    'Tất cả',
+    'Áo khoác',
+    'Túi & Giày',
+    'Đồ cổ',
+    'Dưới 300K',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -60,31 +79,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final homeVM = ref.watch(homeViewModelProvider);
+    final demoStore = ref.watch(retroDemoStoreProvider);
     final state = homeVM.state;
     final feed = state.data;
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: DesignTokens.spaceLg,
-        title: const RetroBrandWordmark(titleText: 'izithrift • Trang chủ'),
-        actions: [
-          RetroHeaderIconButton(
-            icon: Icons.notifications_none_rounded,
-            tooltip: 'Thông báo',
-            onPressed: () => context.push(AppRoutes.notifications),
-          ),
-          RetroHeaderIconButton(
-            icon: Icons.shopping_bag_outlined,
-            tooltip: 'Giỏ hàng',
-            onPressed: () => context.push(AppRoutes.cart),
-          ),
-          const SizedBox(width: DesignTokens.spaceSm),
-        ],
-      ),
+      appBar: const IzithriftGlobalAppBar(),
       body: RetroAmbientSnowflakes(
         child: Builder(
           builder: (context) {
@@ -100,6 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ref,
               feed ?? const HomeFeedModel(),
               homeVM,
+              demoStore,
             );
           },
         ),
@@ -107,164 +109,166 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// Builds the carousel auction list so users always experience swipeable discovery
+  /// while prioritizing real backend auctions first.
+  List<AuctionSummaryModel> _resolveCarouselAuctions(
+    HomeFeedModel feed,
+    RetroDemoMarketplaceStore demoStore,
+  ) {
+    final result = <AuctionSummaryModel>[...feed.liveAuctions];
+    if (result.length < 3) {
+      final existingIds = result.map((a) => a.id).toSet();
+      for (final demo in demoStore.demoHomeAuctionSummaries) {
+        if (!existingIds.contains(demo.id)) {
+          result.add(demo);
+        }
+      }
+    }
+    return result;
+  }
+
+  /// Builds New Arrivals horizontal carousel items (backend first, enriched if sparse).
+  List<ProductSummaryModel> _resolveNewArrivals(
+    HomeFeedModel feed,
+    RetroDemoMarketplaceStore demoStore,
+  ) {
+    final result = <ProductSummaryModel>[...feed.latestProducts];
+    if (result.length < 4) {
+      final existingIds = result.map((p) => p.id).toSet();
+      for (final demo in demoStore.demoCatalogProducts) {
+        if (!existingIds.contains(demo.id)) {
+          result.add(demo);
+        }
+      }
+    }
+    return result;
+  }
+
+  /// Builds the 2-column vertical Nearby Popular Secondhand Stores product discovery feed.
+  List<ProductSummaryModel> _resolveNearbyMarketplaceItems(
+    HomeFeedModel feed,
+    RetroDemoMarketplaceStore demoStore,
+  ) {
+    final merged = <ProductSummaryModel>[];
+    final seenIds = <int>{};
+    // Include backend products & curated local vintage finds with rich photography
+    for (final item in feed.latestProducts) {
+      if (seenIds.add(item.id)) merged.add(item);
+    }
+    for (final item in demoStore.demoCatalogProducts) {
+      if (seenIds.add(item.id)) merged.add(item);
+    }
+    return merged;
+  }
+
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
     HomeFeedModel feed,
     HomeViewModel homeVM,
+    RetroDemoMarketplaceStore demoStore,
   ) {
+    final carouselAuctions = _resolveCarouselAuctions(feed, demoStore);
+    final newArrivals = _resolveNewArrivals(feed, demoStore);
+    final nearbyProducts = _resolveNearbyMarketplaceItems(feed, demoStore);
+
     return RefreshIndicator(
       onRefresh: homeVM.refresh,
       color: AppColors.ctaTerracotta,
       backgroundColor: AppColors.surfaceCard,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      child: ListView(
         padding: const EdgeInsets.only(bottom: DesignTokens.space2xl),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Floating Pill Search Bar ────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                DesignTokens.spaceLg,
-                DesignTokens.spaceXs,
-                DesignTokens.spaceLg,
-                DesignTokens.spaceMd,
-              ),
-              child: RetroSearchPill(
-                placeholder: 'Tìm đồ vintage, áo khoác 90s, denim...',
-                onTap: () => context.push(AppRoutes.search),
-                onFilterTap: () => context.push(AppRoutes.search),
-              ),
+        children: [
+          // ── 1. Search Bar + Adjacent Dedicated Filter Button ─────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              DesignTokens.spaceLg,
+              DesignTokens.spaceMd,
+              DesignTokens.spaceLg,
+              DesignTokens.spaceMd,
             ),
-
-            // ── Cozy Editorial Winter Hero Banner ───────────────────────────
-            _buildHeroBanner(context),
-            const SizedBox(height: DesignTokens.spaceLg),
-
-            // ── Circular Radial-Cream Quick Categories ──────────────────────
-            if (feed.categories.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.spaceLg,
-                ),
-                child: RetroSectionHeader(
-                  title: 'Danh mục tuyển chọn',
-                  icon: Icons.grid_view_rounded,
-                  iconColor: AppColors.ctaTerracotta,
-                  actionLabel: 'Xem tất cả',
-                  onAction: () => context.go(AppRoutes.discover),
-                ),
-              ),
-              const SizedBox(height: DesignTokens.spaceMd),
-              _buildCategoriesStrip(context, ref, feed.categories),
-              const SizedBox(height: DesignTokens.spaceXl),
-            ],
-
-            // ── Latest Vintage Products (Soft-Cream Section Container) ──────
-            if (feed.latestProducts.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.spaceMd,
-                ),
-                child: RetroSectionContainer(
-                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RetroSectionHeader(
-                        title: 'Hàng mới lên kệ',
-                        subtitle: 'Những món đồ vintage tuyển chọn mới nhất',
-                        icon: Icons.bolt_rounded,
-                        iconColor: AppColors.starGold,
-                        actionLabel: 'Xem tất cả',
-                        onAction: () => context.push(AppRoutes.search),
-                      ),
-                      const SizedBox(height: DesignTokens.spaceMd),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final crossAxisCount = constraints.maxWidth >= 1100
-                              ? 4
-                              : constraints.maxWidth >= 680
-                              ? 3
-                              : 2;
-                          final cardAspectRatio = crossAxisCount == 4
-                              ? 0.66
-                              : crossAxisCount == 3
-                              ? 0.68
-                              : 0.60;
-
-                          return GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: feed.latestProducts.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  childAspectRatio: cardAspectRatio,
-                                  crossAxisSpacing: DesignTokens.spaceSm + 2,
-                                  mainAxisSpacing: DesignTokens.spaceSm + 2,
-                                ),
-                            itemBuilder: (context, index) {
-                              final product = feed.latestProducts[index];
-                              return RetroProductCard(
-                                id: product.id,
-                                title: product.title,
-                                price: product.price,
-                                primaryImageUrl: product.primaryImageUrl,
-                                condition: product.condition,
-                                sellerName: product.sellerDisplayName,
-                                isOwner: product.isOwner,
-                                isLiked: product.isFavorited,
-                                onTap: () => context.push(
-                                  AppRoutes.productDetailPath(product.id),
-                                ),
-                                onLikeToggle: () =>
-                                    homeVM.toggleFavorite(context, product.id),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
+            child: Row(
+              children: [
+                Expanded(
+                  child: RetroSearchPill(
+                    placeholder: 'Tìm kiếm sản phẩm, thương hiệu...',
+                    showTrailingFilter: false,
+                    onTap: () => context.push(AppRoutes.search),
                   ),
                 ),
-              ),
-              const SizedBox(height: DesignTokens.spaceXl),
-            ],
-
-            // ── Deep Pine Auction Spotlight Module ──────────────────────────
-            if (feed.liveAuctions.isNotEmpty) ...[
-              _buildAuctionSpotlightModule(context, feed.liveAuctions),
-              const SizedBox(height: DesignTokens.spaceXl),
-            ],
-
-            // ── Trusted Vintage Shops ───────────────────────────────────────
-            if (feed.featuredSellers.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.spaceLg,
+                const SizedBox(width: 10),
+                Material(
+                  color: AppColors.surfaceCard,
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  child: InkWell(
+                    onTap: () => context.push(AppRoutes.search),
+                    borderRadius: DesignTokens.borderRadiusFull,
+                    child: Ink(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceCard,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.borderWarm,
+                          width: 1,
+                        ),
+                        boxShadow: DesignTokens.cardElevation,
+                      ),
+                      child: const Icon(
+                        Icons.tune_rounded,
+                        color: AppColors.pineDeep,
+                        size: 21,
+                      ),
+                    ),
+                  ),
                 ),
-                child: RetroSectionHeader(
-                  title: 'Tiệm đồ si uy tín',
-                  subtitle: 'Những shop được cộng đồng tin tưởng',
-                  icon: Icons.star_rounded,
-                  iconColor: AppColors.starGold,
-                  actionLabel: 'Xem tất cả',
-                  onAction: () => context.push('/home/featured'),
-                ),
-              ),
-              const SizedBox(height: DesignTokens.spaceMd),
-              _buildFeaturedSellersStrip(context, feed.featuredSellers),
-            ],
+              ],
+            ),
+          ),
+
+          // ── 2. Quick Category Circles Strip (6 Compact Circular Buttons) ─
+          _buildCategoriesStrip(context, ref, feed.categories),
+          const SizedBox(height: DesignTokens.spaceMd + 2),
+
+          // ── 3. Seasonal Curated Hero Banner (Cozy Vintage Christmas) ─────
+          _buildHeroBanner(context),
+          const SizedBox(height: DesignTokens.spaceLg + 2),
+
+          // ── 4. Featured Auctions ("Đấu giá nổi bật") — Horizontal Carousel
+          if (carouselAuctions.isNotEmpty) ...[
+            _buildAuctionCarouselModule(context, carouselAuctions),
+            const SizedBox(height: DesignTokens.spaceLg + 2),
           ],
-        ),
+
+          // ── 5. New Arrivals ("Hàng mới lên kệ") — Horizontal Carousel ────
+          if (newArrivals.isNotEmpty) ...[
+            _buildNewArrivalsCarouselSection(context, newArrivals, homeVM),
+            const SizedBox(height: DesignTokens.spaceXl),
+          ],
+
+          // ── 6. Nearby Popular Secondhand Stores (2-Column Grid) ──────────
+          _buildNearbyPopularStoresSection(
+            context,
+            feed.featuredSellers,
+            nearbyProducts.take(4).toList(),
+            homeVM,
+          ),
+          const SizedBox(height: DesignTokens.spaceXl),
+
+          // ── 7. Pass đồ 2hand — Approved Secondhand Product Discovery Feed ─
+          _buildSecondhandDiscoveryFeedSection(
+            context,
+            nearbyProducts,
+            homeVM,
+          ),
+        ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Cozy Editorial Winter Hero Banner
+  // 1. Cozy Editorial Winter Hero Banner (Deep Pine Green + Gold + Terracotta)
   // ---------------------------------------------------------------------------
   Widget _buildHeroBanner(BuildContext context) {
     return Padding(
@@ -277,16 +281,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: ClipRRect(
           borderRadius: DesignTokens.borderRadiusBanner,
           child: SnowfallOverlay(
-            maxFlakes: 10,
+            maxFlakes: 9,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF2B2118),
-                    Color(0xFF3E2A1D),
+                    Color(0xFF103728),
                     AppColors.pineDeep,
+                    Color(0xFF1F6349),
                   ],
-                  stops: [0.0, 0.56, 1.0],
+                  stops: [0.0, 0.55, 1.0],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -294,13 +298,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Stack(
                 clipBehavior: Clip.antiAlias,
                 children: [
-                  // Warm golden hearth glow behind right graphic
                   Positioned(
-                    right: -24,
+                    right: -22,
                     bottom: -26,
                     child: Container(
-                      width: 170,
-                      height: 170,
+                      width: 155,
+                      height: 155,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
@@ -312,76 +315,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Decorative festive snowflake outlines
                   Positioned(
                     top: 10,
-                    right: 88,
+                    right: 108,
                     child: Icon(
-                      Icons.ac_unit_rounded,
-                      size: 32,
-                      color: Colors.white.withValues(alpha: 0.14),
+                      Icons.auto_awesome_rounded,
+                      size: 18,
+                      color: AppColors.starGold.withValues(alpha: 0.72),
                     ),
                   ),
-                  // Right-side framed cozy vintage clothing rack emblem
                   Positioned(
-                    right: 16,
-                    top: 26,
-                    bottom: 30,
+                    right: 14,
+                    top: 14,
+                    bottom: 14,
                     child: Container(
-                      width: 96,
+                      width: 104,
                       decoration: BoxDecoration(
-                        color: AppColors.creamBadgeBg.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(18),
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppColors.creamBadgeBg.withValues(alpha: 0.22),
-                          width: 1,
+                          color: AppColors.starGold.withValues(alpha: 0.42),
+                          width: 1.2,
                         ),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.checkroom_rounded,
-                            size: 40,
-                            color: AppColors.creamBadgeBg.withValues(
-                              alpha: 0.92,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              ProductImageResolver.assetVarsityJacket,
+                              fit: BoxFit.cover,
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.pineDeep.withValues(alpha: 0.7),
-                              borderRadius: DesignTokens.borderRadiusFull,
-                            ),
-                            child: const Text(
-                              'Retro Market',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontHeading,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.creamBadgeBg,
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.50),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pineDeep.withValues(
+                                    alpha: 0.88,
+                                  ),
+                                  borderRadius: DesignTokens.borderRadiusFull,
+                                ),
+                                child: const Text(
+                                  'Retro 90s',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.fontBody,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.starGold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  // Editorial left column content
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 122, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 128, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Warm Cream-Gold Eyebrow Pill
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 9,
+                            vertical: 3.5,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.creamBadgeBg,
@@ -392,157 +408,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               Icon(
                                 Icons.park_rounded,
-                                size: 12,
-                                color: AppColors.pineBanner,
+                                size: 11,
+                                color: AppColors.pineDeep,
                               ),
                               SizedBox(width: 4),
                               Text(
                                 'BỘ SƯU TẬP MÙA ĐÔNG',
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontBody,
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.creamBadgeText,
+                                  color: AppColors.pineDeep,
                                   letterSpacing: 0.3,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 11),
+                        const SizedBox(height: 8),
                         const Text(
-                          'Săn Đồ Vintage\nĐón Mùa Đông',
+                          'Sống chất hơn\nvới đồ si tuyển chọn!',
                           style: TextStyle(
                             fontFamily: AppTypography.fontHeading,
-                            fontSize: 24,
+                            fontSize: 19,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
-                            height: 1.15,
-                            letterSpacing: -0.4,
+                            height: 1.18,
+                            letterSpacing: -0.3,
                           ),
                         ),
-                        const SizedBox(height: 7),
-                        Text(
-                          'Những món đồ secondhand độc đáo từ thập niên 70–90 đang chờ bạn khám phá!',
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontBody,
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.84),
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            Material(
-                              color: AppColors.ctaTerracotta,
-                              borderRadius: DesignTokens.borderRadiusFull,
-                              child: InkWell(
-                                onTap: () => context.go(AppRoutes.discover),
-                                borderRadius: DesignTokens.borderRadiusFull,
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 9,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Khám phá ngay',
-                                        style: TextStyle(
-                                          fontFamily: AppTypography.fontBody,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      SizedBox(width: 5),
-                                      Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                        const SizedBox(height: 11),
+                        Material(
+                          color: AppColors.ctaTerracotta,
+                          borderRadius: DesignTokens.borderRadiusFull,
+                          child: InkWell(
+                            onTap: () => context.push(AppRoutes.discover),
+                            borderRadius: DesignTokens.borderRadiusFull,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 7.5,
                               ),
-                            ),
-                            Material(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              borderRadius: DesignTokens.borderRadiusFull,
-                              child: InkWell(
-                                onTap: () => context.go(AppRoutes.auctions),
-                                borderRadius: DesignTokens.borderRadiusFull,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: DesignTokens.borderRadiusFull,
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.28,
-                                      ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Khám phá ngay',
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.fontBody,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.gavel_rounded,
-                                        size: 13,
-                                        color: AppColors.creamBadgeBg,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Sàn đấu giá',
-                                        style: TextStyle(
-                                          fontFamily: AppTypography.fontBody,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.creamBadgeBg,
-                                        ),
-                                      ),
-                                    ],
+                                  SizedBox(width: 5),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 14,
+                                    color: Colors.white,
                                   ),
-                                ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Subtle carousel pagination dots (reference detail)
-                  Positioned(
-                    bottom: 8,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 16,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.creamBadgeBg,
-                            borderRadius: DesignTokens.borderRadiusFull,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        ...List.generate(
-                          3,
-                          (_) => Container(
-                            width: 4,
-                            height: 4,
-                            margin: const EdgeInsets.only(right: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.42),
-                              shape: BoxShape.circle,
                             ),
                           ),
                         ),
@@ -559,68 +485,117 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // Circular Radial-Cream Category Strip
+  // 2. Quick 6-Circle Category Row (Direct Below Search Bar, Reference Layout)
   // ---------------------------------------------------------------------------
   Widget _buildCategoriesStrip(
     BuildContext context,
     WidgetRef ref,
     List<dynamic> categories,
   ) {
+    final List<({int? id, String label, IconData icon, bool isMore})> items = [];
+
+    if (categories.isNotEmpty) {
+      for (final cat in categories.take(5)) {
+        final name = (cat.name as String).trim();
+        final shortLabel = name == 'Túi xách' ? 'Túi' : name;
+        items.add((
+          id: cat.id as int?,
+          label: shortLabel,
+          icon: _kCategoryIcons[name] ?? Icons.checkroom_rounded,
+          isMore: false,
+        ));
+      }
+    } else {
+      items.addAll(const [
+        (id: null, label: 'Áo', icon: Icons.checkroom_rounded, isMore: false),
+        (id: null, label: 'Quần', icon: Icons.layers_outlined, isMore: false),
+        (id: null, label: 'Giày', icon: Icons.hiking_rounded, isMore: false),
+        (id: null, label: 'Túi', icon: Icons.shopping_bag_outlined, isMore: false),
+        (id: null, label: 'Phụ kiện', icon: Icons.watch_outlined, isMore: false),
+      ]);
+    }
+
+    // 6th shortcut ("Khác") preserves full access to CategoryTaxonomyScreen (/discover)
+    items.add(const (
+      id: null,
+      label: 'Khác',
+      icon: Icons.grid_view_rounded,
+      isMore: true,
+    ));
+
     return SizedBox(
-      height: 100,
+      height: 70,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
         scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        physics: const BouncingScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 9),
         itemBuilder: (context, index) {
-          final cat = categories[index];
-          final icon = _kCategoryIcons[cat.name] ?? Icons.inventory_2_outlined;
-          return InkWell(
-            onTap: () {
-              ref.read(catalogSearchViewModelProvider).setCategory(cat.id);
-              context.push(AppRoutes.search);
-            },
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            child: SizedBox(
-              width: 72,
-              child: Column(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const RadialGradient(
-                        colors: [
-                          AppColors.categoryCircleStart,
-                          AppColors.categoryCircleEnd,
-                        ],
-                        center: Alignment(-0.2, -0.2),
-                        radius: 0.85,
-                      ),
-                      border: Border.all(
-                        color: AppColors.creamBadgeBorder,
-                        width: 1.2,
-                      ),
-                      boxShadow: DesignTokens.cardElevation,
-                    ),
-                    child: Icon(icon, color: AppColors.pineDeep, size: 26),
+          final item = items[index];
+          return Material(
+            color: AppColors.surfaceCard,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: () {
+                if (item.isMore) {
+                  context.push(AppRoutes.discover);
+                } else {
+                  if (item.id != null) {
+                    ref
+                        .read(catalogSearchViewModelProvider)
+                        .setCategory(item.id);
+                  } else {
+                    ref
+                        .read(catalogSearchViewModelProvider)
+                        .setKeyword(item.label);
+                  }
+                  context.push(AppRoutes.search);
+                }
+              },
+              customBorder: const CircleBorder(),
+              child: Ink(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceCard,
+                  border: Border.all(
+                    color: item.isMore
+                        ? AppColors.pineDeep.withValues(alpha: 0.25)
+                        : AppColors.borderWarm,
+                    width: 1,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    cat.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.caption.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textCharcoal,
-                      height: 1.2,
+                  boxShadow: DesignTokens.cardElevation,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: item.isMore
+                          ? AppColors.ctaTerracotta
+                          : AppColors.pineDeep,
+                      size: 22,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 3),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textCharcoal,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -630,413 +605,320 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // Deep Pine Green Auction Spotlight Module (Reference Layout)
+  // 3. Featured Auctions ("Đấu giá nổi bật") — Horizontal Swipe Carousel
   // ---------------------------------------------------------------------------
-  Widget _buildAuctionSpotlightModule(
+  Widget _buildAuctionCarouselModule(
     BuildContext context,
     List<AuctionSummaryModel> auctions,
   ) {
-    final featured = auctions.first;
-    final additional = auctions.length > 1 ? auctions.sublist(1) : const [];
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.43).clamp(152.0, 178.0);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
-      child: RetroPineSpotlightContainer(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row: Gavel + Title + Segmented Countdown + "Xem tất cả >"
-            Row(
-              children: [
-                const Icon(
-                  Icons.gavel_rounded,
-                  color: AppColors.starGold,
-                  size: 20,
-                ),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    'Đấu giá sôi động',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.headingMedium.copyWith(
-                      color: Colors.white,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-                RetroSegmentedCountdown(endsAt: featured.endsAt),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: () => context.go(AppRoutes.auctions),
-                  borderRadius: DesignTokens.borderRadiusFull,
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontBody,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.creamBadgeBg,
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 15,
-                        color: AppColors.creamBadgeBg,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Elevated White Horizontal Spotlight Card (Reference Feature)
-            _buildSpotlightAuctionCard(context, featured),
-
-            // Additional Live Auctions Horizontal Strip
-            if (additional.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 274,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: additional.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    final auction = additional[index];
-                    return SizedBox(
-                      width: 196,
-                      child: RetroAuctionCard(
-                        id: auction.id,
-                        title: auction.title,
-                        currentBid: auction.currentBid,
-                        bidCount: auction.bidCount,
-                        endsAt: auction.endsAt,
-                        primaryImageUrl: auction.primaryImageUrl,
-                        status: auction.status,
-                        extendedCount: auction.extendedCount,
-                        isOwner: auction.isOwner,
-                        onTap: () =>
-                            context.push(AppRoutes.auctionRoomPath(auction.id)),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSpotlightAuctionCard(
-    BuildContext context,
-    AuctionSummaryModel auction,
-  ) {
-    final isScheduled = auction.status.toUpperCase() == 'SCHEDULED';
-    final badgeText = isScheduled ? 'Sắp bắt đầu' : 'Đang diễn ra';
-
-    return Material(
-      color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push(AppRoutes.auctionRoomPath(auction.id)),
-        child: SizedBox(
-          height: 128,
-          child: Row(
-            children: [
-              // Left image + crimson corner pill
-              SizedBox(
-                width: 132,
-                height: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (auction.primaryImageUrl != null &&
-                        auction.primaryImageUrl!.isNotEmpty)
-                      CachedNetworkImage(
-                        imageUrl: auction.primaryImageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const RetroShimmerBox(
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.surfaceWarm,
-                          child: const Icon(
-                            Icons.gavel_rounded,
-                            color: AppColors.textMuted,
-                            size: 32,
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        color: AppColors.surfaceWarm,
-                        child: const Icon(
-                          Icons.gavel_rounded,
-                          color: AppColors.textMuted,
-                          size: 32,
-                        ),
-                      ),
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.priceCrimson,
-                          borderRadius: DesignTokens.borderRadiusFull,
-                        ),
-                        child: Text(
-                          badgeText,
-                          style: const TextStyle(
-                            fontFamily: AppTypography.fontBody,
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Right details column
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        auction.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
-                          color: AppColors.textCharcoal,
-                          height: 1.25,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.gavel_rounded,
-                            size: 12,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            isScheduled ? 'Giá khởi điểm' : 'Giá hiện tại',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 11,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        VndFormatter.format(auction.currentBid),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.priceMedium.copyWith(
-                          fontSize: 16,
-                          color: AppColors.priceCrimson,
-                        ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.people_alt_outlined,
-                            size: 13,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${auction.bidCount} lượt đặt giá',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.creamBadgeSoft,
-                              borderRadius: DesignTokens.borderRadiusFull,
-                              border: Border.all(
-                                color: AppColors.creamBadgeBorder,
-                              ),
-                            ),
-                            child: Text(
-                              isScheduled ? 'Nhắc tôi' : 'Đặt giá',
-                              style: const TextStyle(
-                                fontFamily: AppTypography.fontBody,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.creamBadgeText,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+          child: RetroSectionHeader(
+            title: 'Đấu giá nổi bật',
+            icon: Icons.gavel_rounded,
+            iconColor: AppColors.ctaTerracotta,
+            actionLabel: 'Xem tất cả',
+            onAction: () => context.go(AppRoutes.auctions),
           ),
         ),
-      ),
+        const SizedBox(height: DesignTokens.spaceMd),
+        SizedBox(
+          height: 214,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: auctions.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 11),
+            itemBuilder: (context, index) {
+              final auction = auctions[index];
+              return SizedBox(
+                width: cardWidth,
+                child: RetroAuctionCard(
+                  id: auction.id,
+                  title: auction.title,
+                  currentBid: auction.currentBid,
+                  startingPrice: auction.startingPrice,
+                  bidCount: auction.bidCount,
+                  watchCount: auction.watchCount,
+                  startsAt: auction.startsAt,
+                  endsAt: auction.endsAt,
+                  primaryImageUrl: auction.primaryImageUrl,
+                  categoryName: auction.categoryName,
+                  status: auction.status,
+                  extendedCount: auction.extendedCount,
+                  isOwner: auction.isOwner,
+                  compactCarousel: true,
+                  onTap: () => context.push(
+                    AppRoutes.auctionRoomPath(auction.id),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Trusted Vintage Shops Horizontal Strip (Reference Style)
+  // 4. New Arrivals ("Hàng mới lên kệ") — Horizontal Product Carousel
   // ---------------------------------------------------------------------------
-  Widget _buildFeaturedSellersStrip(
+  Widget _buildNewArrivalsCarouselSection(
+    BuildContext context,
+    List<ProductSummaryModel> products,
+    HomeViewModel homeVM,
+  ) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.43).clamp(154.0, 180.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+          child: RetroSectionHeader(
+            title: 'Hàng mới lên kệ',
+            icon: Icons.star_rounded,
+            iconColor: AppColors.starGold,
+            actionLabel: 'Xem tất cả',
+            onAction: () => context.push(AppRoutes.search),
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spaceMd),
+        SizedBox(
+          height: 262,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: products.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 11),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return SizedBox(
+                width: cardWidth,
+                child: RetroProductCard(
+                  id: product.id,
+                  title: product.title,
+                  price: product.price,
+                  primaryImageUrl: product.primaryImageUrl,
+                  condition: product.condition,
+                  categoryName: product.categoryName,
+                  sellerName: product.sellerDisplayName,
+                  isOwner: product.isOwner,
+                  isLiked: product.isFavorited,
+                  onTap: () => context.push(
+                    AppRoutes.productDetailPath(product.id),
+                  ),
+                  onLikeToggle: () =>
+                      homeVM.toggleFavorite(context, product.id),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Nearby Popular Secondhand Stores ("Tiệm đồ si được yêu thích gần bạn")
+  //    Compact Nearby Shops Strip + 2-Column Vertical Marketplace Product Grid
+  // ---------------------------------------------------------------------------
+  Widget _buildNearbyPopularStoresSection(
+    BuildContext context,
+    List<FeaturedSellerModel> sellers,
+    List<ProductSummaryModel> products,
+    HomeViewModel homeVM,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+          child: RetroSectionHeader(
+            title: 'Tiệm đồ si được yêu thích gần bạn',
+            subtitle: 'Đồ secondhand tuyển chọn từ các chủ tiệm gần khu vực của bạn',
+            icon: Icons.location_on_rounded,
+            iconColor: AppColors.ctaTerracotta,
+            actionLabel: 'Xem tất cả',
+            onAction: () => context.push(AppRoutes.featuredSellers),
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spaceSm + 2),
+
+        // Compact horizontal nearby trusted-shop quick pills
+        if (sellers.isNotEmpty) ...[
+          _buildCompactNearbyShopChips(context, sellers),
+          const SizedBox(height: DesignTokens.spaceMd),
+        ],
+
+        // 2-Column Vertical Marketplace Discovery Grid
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: products.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.54,
+              crossAxisSpacing: 11,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              final distance = ProductImageResolver.nearbyDistanceLabel(
+                productId: product.id,
+                sellerId: product.sellerId,
+              );
+              return RetroProductCard(
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                primaryImageUrl: product.primaryImageUrl,
+                condition: product.condition,
+                categoryName: product.categoryName,
+                distanceLabel: distance,
+                showConditionPercent: true,
+                sellerName: product.sellerDisplayName,
+                isOwner: product.isOwner,
+                isLiked: product.isFavorited,
+                onTap: () => context.push(
+                  AppRoutes.productDetailPath(product.id),
+                ),
+                onLikeToggle: () => homeVM.toggleFavorite(context, product.id),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactNearbyShopChips(
     BuildContext context,
     List<FeaturedSellerModel> sellers,
   ) {
     return SizedBox(
-      height: 110,
+      height: 54,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
         scrollDirection: Axis.horizontal,
         itemCount: sellers.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        separatorBuilder: (context, index) => const SizedBox(width: 9),
         itemBuilder: (context, index) {
           final seller = sellers[index];
-          final isDarkCrest = index.isOdd;
-
+          final distance = ProductImageResolver.nearbyDistanceLabel(
+            sellerId: seller.id,
+          );
           return Material(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+            borderRadius: DesignTokens.borderRadiusFull,
             child: InkWell(
               onTap: () =>
                   context.push(AppRoutes.sellerStorefrontPath(seller.id)),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+              borderRadius: DesignTokens.borderRadiusFull,
               child: Ink(
-                width: 222,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(7, 6, 13, 6),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  borderRadius: DesignTokens.borderRadiusFull,
                   border: Border.all(color: AppColors.borderWarm),
                   boxShadow: DesignTokens.cardElevation,
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Vintage Circular Emblem Crest
                     Container(
-                      width: 62,
-                      height: 62,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isDarkCrest
+                        color: index.isOdd
                             ? const Color(0xFF3E2B1E)
                             : AppColors.categoryCircleEnd,
                         border: Border.all(
-                          color: isDarkCrest
-                              ? AppColors.starGold
-                              : AppColors.creamBadgeBorder,
-                          width: 1.5,
+                          color: AppColors.creamBadgeBorder,
+                          width: 1.2,
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child:
-                          seller.avatarUrl != null &&
+                      child: seller.avatarUrl != null &&
                               seller.avatarUrl!.isNotEmpty
                           ? ClipOval(
                               child: CachedNetworkImage(
                                 imageUrl: seller.avatarUrl!,
-                                width: 60,
-                                height: 60,
+                                width: 38,
+                                height: 38,
                                 fit: BoxFit.cover,
                                 errorWidget: (_, _, _) => Icon(
                                   Icons.storefront_rounded,
-                                  color: isDarkCrest
+                                  size: 18,
+                                  color: index.isOdd
                                       ? AppColors.creamBadgeBg
                                       : AppColors.pineDeep,
-                                  size: 26,
                                 ),
                               ),
                             )
                           : Icon(
                               Icons.storefront_rounded,
-                              color: isDarkCrest
+                              size: 18,
+                              color: index.isOdd
                                   ? AppColors.creamBadgeBg
                                   : AppColors.pineDeep,
-                              size: 26,
                             ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            seller.shopName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13.5,
-                              color: AppColors.textCharcoal,
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              seller.shopName,
+                              style: AppTypography.bodySmall.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: AppColors.textCharcoal,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                color: AppColors.starGold,
-                                size: 14,
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 12,
+                              color: AppColors.verifiedLeaf,
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 12,
+                              color: AppColors.starGold,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${seller.ratingAvg.toStringAsFixed(1)} • $distance',
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 10.5,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                child: Text(
-                                  '${seller.ratingAvg.toStringAsFixed(1)} (${seller.completedOrdersCount} đơn)',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 11,
-                                    color: AppColors.textMuted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          const RetroVerifiedShopChip(fontSize: 11),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1045,6 +927,143 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 7. "Pass đồ 2hand" — Approved Public Secondhand Product Discovery Feed
+  // ---------------------------------------------------------------------------
+  List<ProductSummaryModel> _filterSecondhandItems(
+    List<ProductSummaryModel> products,
+  ) {
+    if (_selectedSecondhandFilter == 'Tất cả') return products;
+    return products.where((item) {
+      final cat = (item.categoryName ?? '').toLowerCase();
+      final title = item.title.toLowerCase();
+      switch (_selectedSecondhandFilter) {
+        case 'Áo khoác':
+          return cat.contains('áo') ||
+              title.contains('áo') ||
+              title.contains('jacket') ||
+              title.contains('denim');
+        case 'Túi & Giày':
+          return cat.contains('túi') ||
+              cat.contains('giày') ||
+              title.contains('túi') ||
+              title.contains('giày') ||
+              title.contains('boots');
+        case 'Đồ cổ':
+          return cat.contains('đồ cổ') ||
+              cat.contains('điện tử') ||
+              cat.contains('phụ kiện') ||
+              title.contains('máy ảnh') ||
+              title.contains('đồng hồ') ||
+              title.contains('film');
+        case 'Dưới 300K':
+          return item.price <= 300000;
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
+  Widget _buildSecondhandDiscoveryFeedSection(
+    BuildContext context,
+    List<ProductSummaryModel> allProducts,
+    HomeViewModel homeVM,
+  ) {
+    final filtered = _filterSecondhandItems(allProducts);
+    final displayItems = filtered.isEmpty ? allProducts : filtered;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
+          child: RetroSectionHeader(
+            title: 'Pass đồ 2hand',
+            subtitle: 'Khám phá món đồ đã qua kiểm duyệt từ cộng đồng izithrift',
+            icon: Icons.recycling_rounded,
+            iconColor: AppColors.pineDeep,
+            actionLabel: 'Tìm thêm',
+            onAction: () => context.push(AppRoutes.search),
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spaceSm + 2),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DesignTokens.spaceLg,
+            ),
+            scrollDirection: Axis.horizontal,
+            itemCount: _secondhandFilters.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final label = _secondhandFilters[index];
+              final isSelected = _selectedSecondhandFilter == label;
+              return ChoiceChip(
+                label: Text(label),
+                selected: isSelected,
+                onSelected: (_) {
+                  setState(() => _selectedSecondhandFilter = label);
+                },
+                selectedColor: AppColors.pineDeep,
+                backgroundColor: AppColors.surfaceCard,
+                showCheckmark: false,
+                labelStyle: AppTypography.caption.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.textCharcoal,
+                ),
+                side: BorderSide(
+                  color: isSelected ? AppColors.pineDeep : AppColors.borderWarm,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spaceMd),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: displayItems.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.54,
+              crossAxisSpacing: 11,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              final product = displayItems[index];
+              final distance = ProductImageResolver.nearbyDistanceLabel(
+                productId: product.id,
+                sellerId: product.sellerId,
+              );
+              return RetroProductCard(
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                primaryImageUrl: product.primaryImageUrl,
+                condition: product.condition,
+                categoryName: product.categoryName,
+                distanceLabel: distance,
+                showConditionPercent: true,
+                sellerName: product.sellerDisplayName,
+                isOwner: product.isOwner,
+                isLiked: product.isFavorited,
+                onTap: () => context.push(
+                  AppRoutes.productDetailPath(product.id),
+                ),
+                onLikeToggle: () => homeVM.toggleFavorite(context, product.id),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

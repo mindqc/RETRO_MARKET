@@ -5,16 +5,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/utils/product_image_resolver.dart';
+import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/retro_product_image.dart';
+import '../../../core/widgets/status_pill_badge.dart';
 import '../../catalog/models/category_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
+import '../models/seller_product_item_model.dart';
 import '../viewmodels/seller_product_form_view_model.dart';
 
-/// M-SL-03: Create Product Listing Screen
-/// Enforces BR-PR-01 (Auction locked quantity = 1), BR-PR-03 (Mandatory defect info >= 5 chars, 5 condition levels).
+/// M-SL-03: Create Product Listing Screen ("Đăng bán đồ")
+/// Enforces:
+/// - BR-PR-01: Auction quantity locked to 1
+/// - BR-PR-03: Mandatory defect info >= 5 chars, 5 condition tiers with % freshness
+/// - Strict Moderation Workflow: All submissions enter PENDING_REVIEW (never auto-published)
 class CreateListingScreen extends ConsumerStatefulWidget {
   const CreateListingScreen({super.key});
 
@@ -32,6 +42,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   late TextEditingController _quantityController;
   late TextEditingController _defectController;
   late TextEditingController _brandController;
+  late TextEditingController _locationController;
+  late TextEditingController _shippingController;
   late TextEditingController _startPriceController;
   late TextEditingController _bidIncrementController;
 
@@ -40,6 +52,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     Duration(hours: 1),
     Duration(hours: 24),
     Duration(days: 3),
+  ];
+
+  static const List<_ConditionOption> _conditions = [
+    _ConditionOption('NEW_WITH_TAGS', 'Mới còn tag (100%)'),
+    _ConditionOption('LIKE_NEW', 'Như mới (95%)'),
+    _ConditionOption('GOOD', 'Tốt (85%)'),
+    _ConditionOption('FAIR', 'Khá (70%)'),
+    _ConditionOption('VINTAGE_WORN', 'Dấu ấn vintage (60%)'),
   ];
 
   String _auctionDurationLabel(Duration duration) {
@@ -122,14 +142,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     }
   }
 
-  static const List<_ConditionOption> _conditions = [
-    _ConditionOption('NEW_WITH_TAGS', 'Mới còn tag'),
-    _ConditionOption('LIKE_NEW', 'Như mới (99%)'),
-    _ConditionOption('GOOD', 'Tốt (90%)'),
-    _ConditionOption('FAIR', 'Khá (80%)'),
-    _ConditionOption('VINTAGE_WORN', 'Dấu ấn vintage'),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -139,6 +151,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     _quantityController = TextEditingController(text: '1');
     _defectController = TextEditingController();
     _brandController = TextEditingController();
+    _locationController = TextEditingController(text: 'Quận 1, TP. Hồ Chí Minh');
+    _shippingController = TextEditingController(
+      text: 'Giao hàng toàn quốc • Cho kiểm tra trước khi nhận',
+    );
     _startPriceController = TextEditingController();
     _bidIncrementController = TextEditingController(text: '10000');
 
@@ -157,6 +173,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     _quantityController.dispose();
     _defectController.dispose();
     _brandController.dispose();
+    _locationController.dispose();
+    _shippingController.dispose();
     _startPriceController.dispose();
     _bidIncrementController.dispose();
     super.dispose();
@@ -211,6 +229,20 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           'Đăng bán sản phẩm mới',
           style: AppTypography.headingMedium.copyWith(fontSize: 19),
         ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => _showPreviewSheet(vm),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.pineDeep,
+            ),
+            icon: const Icon(Icons.visibility_outlined, size: 18),
+            label: const Text(
+              'Xem trước',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       bottomNavigationBar: _buildBottomActionBar(vm),
       body: SafeArea(
@@ -221,11 +253,15 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Moderation workflow reminder banner
+                _buildModerationNoticeBanner(),
+                const SizedBox(height: 14),
+
                 // 1. Listing Type Toggle (Fixed Price vs Auction)
                 _buildListingTypeSelector(vm),
                 const SizedBox(height: 16),
 
-                // 2. Photo Upload Section (Up to 10 photos)
+                // 2. Photo Upload Section (Up to 10 photos + Cover Selection)
                 _buildPhotosSection(vm),
                 const SizedBox(height: 16),
 
@@ -235,6 +271,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
                 // 4. Condition & Defect Info (BR-PR-03)
                 _buildConditionAndDefectSection(vm),
+                const SizedBox(height: 16),
+
+                // 5. Location & Shipping Options
+                _buildLocationAndShippingSection(vm),
               ],
             ),
           ),
@@ -243,72 +283,29 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     );
   }
 
-  Widget _buildListingTypeSelector(SellerProductFormViewModel vm) {
-    final isFixed = vm.listingType == 'FIXED_PRICE';
-    final isAuction = vm.listingType == 'AUCTION';
-
+  Widget _buildModerationNoticeBanner() {
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: DesignTokens.borderRadiusFull,
-        border: Border.all(color: AppColors.borderWarm),
-        boxShadow: DesignTokens.cardElevation,
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () => vm.setListingType('FIXED_PRICE'),
-              borderRadius: DesignTokens.borderRadiusFull,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color:
-                      isFixed ? AppColors.ctaTerracotta : Colors.transparent,
-                  borderRadius: DesignTokens.borderRadiusFull,
-                ),
-                child: Center(
-                  child: Text(
-                    '🏷️ Bán giá cố định',
-                    style: AppTypography.labelStrong.copyWith(
-                      fontSize: 13.5,
-                      color: isFixed
-                          ? AppColors.textLight
-                          : AppColors.textCharcoal,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          const Icon(
+            Icons.verified_user_outlined,
+            size: 18,
+            color: AppColors.pineDeep,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 9),
           Expanded(
-            child: InkWell(
-              onTap: () {
-                vm.setListingType('AUCTION');
-                _quantityController.text = '1';
-                // Demo default: short auction for immediate testing.
-                _setAuctionDuration(vm, const Duration(minutes: 15));
-              },
-              borderRadius: DesignTokens.borderRadiusFull,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isAuction ? AppColors.pineDeep : Colors.transparent,
-                  borderRadius: DesignTokens.borderRadiusFull,
-                ),
-                child: Center(
-                  child: Text(
-                    '🔨 Đấu giá trực tiếp',
-                    style: AppTypography.labelStrong.copyWith(
-                      fontSize: 13.5,
-                      color: isAuction
-                          ? AppColors.creamBadgeBg
-                          : AppColors.textCharcoal,
-                    ),
-                  ),
-                ),
+            child: Text(
+              'Mọi bài đăng mới đều trải qua bước kiểm duyệt (Đang chờ duyệt) trước khi hiển thị công khai trên sàn.',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.creamBadgeText,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
               ),
             ),
           ),
@@ -317,7 +314,107 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     );
   }
 
+  Widget _buildListingTypeSelector(SellerProductFormViewModel vm) {
+    final isFixed = vm.listingType == 'FIXED_PRICE';
+    final isAuction = vm.listingType == 'AUCTION';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: DesignTokens.borderRadiusFull,
+            border: Border.all(color: AppColors.borderWarm),
+            boxShadow: DesignTokens.cardElevation,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => vm.setListingType('FIXED_PRICE'),
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isFixed
+                          ? AppColors.ctaTerracotta
+                          : Colors.transparent,
+                      borderRadius: DesignTokens.borderRadiusFull,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '🏷️ Bán giá cố định',
+                        style: AppTypography.labelStrong.copyWith(
+                          fontSize: 13.5,
+                          color: isFixed
+                              ? AppColors.textLight
+                              : AppColors.textCharcoal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    vm.setListingType('AUCTION');
+                    _quantityController.text = '1';
+                    _setAuctionDuration(vm, const Duration(minutes: 15));
+                  },
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isAuction ? AppColors.pineDeep : Colors.transparent,
+                      borderRadius: DesignTokens.borderRadiusFull,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '🔨 Đấu giá trực tiếp',
+                        style: AppTypography.labelStrong.copyWith(
+                          fontSize: 13.5,
+                          color: isAuction
+                              ? AppColors.creamBadgeBg
+                              : AppColors.textCharcoal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isAuction) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () =>
+                  context.pushReplacement(AppRoutes.sellerCreateAuction),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pineDeep,
+                visualDensity: VisualDensity.compact,
+              ),
+              icon: const Icon(Icons.schedule_rounded, size: 15),
+              label: const Text(
+                'Mở trang Tạo phiên đấu giá chuyên sâu (chọn ngày/giờ mở) →',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildPhotosSection(SellerProductFormViewModel vm) {
+    final totalPhotos = vm.imageUrls.length + vm.imageFiles.length;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -332,9 +429,11 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Hình ảnh sản phẩm (Tối đa 10 ảnh)',
-                style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
+              Expanded(
+                child: Text(
+                  'Hình ảnh sản phẩm (Tối đa 10 ảnh)',
+                  style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -343,7 +442,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   borderRadius: DesignTokens.borderRadiusFull,
                 ),
                 child: Text(
-                  '${vm.imageUrls.length + vm.imageFiles.length}/10',
+                  '$totalPhotos/10',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.creamBadgeText,
                     fontWeight: FontWeight.w700,
@@ -352,15 +451,23 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Chụp rõ mặt trước, nhãn mác và khuyết điểm. Nhấn vào ảnh để đặt làm Ảnh bìa.',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              height: 1.35,
+            ),
+          ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 92,
+            height: 98,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: vm.imageUrls.length + vm.imageFiles.length + 1,
+              itemCount: totalPhotos + 1,
               separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
-                if (index == vm.imageUrls.length + vm.imageFiles.length) {
+                if (index == totalPhotos) {
                   return _buildAddPhotoButton(vm);
                 }
                 if (index < vm.imageUrls.length) {
@@ -373,19 +480,233 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               },
             ),
           ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => _promptAddImageUrl(vm),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.pineDeep,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _openDemoPhotoLibrarySheet(vm),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.pineDeep,
+                  backgroundColor: AppColors.creamBadgeSoft,
+                  side: const BorderSide(color: AppColors.creamBadgeBorder),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  shape: const StadiumBorder(),
+                ),
+                icon: const Icon(Icons.photo_library_outlined, size: 16),
+                label: const Text(
+                  'Chọn ảnh mẫu Vintage',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
               ),
-              icon: const Icon(Icons.link_rounded, size: 17),
-              label: const Text(
-                'Thêm ảnh bằng đường dẫn URL',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              TextButton.icon(
+                onPressed: () => _promptAddImageUrl(vm),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.pineDeep,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                icon: const Icon(Icons.link_rounded, size: 17),
+                label: const Text(
+                  'Thêm ảnh bằng URL',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openDemoPhotoLibrarySheet(SellerProductFormViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DesignTokens.radius2xl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Thư viện ảnh sản phẩm Vintage',
+                      style: AppTypography.headingSmall.copyWith(fontSize: 16.5),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              Text(
+                'Chọn nhanh ảnh đồ si rõ nét để xem trước hoặc trình diễn đăng bài.',
+                style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 220,
+                child: GridView.builder(
+                  itemCount: ProductImageResolver.curatedDemoPhotos.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.78,
+                  ),
+                  itemBuilder: (context, idx) {
+                    final option = ProductImageResolver.curatedDemoPhotos[idx];
+                    final alreadyAdded =
+                        vm.imageUrls.contains(option.assetPath);
+                    return InkWell(
+                      onTap: () {
+                        if (!alreadyAdded) {
+                          vm.addImageUrl(option.assetPath);
+                        }
+                        Navigator.pop(ctx);
+                      },
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: DesignTokens.borderRadiusMd,
+                                  child: Image.asset(
+                                    option.assetPath,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                if (alreadyAdded)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.pineDeep.withValues(
+                                        alpha: 0.55,
+                                      ),
+                                      borderRadius: DesignTokens.borderRadiusMd,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            option.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocalPhotoThumbnail(SellerProductFormViewModel vm, int index) {
+    final isPrimary = vm.imageUrls.isEmpty && index == 0;
+    return GestureDetector(
+      onTap: () => vm.setPrimaryImageFile(index),
+      child: Stack(
+        children: [
+          Container(
+            width: 92,
+            height: 98,
+            decoration: BoxDecoration(
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(
+                color:
+                    isPrimary ? AppColors.ctaTerracotta : AppColors.borderWarm,
+                width: isPrimary ? 2 : 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd - 1),
+              child: FutureBuilder<Uint8List>(
+                future: vm.imageFiles[index].readAsBytes(),
+                builder: (context, snapshot) => snapshot.hasData
+                    ? Image.memory(
+                        snapshot.data!,
+                        width: 92,
+                        height: 98,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: AppColors.surfaceWarm,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.pineDeep,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: InkWell(
+              onTap: () => vm.removeImageFile(index),
+              child: const CircleAvatar(
+                radius: 10,
+                backgroundColor: Colors.black54,
+                child: Icon(Icons.close, size: 12, color: Colors.white),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isPrimary
+                    ? AppColors.ctaTerracotta.withValues(alpha: 0.92)
+                    : Colors.black54,
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(DesignTokens.radiusMd - 1),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                isPrimary ? 'Ảnh bìa' : 'Đặt ảnh bìa',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -394,74 +715,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     );
   }
 
-  Widget _buildLocalPhotoThumbnail(SellerProductFormViewModel vm, int index) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: DesignTokens.borderRadiusMd,
-          child: FutureBuilder<Uint8List>(
-            future: vm.imageFiles[index].readAsBytes(),
-            builder: (context, snapshot) => snapshot.hasData
-                ? Image.memory(
-                    snapshot.data!,
-                    width: 90,
-                    height: 92,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 90,
-                    height: 92,
-                    color: AppColors.surfaceWarm,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.pineDeep,
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: InkWell(
-            onTap: () => vm.removeImageFile(index),
-            child: const CircleAvatar(
-              radius: 10,
-              backgroundColor: Colors.black54,
-              child: Icon(Icons.close, size: 12, color: Colors.white),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(DesignTokens.radiusMd),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: const Text(
-              'Ảnh mới',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 9.5),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAddPhotoButton(SellerProductFormViewModel vm) {
     return InkWell(
       onTap: () => _pickImages(vm),
       borderRadius: DesignTokens.borderRadiusMd,
       child: Container(
-        width: 90,
+        width: 92,
+        height: 98,
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
           borderRadius: DesignTokens.borderRadiusMd,
@@ -496,23 +756,32 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     final url = vm.imageUrls[index];
     final isPrimary = index == 0;
 
-    return Stack(
-      children: [
-        Container(
-          width: 90,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceWarm,
-            borderRadius: DesignTokens.borderRadiusMd,
-            border: Border.all(
-              color: isPrimary
-                  ? AppColors.ctaTerracotta
-                  : AppColors.borderWarm,
-              width: isPrimary ? 2 : 1,
+    return GestureDetector(
+      onTap: () => vm.setPrimaryImageUrl(index),
+      child: Stack(
+        children: [
+          Container(
+            width: 92,
+            height: 98,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWarm,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(
+                color:
+                    isPrimary ? AppColors.ctaTerracotta : AppColors.borderWarm,
+                width: isPrimary ? 2 : 1,
+              ),
             ),
-            image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd - 1),
+              child: RetroProductImage(
+                imageUrl: url,
+                title: vm.title,
+                productId: index + 1,
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-        if (isPrimary)
           Positioned(
             bottom: 0,
             left: 0,
@@ -520,15 +789,17 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.ctaTerracotta.withValues(alpha: 0.92),
+                color: isPrimary
+                    ? AppColors.ctaTerracotta.withValues(alpha: 0.92)
+                    : Colors.black54,
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(DesignTokens.radiusMd - 1),
                 ),
               ),
-              child: const Text(
-                'Ảnh đại diện',
+              child: Text(
+                isPrimary ? 'Ảnh bìa' : 'Đặt ảnh bìa',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 9.5,
                   fontWeight: FontWeight.w700,
@@ -536,29 +807,28 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               ),
             ),
           ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: InkWell(
-            onTap: () => vm.removeImageUrl(index),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
+          Positioned(
+            top: 4,
+            right: 4,
+            child: InkWell(
+              onTap: () => vm.removeImageUrl(index),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 13, color: Colors.white),
               ),
-              child: const Icon(Icons.close, size: 13, color: Colors.white),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   void _promptAddImageUrl(SellerProductFormViewModel vm) {
-    final urlController = TextEditingController(
-      text: 'https://images.unsplash.com/photo-1551028719-00167b16eac5',
-    );
+    final urlController = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -575,6 +845,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           controller: urlController,
           decoration: _editorialInputDecoration(
             labelText: 'URL hình ảnh (jpg, png, webp)',
+            hintText: 'https://...',
           ),
         ),
         actions: [
@@ -646,21 +917,26 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             maxLength: 5000,
             decoration: _editorialInputDecoration(
               labelText: 'Mô tả sản phẩm',
-              hintText: 'Chất liệu, kiểu dáng, nguồn gốc, cách phối...',
+              hintText: 'Chất liệu, số đo, kiểu dáng, nguồn gốc, cách phối...',
               alignLabelWithHint: true,
             ),
             onChanged: (value) => vm.description = value,
           ),
           const SizedBox(height: 12),
 
-          // Category Dropdown — active categories from taxonomy API.
+          // Category Dropdown — active categories from taxonomy API with offline demo fallback.
           Builder(
             builder: (context) {
               final taxonomyVm = ref.watch(catalogSearchViewModelProvider);
               final taxonomy = taxonomyVm.taxonomy;
-              final categories = taxonomy == null
+              final apiCategories = taxonomy == null
                   ? <CategoryModel>[]
                   : _flattenCategories(taxonomy.categories);
+              final categories = apiCategories.isNotEmpty
+                  ? apiCategories
+                  : (!taxonomyVm.isLoadingTaxonomy
+                      ? RetroDemoMarketplaceStore.fallbackCategories
+                      : <CategoryModel>[]);
               final selectedCategoryId = vm.categoryId;
               final hasSelectedCategory = categories.any(
                 (category) => category.id == selectedCategoryId,
@@ -673,8 +949,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   prefixIcon: const Icon(Icons.category_outlined),
                   helperText: taxonomyVm.isLoadingTaxonomy
                       ? 'Đang tải danh mục...'
-                      : taxonomyVm.taxonomyError,
-                  errorText: taxonomyVm.taxonomyError,
+                      : null,
                   suffixIcon: taxonomyVm.taxonomyError != null
                       ? IconButton(
                           tooltip: 'Thử tải lại',
@@ -706,9 +981,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     ),
                   );
                 }).toList(),
-                onChanged: taxonomyVm.isLoadingTaxonomy ||
-                        taxonomyVm.taxonomyError != null ||
-                        categories.isEmpty
+                onChanged: taxonomyVm.isLoadingTaxonomy || categories.isEmpty
                     ? null
                     : (categoryId) {
                         if (categoryId == null) return;
@@ -891,16 +1164,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     );
                   }).toList(),
                 ),
-                if (vm.auctionStartsAt != null && vm.auctionEndsAt != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Bắt đầu: ${vm.auctionStartsAt!.toLocal()}\n'
-                    'Kết thúc: ${vm.auctionEndsAt!.toLocal()}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
               ],
             ),
           ],
@@ -940,7 +1203,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           ),
           const SizedBox(height: 10),
 
-          // 5-Tier Condition Choice Chips
           Wrap(
             spacing: 8,
             runSpacing: 6,
@@ -970,7 +1232,15 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          Text(
+            ProductImageResolver.conditionDescription(vm.condition),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.pineDeep,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 14),
 
           // BR-PR-03: Mandatory Defect Info (>= 5 chars)
           TextFormField(
@@ -994,6 +1264,165 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             onChanged: (v) => vm.defectInfo = v.trim(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocationAndShippingSection(SellerProductFormViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: DesignTokens.borderRadiusBanner,
+        border: Border.all(color: AppColors.borderWarm),
+        boxShadow: DesignTokens.cardElevation,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Khu vực & Giao nhận',
+            style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _locationController,
+            decoration: _editorialInputDecoration(
+              labelText: 'Khu vực bán / Quận, Thành phố',
+              prefixIcon: const Icon(Icons.location_on_outlined),
+            ),
+            onChanged: vm.setLocation,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _shippingController,
+            decoration: _editorialInputDecoration(
+              labelText: 'Phương thức giao hàng',
+              prefixIcon: const Icon(Icons.local_shipping_outlined),
+            ),
+            onChanged: vm.setShippingNote,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPreviewSheet(SellerProductFormViewModel vm) {
+    final previewTitle = _titleController.text.trim().isNotEmpty
+        ? _titleController.text.trim()
+        : 'Sản phẩm Vintage chưa đặt tên';
+    final previewPrice = vm.listingType == 'AUCTION'
+        ? (double.tryParse(_startPriceController.text.trim()) ?? 0)
+        : (double.tryParse(_priceController.text.trim()) ?? 0);
+    final previewImage = vm.imageUrls.isNotEmpty
+        ? vm.imageUrls.first
+        : ProductImageResolver.fallbackAssetFor(
+            title: previewTitle,
+            categoryName: vm.categoryName,
+            id: 1,
+          );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DesignTokens.radius2xl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Xem trước bài đăng của bạn',
+                      style: AppTypography.headingSmall.copyWith(fontSize: 17),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: SizedBox(
+                  width: 210,
+                  height: 332,
+                  child: RetroProductCard(
+                    id: 999,
+                    title: previewTitle,
+                    price: previewPrice,
+                    primaryImageUrl: previewImage,
+                    condition: vm.condition,
+                    categoryName: vm.categoryName.isNotEmpty
+                        ? vm.categoryName
+                        : 'Vintage',
+                    distanceLabel: '0,5 km',
+                    showConditionPercent: true,
+                    sellerName: 'Tiệm của bạn',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.creamBadgeSoft,
+                  borderRadius: DesignTokens.borderRadiusMd,
+                  border: Border.all(color: AppColors.creamBadgeBorder),
+                ),
+                child: Row(
+                  children: [
+                    const StatusPillBadge(
+                      status: 'PENDING_REVIEW',
+                      isCompact: true,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Khi gửi, bài đăng sẽ chuyển vào hàng đợi duyệt của quản trị viên.',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.creamBadgeText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.ctaTerracotta,
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _submitForm(vm, submitForReview: true);
+                  },
+                  child: const Text(
+                    'Xác nhận gửi phê duyệt',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1072,12 +1501,18 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     SellerProductFormViewModel vm, {
     required bool submitForReview,
   }) async {
+    vm.title = _titleController.text.trim();
+    vm.description = _descriptionController.text.trim();
+    vm.defectInfo = _defectController.text.trim();
+    vm.location = _locationController.text.trim();
+    vm.shippingNote = _shippingController.text.trim();
+
     if (submitForReview) {
       if (!_formKey.currentState!.validate()) {
         return;
       }
     } else {
-      if (_titleController.text.trim().isEmpty) {
+      if (vm.title.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Vui lòng nhập tên sản phẩm trước khi lưu nháp.'),
@@ -1085,38 +1520,115 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         );
         return;
       }
-      vm.title = _titleController.text.trim();
-      vm.description = _descriptionController.text.trim();
-      vm.defectInfo = _defectController.text.trim();
     }
 
     final res = await vm.submit(submitForReview: submitForReview);
-    if (mounted) {
-      if (res != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              submitForReview
-                  ? 'Đã gửi duyệt sản phẩm "${res.title}" thành công!'
-                  : 'Đã lưu bản nháp "${res.title}".',
-            ),
-          ),
-        );
-        context.pushReplacement(AppRoutes.sellerListings);
+    if (!mounted) return;
+
+    if (res != null) {
+      if (submitForReview) {
+        await _showPendingModerationDialog(res);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.priceCrimson,
-            content: Text(
-              vm.state.maybeWhen(
-                error: (err, _) => err,
-                orElse: () => 'Lỗi khi lưu sản phẩm.',
+          SnackBar(content: Text('Đã lưu bản nháp "${res.title}".')),
+        );
+        context.pushReplacement(AppRoutes.sellerListingsPath('DRAFT'));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.priceCrimson,
+          content: Text(
+            vm.state.maybeWhen(
+              error: (err, _) => err,
+              orElse: () => 'Lỗi khi lưu sản phẩm.',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showPendingModerationDialog(SellerProductItemModel item) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+          side: const BorderSide(color: AppColors.borderWarm),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppColors.creamBadgeBg,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.creamBadgeBorder),
+              ),
+              child: const Icon(
+                Icons.hourglass_top_rounded,
+                size: 30,
+                color: AppColors.pineDeep,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Đã gửi bài đăng thành công',
+              textAlign: TextAlign.center,
+              style: AppTypography.headingSmall.copyWith(fontSize: 17.5),
+            ),
+            const SizedBox(height: 8),
+            const StatusPillBadge(status: 'PENDING_REVIEW'),
+            const SizedBox(height: 10),
+            Text(
+              'Đã gửi bài đăng. Bài đăng của bạn đang chờ duyệt.',
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textCharcoal,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '"${item.title}" (${VndFormatter.format(item.price)}) sẽ tự động hiển thị trên sàn ngay sau khi quản trị viên phê duyệt.',
+              textAlign: TextAlign.center,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.pineDeep,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.pushReplacement(
+                  AppRoutes.sellerListingsPath('PENDING_REVIEW'),
+                );
+              },
+              child: const Text(
+                'Xem danh sách chờ duyệt',
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),
-        );
-      }
-    }
+        ],
+      ),
+    );
   }
 }
 

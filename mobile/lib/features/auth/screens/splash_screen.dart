@@ -5,6 +5,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/auth_view_model.dart';
 
@@ -51,26 +52,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    gradient: const RadialGradient(
-                      colors: [
-                        AppColors.categoryCircleStart,
-                        AppColors.categoryCircleEnd,
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
-                    boxShadow: DesignTokens.cardElevation,
-                  ),
-                  child: const Icon(
-                    Icons.checkroom_rounded,
-                    size: 52,
-                    color: AppColors.pineDeep,
-                  ),
-                ),
+                const IzithriftLogo.iconOnly(iconSize: 96),
                 const SizedBox(height: DesignTokens.spaceLg),
                 Row(
                   mainAxisSize: MainAxisSize.min,

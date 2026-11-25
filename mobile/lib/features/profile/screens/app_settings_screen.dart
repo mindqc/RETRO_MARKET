@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../core/config/env_config.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -42,9 +41,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
 
     setState(() => _isChangingPassword = true);
 
-    final success = await ref
-        .read(profileViewModelProvider)
-        .changePassword(
+    final success = await ref.read(profileViewModelProvider).changePassword(
           currentPassword: _currentPasswordController.text,
           password: _newPasswordController.text,
           passwordConfirmation: _confirmNewPasswordController.text,
@@ -68,9 +65,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: AppColors.priceCrimson,
-            content: Text(
-              'Mật khẩu hiện tại không chính xác hoặc không hợp lệ.',
-            ),
+            content:
+                Text('Mật khẩu hiện tại không chính xác hoặc không hợp lệ.'),
           ),
         );
       }
@@ -115,24 +111,6 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
     );
   }
 
-  Widget _buildSettingsCard({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: DesignTokens.borderRadiusLg,
-        boxShadow: DesignTokens.cardElevation,
-      ),
-      child: Material(
-        color: AppColors.surfaceCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: DesignTokens.borderRadiusLg,
-          side: const BorderSide(color: AppColors.borderWarm),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: child,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDecorEnabled = ref.watch(seasonalDecorProvider);
@@ -157,8 +135,19 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                 iconColor: AppColors.ctaTerracotta,
               ),
               const SizedBox(height: DesignTokens.spaceSm),
-              _buildSettingsCard(
-                child: SwitchListTile(
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: DesignTokens.borderRadiusLg,
+                  boxShadow: DesignTokens.cardElevation,
+                ),
+                child: Material(
+                  color: AppColors.surfaceCard,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: DesignTokens.borderRadiusLg,
+                    side: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: SwitchListTile(
                   activeColor: AppColors.priceCrimson,
                   secondary: Container(
                     width: 40,
@@ -188,6 +177,7 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                   onChanged: (val) {
                     ref.read(profileViewModelProvider).toggleSeasonalDecor(val);
                   },
+                  ),
                 ),
               ),
 
@@ -201,19 +191,29 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                   iconColor: AppColors.pineDeep,
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
-                _buildSettingsCard(
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: Container(
-                          width: 38,
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: DesignTokens.borderRadiusLg,
+                    boxShadow: DesignTokens.cardElevation,
+                  ),
+                  child: Material(
+                    color: AppColors.surfaceCard,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: DesignTokens.borderRadiusLg,
+                      side: const BorderSide(color: AppColors.borderWarm),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            width: 38,
                           height: 38,
                           decoration: BoxDecoration(
                             color: AppColors.creamBadgeSoft,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.creamBadgeBorder,
-                            ),
+                            border:
+                                Border.all(color: AppColors.creamBadgeBorder),
                           ),
                           child: const Icon(
                             Icons.lock_reset_rounded,
@@ -298,8 +298,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                                   ),
                                   validator: (v) =>
                                       v != _newPasswordController.text
-                                      ? 'Mật khẩu xác nhận không khớp.'
-                                      : null,
+                                          ? 'Mật khẩu xác nhận không khớp.'
+                                          : null,
                                 ),
                                 const SizedBox(height: DesignTokens.spaceLg),
                                 SizedBox(
@@ -324,7 +324,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: DesignTokens.spaceXl),
@@ -337,10 +338,21 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                 iconColor: AppColors.starGold,
               ),
               const SizedBox(height: DesignTokens.spaceSm),
-              _buildSettingsCard(
-                child: Column(
-                  children: [
-                    ListTile(
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: DesignTokens.borderRadiusLg,
+                  boxShadow: DesignTokens.cardElevation,
+                ),
+                child: Material(
+                  color: AppColors.surfaceCard,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: DesignTokens.borderRadiusLg,
+                    side: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      ListTile(
                       leading: const Icon(
                         Icons.info_outline_rounded,
                         color: AppColors.textMuted,
@@ -387,7 +399,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
                         ),
                       ),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 

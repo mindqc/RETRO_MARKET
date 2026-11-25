@@ -6,12 +6,13 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../viewmodels/auction_hub_view_model.dart';
 
-/// Screen M-AC-01: Scheduled Auction Hub (Root of Tab 3)
+/// Screen M-AC-01: Scheduled Auction Hub (Auctions Tab)
 class ScheduledAuctionHubScreen extends ConsumerStatefulWidget {
   const ScheduledAuctionHubScreen({super.key});
 
@@ -31,6 +32,7 @@ class _ScheduledAuctionHubScreenState
     _HubTabDefinition(key: 'ending_soon', label: '⚡ Sắp kết thúc'),
     _HubTabDefinition(key: 'upcoming', label: '⏰ Sắp mở'),
     _HubTabDefinition(key: 'completed', label: '📦 Đã kết thúc'),
+    _HubTabDefinition(key: 'all', label: '✨ Tất cả'),
   ];
 
   @override
@@ -69,82 +71,141 @@ class _ScheduledAuctionHubScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: DesignTokens.spaceLg,
-        title: const RetroBrandWordmark(titleText: 'izithrift • Đấu giá'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: TextButton.icon(
-              onPressed: () => context.push(AppRoutes.myAuctions),
-              icon: const Icon(
-                Icons.gavel_rounded,
-                size: 16,
-                color: AppColors.creamBadgeText,
-              ),
-              label: const Text(
-                'Của tôi',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontBody,
-                  color: AppColors.creamBadgeText,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12.5,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.creamBadgeBg,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                side: const BorderSide(color: AppColors.creamBadgeBorder),
-                shape: const StadiumBorder(),
-              ),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceWarm,
-              borderRadius: DesignTokens.borderRadiusFull,
-              border: Border.all(color: AppColors.borderWarm),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              padding: const EdgeInsets.all(3),
-              indicator: BoxDecoration(
-                color: AppColors.surfaceCard,
-                borderRadius: DesignTokens.borderRadiusFull,
-                boxShadow: DesignTokens.cardElevation,
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: AppColors.priceCrimson,
-              unselectedLabelColor: AppColors.textMuted,
-              labelStyle: const TextStyle(
-                fontFamily: AppTypography.fontBody,
-                fontWeight: FontWeight.w700,
-                fontSize: 12.5,
-              ),
-              tabs: _tabs.map((t) => Tab(height: 36, text: t.label)).toList(),
-            ),
-          ),
-        ),
-      ),
+      appBar: const IzithriftGlobalAppBar(),
       body: RetroAmbientSnowflakes(
-        child: RefreshIndicator(
-          color: AppColors.ctaTerracotta,
-          onRefresh: () =>
-              ref.read(auctionHubViewModelProvider.notifier).fetchInitial(),
-          child: _buildBody(vm),
+        child: Column(
+          children: [
+            // Section Title + Subtitle + Quick Auction Actions
+            Container(
+              color: AppColors.surfaceCard,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Đấu giá',
+                              style: AppTypography.headingMedium.copyWith(
+                                fontSize: 20,
+                                color: AppColors.textCharcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Săn món đồ độc đáo với mức giá của bạn.',
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.push(AppRoutes.sellerCreateAuction),
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Tạo phiên',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontBody,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppColors.ctaTerracotta,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: 7,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      TextButton.icon(
+                        onPressed: () => context.push(AppRoutes.myAuctions),
+                        icon: const Icon(
+                          Icons.gavel_rounded,
+                          size: 14,
+                          color: AppColors.pineDeep,
+                        ),
+                        label: const Text(
+                          'Của tôi',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontBody,
+                            color: AppColors.pineDeep,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppColors.primaryForestGreenLight,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.canvasParchment,
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      border: Border.all(color: AppColors.borderWarm),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      padding: const EdgeInsets.all(3),
+                      indicator: BoxDecoration(
+                        color: AppColors.pineDeep,
+                        borderRadius: DesignTokens.borderRadiusFull,
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: AppColors.textMuted,
+                      labelStyle: const TextStyle(
+                        fontFamily: AppTypography.fontBody,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                      tabs: _tabs
+                          .map((t) => Tab(height: 34, text: t.label))
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.borderWarm),
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.ctaTerracotta,
+                onRefresh: () => ref
+                    .read(auctionHubViewModelProvider.notifier)
+                    .fetchInitial(),
+                child: _buildBody(vm),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -234,7 +295,7 @@ class _ScheduledAuctionHubScreenState
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.64,
+              childAspectRatio: 0.58,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -245,9 +306,13 @@ class _ScheduledAuctionHubScreenState
                       id: card.id,
                       title: card.productTitle,
                       currentBid: card.currentHighestBid,
+                      startingPrice: card.startingPrice,
                       bidCount: card.bidCount,
+                      watchCount: card.watchCount,
+                      startsAt: card.auctionStartsAt,
                       endsAt: card.auctionEndsAt,
                       primaryImageUrl: card.primaryImageUrl,
+                      categoryName: card.categoryName,
                       status: card.status,
                       extendedCount: card.extendedCount,
                       isOwner: card.isOwner,

@@ -1,17 +1,19 @@
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/state/base_view_model.dart';
 import '../models/seller_product_form_payload.dart';
 import '../models/seller_product_item_model.dart';
 import '../repositories/seller_channel_repository.dart';
 
-/// ViewModel managing product form creation (M-SL-03) and editing/resubmission (M-SL-04).
+/// ViewModel managing product form creation (M-SL-03), auction creation, and editing/resubmission (M-SL-04).
 /// Enforces BR-PR-01 (Auction quantity locked to 1), BR-PR-03 (Mandatory defect info >= 5 chars),
-/// and DEC-05 (Rejection reason display & clearing upon resubmission).
+/// DEC-05 (Rejection reason display & clearing upon resubmission), and strict PENDING_REVIEW moderation.
 class SellerProductFormViewModel
     extends BaseViewModel<SellerProductItemModel?> {
   final SellerChannelRepository repository;
+  final RetroDemoMarketplaceStore? demoStore;
 
   int? editingProductId;
   String? currentRejectionReason;
@@ -27,6 +29,8 @@ class SellerProductFormViewModel
   String condition =
       'GOOD'; // NEW_WITH_TAGS, LIKE_NEW, GOOD, FAIR, VINTAGE_WORN
   String defectInfo = '';
+  String location = 'Quận 1, TP. Hồ Chí Minh';
+  String shippingNote = 'Giao hàng toàn quốc • Cho kiểm tra trước khi nhận';
   List<String> imageUrls = [];
   List<XFile> imageFiles = [];
 
@@ -39,10 +43,13 @@ class SellerProductFormViewModel
 
   bool isSubmitting = false;
 
-  SellerProductFormViewModel({required this.repository});
+  SellerProductFormViewModel({
+    required this.repository,
+    this.demoStore,
+  });
 
-  /// Initializes an empty form for creating new listing (M-SL-03)
-  void initForCreate() {
+  /// Initializes an empty form for creating a fixed-price or general listing (M-SL-03)
+  void initForCreate({String initialListingType = 'FIXED_PRICE'}) {
     editingProductId = null;
     currentRejectionReason = null;
     title = '';
@@ -51,18 +58,26 @@ class SellerProductFormViewModel
     categoryName = '';
     brandId = null;
     brandName = null;
-    listingType = 'FIXED_PRICE';
+    listingType = initialListingType.toUpperCase();
     price = 0.0;
     quantity = 1;
     condition = 'GOOD';
     defectInfo = '';
+    location = 'Quận 1, TP. Hồ Chí Minh';
+    shippingNote = 'Giao hàng toàn quốc • Cho kiểm tra trước khi nhận';
     imageUrls = [];
     imageFiles = [];
     startingPrice = null;
-    minBidIncrement = null;
+    minBidIncrement = listingType == 'AUCTION' ? 20000.0 : null;
     reservePrice = null;
-    auctionStartsAt = null;
-    auctionEndsAt = null;
+    if (listingType == 'AUCTION') {
+      final start = DateTime.now().add(const Duration(minutes: 30));
+      auctionStartsAt = start;
+      auctionEndsAt = start.add(const Duration(hours: 24));
+    } else {
+      auctionStartsAt = null;
+      auctionEndsAt = null;
+    }
     isSubmitting = false;
     notifyListeners();
   }
@@ -86,7 +101,6 @@ class SellerProductFormViewModel
         ? [product.primaryImageUrl!]
         : [];
     imageFiles = [];
-    description = product.description ?? '';
     startingPrice = product.startingPrice;
     minBidIncrement = product.bidIncrement;
     reservePrice = product.reservePrice;
@@ -137,9 +151,27 @@ class SellerProductFormViewModel
     notifyListeners();
   }
 
+  void setLocation(String value) {
+    location = value.trim();
+    notifyListeners();
+  }
+
+  void setShippingNote(String value) {
+    shippingNote = value.trim();
+    notifyListeners();
+  }
+
   void addImageUrl(String url) {
     if (imageUrls.length + imageFiles.length < 10) {
       imageUrls.add(url);
+      notifyListeners();
+    }
+  }
+
+  void setPrimaryImageUrl(int index) {
+    if (index > 0 && index < imageUrls.length) {
+      final picked = imageUrls.removeAt(index);
+      imageUrls.insert(0, picked);
       notifyListeners();
     }
   }
@@ -152,6 +184,14 @@ class SellerProductFormViewModel
     if (remaining <= 0) return;
     imageFiles.addAll(files.take(remaining));
     notifyListeners();
+  }
+
+  void setPrimaryImageFile(int index) {
+    if (index > 0 && index < imageFiles.length) {
+      final picked = imageFiles.removeAt(index);
+      imageFiles.insert(0, picked);
+      notifyListeners();
+    }
   }
 
   void removeImageFile(int index) {
@@ -168,21 +208,25 @@ class SellerProductFormViewModel
     }
   }
 
-  /// Validates and submits product listing
+  /// Validates and submits product or auction listing.
+  /// Strict Moderation Policy: Newly submitted listings ALWAYS enter PENDING_REVIEW
+  /// (never auto-published to public marketplace feeds).
   Future<SellerProductItemModel?> submit({
     required bool submitForReview,
   }) async {
+    final composedDescription = _composeEnrichedDescription();
+
     final payload = SellerProductFormPayload(
       title: title,
-      description: description,
+      description: composedDescription,
       categoryId: categoryId,
       brandId: brandId,
       listingType: listingType,
-      price: price,
+      price: listingType == 'AUCTION' ? (startingPrice ?? price) : price,
       availableQuantity: listingType == 'AUCTION' ? 1 : quantity,
       condition: condition,
       defectInfo: defectInfo,
-      imageUrls: imageUrls,
+      imageUrls: imageUrls.where((u) => !u.startsWith('assets/')).toList(),
       imageFiles: imageFiles,
       submitForReview: submitForReview,
       startingPrice: startingPrice,
@@ -204,15 +248,12 @@ class SellerProductFormViewModel
     try {
       SellerProductItemModel result;
       if (editingProductId != null) {
-        // Edit / Resubmit (DEC-05)
         result = await repository.updateAndResubmitProduct(
           editingProductId!,
           payload,
         );
-        // DEC-05: Clearing rejection reason upon successful resubmission
         currentRejectionReason = null;
       } else {
-        // Create new
         result = await repository.createProduct(payload);
       }
 
@@ -220,10 +261,48 @@ class SellerProductFormViewModel
       setSuccess(result);
       return result;
     } catch (e) {
+      // Demo-compatible offline fallback: strictly stores submission as PENDING_REVIEW / DRAFT
+      if (demoStore != null && editingProductId == null) {
+        final demoItem = demoStore!.addPendingSubmission(
+          title: title,
+          description: composedDescription,
+          categoryId: categoryId,
+          categoryName: categoryName.isNotEmpty ? categoryName : 'Vintage',
+          listingType: listingType,
+          price: listingType == 'AUCTION' ? (startingPrice ?? price) : price,
+          quantity: listingType == 'AUCTION' ? 1 : quantity,
+          condition: condition,
+          defectInfo: defectInfo,
+          imageUrls: imageUrls,
+          submitForReview: submitForReview,
+          startingPrice: startingPrice,
+          minBidIncrement: minBidIncrement,
+          reservePrice: reservePrice,
+          auctionStartsAt: auctionStartsAt,
+          auctionEndsAt: auctionEndsAt,
+        );
+        isSubmitting = false;
+        setSuccess(demoItem);
+        return demoItem;
+      }
+
       isSubmitting = false;
       setError('Lỗi khi lưu bài đăng: $e');
       return null;
     }
+  }
+
+  String _composeEnrichedDescription() {
+    final buffer = StringBuffer(description.trim());
+    if (location.isNotEmpty && !description.contains('Khu vực:')) {
+      if (buffer.isNotEmpty) buffer.write('\n\n');
+      buffer.write('Khu vực: $location');
+    }
+    if (shippingNote.isNotEmpty && !description.contains('Giao hàng:')) {
+      if (buffer.isNotEmpty) buffer.write('\n');
+      buffer.write('Giao hàng: $shippingNote');
+    }
+    return buffer.toString();
   }
 }
 
@@ -231,5 +310,9 @@ class SellerProductFormViewModel
 final sellerProductFormViewModelProvider =
     ChangeNotifierProvider.autoDispose<SellerProductFormViewModel>((ref) {
       final repo = ref.watch(sellerChannelRepositoryProvider);
-      return SellerProductFormViewModel(repository: repo);
+      final demoStore = ref.read(retroDemoStoreProvider);
+      return SellerProductFormViewModel(
+        repository: repo,
+        demoStore: demoStore,
+      );
     });

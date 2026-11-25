@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
+import 'izithrift_logo.dart';
 
-/// Shared visual primitives implementing the approved Retro Market (izithrift)
-/// Cozy Vintage Editorial design language across all screens.
+/// Shared visual primitives implementing the izithrift
+/// Modern C2C Marketplace × Cozy Vintage Christmas design language across all screens.
 
-/// Subtle parchment header/brand wordmark matching the reference Home top bar.
+/// Brand wordmark matching the izithrift identity.
 /// Keeps exact [titleText] strings so navigation & screen tests stay intact.
 class RetroBrandWordmark extends StatelessWidget {
   final String titleText;
@@ -25,22 +26,8 @@ class RetroBrandWordmark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showSeasonalAccent) ...[
-          Container(
-            width: 24,
-            height: 24,
-            decoration: const BoxDecoration(
-              color: AppColors.priceCrimson,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.ac_unit_rounded,
-              color: AppColors.creamBadgeBg,
-              size: 13,
-            ),
-          ),
-          const SizedBox(width: 7),
-        ],
+        const IzithriftLogo.iconOnly(iconSize: 28),
+        const SizedBox(width: 8),
         Flexible(
           child: Text(
             titleText,
@@ -50,10 +37,10 @@ class RetroBrandWordmark extends StatelessWidget {
           ),
         ),
         if (showSeasonalAccent) ...[
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           const Icon(
             Icons.auto_awesome,
-            size: 14,
+            size: 13,
             color: AppColors.starGold,
           ),
         ],
@@ -62,7 +49,7 @@ class RetroBrandWordmark extends StatelessWidget {
   }
 }
 
-/// Outlined top-bar icon button with optional crimson notification counter pill.
+/// Outlined top-bar icon button with optional Terracotta notification/cart counter badge.
 class RetroHeaderIconButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
@@ -96,7 +83,7 @@ class RetroHeaderIconButton extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
                 decoration: const BoxDecoration(
-                  color: AppColors.priceCrimson,
+                  color: AppColors.ctaTerracotta,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -123,12 +110,14 @@ class RetroSearchPill extends StatelessWidget {
   final String placeholder;
   final VoidCallback onTap;
   final VoidCallback? onFilterTap;
+  final bool showTrailingFilter;
 
   const RetroSearchPill({
     super.key,
     required this.placeholder,
     required this.onTap,
     this.onFilterTap,
+    this.showTrailingFilter = true,
   });
 
   @override
@@ -140,7 +129,7 @@ class RetroSearchPill extends StatelessWidget {
         onTap: onTap,
         borderRadius: DesignTokens.borderRadiusFull,
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11.5),
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
             borderRadius: DesignTokens.borderRadiusFull,
@@ -151,7 +140,7 @@ class RetroSearchPill extends StatelessWidget {
             children: [
               const Icon(
                 Icons.search_rounded,
-                color: AppColors.textCharcoal,
+                color: AppColors.pineDeep,
                 size: 20,
               ),
               const SizedBox(width: 10),
@@ -162,19 +151,21 @@ class RetroSearchPill extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textMuted,
-                    fontSize: 14,
+                    fontSize: 13.5,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onFilterTap ?? onTap,
-                child: const Icon(
-                  Icons.tune_rounded,
-                  color: AppColors.textCharcoal,
-                  size: 19,
+              if (showTrailingFilter) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: onFilterTap ?? onTap,
+                  child: const Icon(
+                    Icons.tune_rounded,
+                    color: AppColors.textCharcoal,
+                    size: 19,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

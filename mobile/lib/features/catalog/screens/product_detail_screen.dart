@@ -12,6 +12,7 @@ import '../../../core/widgets/defect_authenticity_box.dart';
 import '../../../core/widgets/price_breakdown_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/verification_badge.dart';
 import '../models/product_detail_model.dart';
@@ -432,18 +433,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   },
                   child: Container(
                     color: AppColors.surfaceWarm,
-                    child: Image.network(
-                      img.imageUrl,
+                    child: RetroProductImage(
+                      imageUrl: img.imageUrl,
+                      title: product.title,
+                      categoryName: product.category?.name,
+                      productId: product.id + idx,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                        child: Icon(
-                          Icons.checkroom_outlined,
-                          size: 54,
-                          color: AppColors.pineDeep,
-                        ),
-                      ),
                     ),
                   ),
                 );

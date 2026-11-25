@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/theme/app_colors.dart';
@@ -42,12 +43,27 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
     }
   }
 
-  /// Loads product detail from GET /api/v1/products/{id}
+  /// Loads product detail from GET /api/v1/products/{id}, with demo-compatible fallback
   Future<void> loadProductDetail(int productId) async {
     _currentImageIndex = 0;
     _selectedQuantity = 1;
+    final demoFallback =
+        ref.read(retroDemoStoreProvider).getDemoProductDetail(productId);
+    if (demoFallback != null) {
+      setSuccess(demoFallback);
+      return;
+    }
     await runCatching(
-      () => repository.fetchProductDetail(productId),
+      () async {
+        try {
+          return await repository.fetchProductDetail(productId);
+        } catch (_) {
+          final fallback =
+              ref.read(retroDemoStoreProvider).getDemoProductDetail(productId);
+          if (fallback != null) return fallback;
+          rethrow;
+        }
+      },
       emptyMessage: 'Không tìm thấy sản phẩm hoặc sản phẩm đã bị ẩn.',
     );
   }

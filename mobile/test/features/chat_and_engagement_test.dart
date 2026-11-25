@@ -578,7 +578,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('izithrift • Tin nhắn'), findsOneWidget);
+      expect(find.text('izithrift'), findsOneWidget);
+      expect(find.text('Tin nhắn'), findsOneWidget);
       expect(find.text('Tiệm Đồ Cũ Sài Gòn'), findsOneWidget);
       expect(find.text('Dạ shop đã gửi hàng sáng nay rồi nhé!'), findsOneWidget);
       expect(find.text('4'), findsWidgets);

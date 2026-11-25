@@ -508,21 +508,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('izithrift • Trang chủ'), findsOneWidget);
+        expect(find.text('izithrift'), findsOneWidget);
         expect(
-          find.text('Tìm đồ vintage, áo khoác 90s, denim...'),
+          find.text('Tìm kiếm sản phẩm, thương hiệu...'),
           findsOneWidget,
         );
+        expect(find.text('Khác'), findsOneWidget);
         expect(find.text('BỘ SƯU TẬP MÙA ĐÔNG'), findsOneWidget);
-        expect(find.text('Danh mục tuyển chọn'), findsOneWidget);
-        expect(find.text('Đấu giá sôi động'), findsOneWidget);
-
-        await tester.scrollUntilVisible(
-          find.text('Tiệm đồ si uy tín'),
-          200,
-          scrollable: find.byType(Scrollable).first,
-        );
-        expect(find.text('Tiệm đồ si uy tín'), findsOneWidget);
+        expect(find.text('Đấu giá nổi bật'), findsOneWidget);
 
         await tester.scrollUntilVisible(
           find.text('Hàng mới lên kệ'),
@@ -530,6 +523,20 @@ void main() {
           scrollable: find.byType(Scrollable).first,
         );
         expect(find.text('Hàng mới lên kệ'), findsOneWidget);
+
+        await tester.scrollUntilVisible(
+          find.text('Tiệm đồ si được yêu thích gần bạn'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('Tiệm đồ si được yêu thích gần bạn'), findsOneWidget);
+
+        await tester.scrollUntilVisible(
+          find.text('Pass đồ 2hand'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('Pass đồ 2hand'), findsOneWidget);
       },
     );
 

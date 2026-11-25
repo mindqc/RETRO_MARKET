@@ -5,22 +5,52 @@
 @source '../views/**/*.blade.php';
 
 @theme {
-    --color-warm-cream: #FBF8F3;
-    --color-warm-beige: #EFE8DD;
-    --color-warm-sand: #E5DDD0;
-    --color-terracotta: #C85A32;
-    --color-terracotta-dark: #A84522;
-    --color-pine-green: #2D5A3C;
-    --color-pine-green-dark: #21442D;
-    --color-vintage-gold: #D4AF37;
-    --color-dark-charcoal: #2B2625;
-    --color-dark-brown: #3D3533;
-    --color-muted-border: #E2D9CD;
+    /* Primary izithrift Brand Palette (Modern C2C Marketplace x Cozy Vintage Christmas) */
+    --color-brand-bg: #F4F5F7;
+    --color-brand-surface: #FFFFFF;
+    --color-brand-pine: #174D38;
+    --color-brand-pine-dark: #103828;
+    --color-brand-pine-soft: #E7F2EC;
+    --color-brand-terracotta: #C65335;
+    --color-brand-terracotta-dark: #A94227;
+    --color-brand-terracotta-soft: #FBEDE9;
+    --color-brand-gold: #D6AE55;
+    --color-brand-gold-soft: #F8EED6;
 
-    --font-serif: 'Fraunces', Georgia, serif;
+    /* Backward-compatible semantic aliases for existing Admin views */
+    --color-warm-cream: #F4F5F7;
+    --color-warm-beige: #EDF0F4;
+    --color-warm-sand: #E5E7EB;
+    --color-terracotta: #C65335;
+    --color-terracotta-dark: #A94227;
+    --color-pine-green: #174D38;
+    --color-pine-green-dark: #103828;
+    --color-vintage-gold: #D6AE55;
+    --color-dark-charcoal: #231F20;
+    --color-dark-brown: #374151;
+    --color-muted-border: #E5E7EB;
+
+    /* Unified Be Vietnam Pro typography across Web Storefront & Admin */
+    --font-serif: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
     --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 
 .tabular-nums {
     font-variant-numeric: tabular-nums;
+}
+
+/* Smooth horizontal carousel scrollbars */
+.izi-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+.izi-carousel::-webkit-scrollbar-track {
+    background: #EDF0F4;
+    border-radius: 9999px;
+}
+.izi-carousel::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 9999px;
+}
+.izi-carousel::-webkit-scrollbar-thumb:hover {
+    background: #174D38;
 }

@@ -1,0 +1,1801 @@
+# IZITHRIFT — COMPLETE MARKETPLACE UI/UX REDESIGN & FEATURE IMPLEMENTATION
+
+## PROJECT CONTEXT
+
+You are working directly on the existing source code of **izithrift (Retro Market)**, a secondhand C2C marketplace application.
+
+This project is an existing university mobile application/demo. The codebase already contains many screens, features, routes, backend integrations, UI components, product models, auction functionality, authentication, seller functionality, and payment flows.
+
+Your task is to inspect the existing source and implement a comprehensive UI/UX upgrade while preserving all existing functional capabilities.
+
+This is NOT a request to create a new app from scratch.
+
+This is NOT a request to generate static mockup screens.
+
+I want the actual existing application to be improved, with working navigation, interactions, screens, and demo flows.
+
+You may inspect, refactor, implement, and test the existing source code directly.
+
+---
+
+# 1. DESIGN BRIEF — NEW BRAND IDENTITY
+
+The following design brief is the primary visual direction for the entire project.
+
+Use it consistently across the mobile application and website.
+
+## Brand
+
+**izithrift**
+
+Modern C2C Marketplace × Cozy Vintage Christmas
+
+## Color Palette
+
+- Background: Light cool gray `#F4F5F7`
+- Surface: White `#FFFFFF`
+- Primary brand: Deep Pine Green `#174D38`
+- Primary CTA: Terracotta `#C65335`
+- Accent: Vintage Gold `#D6AE55`
+
+Use these colors consistently.
+
+### Color usage
+
+- Deep Pine Green: branding, navigation active states, headers, trust indicators, important marketplace identity elements.
+- Terracotta: primary CTA buttons, selling action, important action highlights.
+- Vintage Gold: auction badges, limited offers, premium accents, festive decorations.
+- Light cool gray: app backgrounds and page backgrounds.
+- White: cards, dialogs, sheets, product surfaces.
+
+Do not randomly introduce unrelated colors.
+
+Status colors may be used when functionally necessary, but should remain harmonious with the brand.
+
+## Typography
+
+Use:
+
+**Be Vietnam Pro**
+
+Ensure Vietnamese diacritics render correctly.
+
+Typography should be consistent across:
+
+- Headers
+- Body text
+- Buttons
+- Product titles
+- Price
+- Metadata
+- Badges
+- Dialogs
+
+## Brand Personality
+
+- Cozy
+- Trustworthy
+- Modern
+- Vintage
+- Festive
+
+## Christmas Theme
+
+Use subtle seasonal Christmas elements:
+
+- Light snowfall
+- Santa hat
+- Pine branches
+- Warm lights
+- Fireplace glow
+- Gift decorations
+- Christmas ornaments
+
+IMPORTANT:
+
+Christmas decoration must not interfere with marketplace usability.
+
+Product images and product information must remain the visual priority.
+
+Use subtle decoration instead of excessive overlays.
+
+Snow effects should be light and optional where they interfere with performance or readability.
+
+Do not place Christmas decorations on every single card.
+
+The overall interface should remain a professional marketplace with a seasonal personality.
+
+## Marketplace Focus
+
+The visual priority is:
+
+1. Product images
+2. Product information
+3. Deals
+4. Auctions
+5. Seller trust
+6. Product discovery
+7. Decorative elements
+
+## Layout
+
+- Mobile-first
+- Horizontal carousels
+- Two-column product grids
+- Fixed bottom navigation
+- Consistent upper navigation
+- Responsive web design
+
+## Card Style
+
+- White surfaces
+- Rounded corners
+- Subtle borders
+- Minimal shadows
+- Consistent spacing
+- Clean image presentation
+
+## Visual Priority
+
+**Product first. Information second. Decoration third.**
+
+---
+
+# 2. CREATE A NEW IZITHRIFT BRAND LOGO
+
+The current app needs a cohesive brand identity.
+
+Create and implement a logo for:
+
+**izithrift**
+
+Do not simply use a text label as the logo.
+
+## Logo direction
+
+Design a distinctive icon and wordmark inspired by:
+
+- Secondhand clothing
+- Circular reuse
+- Vintage fashion
+- A thrift-store treasure
+- Sustainable reuse
+- Christmas warmth, subtly
+
+Possible conceptual directions include:
+
+- A stylized clothing tag combined with a circular reuse symbol.
+- A vintage shopping tag with a subtle star.
+- A minimal retro emblem representing discovering hidden treasures.
+
+The logo should be:
+
+- Simple
+- Recognizable
+- Modern
+- Suitable for mobile app icons
+- Suitable for website headers
+- Suitable for splash screens
+- Readable at small sizes
+
+Use the Deep Pine Green as the main logo color.
+
+Terracotta or Vintage Gold may be used as supporting accents.
+
+Avoid an overly complicated illustration.
+
+## Deliverables
+
+Implement the logo as a reusable asset.
+
+Use the same logo consistently in:
+
+- App upper navigation
+- Website header
+- Splash screen, if applicable
+- Authentication screens
+- Relevant branding areas
+
+If possible, create:
+
+- Logo icon
+- Full logo with wordmark
+- App icon version
+
+Do not use different logo designs on mobile and web.
+
+---
+
+# 3. GLOBAL UPPER NAVIGATION — UNIFIED HEADER
+
+Currently, the upper navigation/header changes inconsistently when navigating between different app functions.
+
+I want this to be standardized.
+
+Create a reusable global upper navigation component for the main application sections.
+
+The layout must follow this structure:
+
+`[App Logo] [App Name] [Flexible Empty Space] [Notifications] [Shopping Cart]`
+
+## Layout details
+
+### Left side
+
+- Brand logo.
+- Text: `izithrift`
+- Logo and brand name should be horizontally aligned.
+- The logo should have a consistent size.
+- Brand name should use consistent typography and styling.
+
+### Middle
+
+- Flexible spacing.
+
+### Right side
+
+1. Notifications icon.
+2. Shopping cart icon.
+
+The icons should have appropriate badge indicators when unread notifications or cart items exist.
+
+## Visual design
+
+- White surface or appropriate surface color.
+- Consistent height.
+- Consistent horizontal padding.
+- Clean layout.
+- Subtle bottom border or separation.
+- Avoid excessive shadows.
+- Responsive on small screens.
+
+## Behavior
+
+### Notifications
+
+Tap the notification icon to open the existing notification center.
+
+Preserve notification functionality.
+
+Show an unread badge when appropriate.
+
+### Shopping cart
+
+Tap the cart icon to open the existing shopping cart.
+
+Preserve current cart and checkout functionality.
+
+Show cart quantity badge when appropriate.
+
+## Consistency requirement
+
+The same upper navigation should be used consistently across the main marketplace sections:
+
+- Home
+- Messages
+- Auction Center
+- Profile
+
+Do not allow each main tab to independently implement a different header.
+
+Create a reusable shared component and use the same component.
+
+## Exceptions
+
+Some screens may legitimately use a specialized header:
+
+- Product detail
+- Checkout
+- Payment
+- Auction room
+- Full-screen chat
+- Authentication
+- Forms
+
+However, specialized headers should follow the same brand identity and visual rules.
+
+Do not unnecessarily force the global header into screens where it would interfere with the task.
+
+---
+
+# 4. MAIN BOTTOM NAVIGATION — NEW STRUCTURE
+
+Remove the independent Explore tab from the main bottom navigation.
+
+The current Explore functionality overlaps with the Home Feed and product search.
+
+Do not simply rename Explore.
+
+Instead, reorganize the application into the following five main destinations.
+
+## Bottom Navigation
+
+### 1. Trang chủ
+
+Icon: Home
+
+### 2. Tin nhắn
+
+Icon: Message
+
+### 3. Đăng bán
+
+Central elevated primary action with Plus icon.
+
+### 4. Đấu giá
+
+Icon: Gavel
+
+### 5. Cá nhân
+
+Icon: User/Profile
+
+The central selling action must be visually prominent.
+
+Use Terracotta `#C65335` for the primary action.
+
+Use Deep Pine Green `#174D38` for active navigation states where appropriate.
+
+Use a visually balanced and modern navigation bar.
+
+Ensure:
+
+- Safe area support.
+- No keyboard overlap.
+- Consistent active states.
+- Smooth navigation.
+- Clear Vietnamese labels.
+- Appropriate tap targets.
+- Responsive behavior.
+
+---
+
+# 5. REMOVE EXPLORE WITHOUT LOSING ITS FEATURES
+
+Inspect the existing Explore screen before removing it.
+
+Identify all existing functionality.
+
+Preserve useful capabilities, including:
+
+- Search
+- Filtering
+- Category selection
+- Sorting
+- Product discovery
+- Existing product results
+- Existing repositories and services
+
+Migrate useful functionality into:
+
+- Home
+- Search entry point on Home
+- Product discovery feed
+- Relevant filters
+
+Do not delete the underlying search/filter implementation unnecessarily.
+
+The Explore tab should no longer exist in the bottom navigation.
+
+Do not leave orphaned navigation routes, broken buttons, or duplicate search interfaces.
+
+---
+
+# 6. HOME FEED — MARKETPLACE DISCOVERY
+
+The Home Feed should be the main browsing and product discovery experience.
+
+The Home Feed must not feel like a search results page.
+
+Users should browse naturally and discover interesting items.
+
+## Home Feed hierarchy
+
+Use the following hierarchy:
+
+1. Global upper navigation
+2. Search bar
+3. Category shortcuts
+4. Promotional / curated collection banner
+5. Featured auctions
+6. New arrivals
+7. Nearby popular secondhand stores
+8. Secondhand product discovery feed
+
+Retain useful existing sections if appropriate, but keep the hierarchy clear.
+
+---
+
+## 6.1 Search bar on Home
+
+Search should exist on Home.
+
+It should be prominent and easy to access.
+
+Support:
+
+- Search query
+- Search suggestions, if available
+- Search history, if available
+- Category selection
+- Filters
+- Sorting
+
+The search bar should navigate to the existing search functionality.
+
+Search is NOT a bottom navigation tab.
+
+When tapping the Home search bar:
+
+- Open the Search interface.
+- Focus the input if possible.
+- Preserve existing search and filtering functionality.
+
+The search interface should be accessible from Home without creating a redundant navigation destination.
+
+---
+
+## 6.2 Category shortcuts
+
+Create a visually attractive category shortcut section.
+
+Examples:
+
+- Áo
+- Quần
+- Giày
+- Túi
+- Phụ kiện
+- Đồ cổ
+- Khác
+
+Use distinct, appropriate icons or images.
+
+Avoid using identical generic icons for every category.
+
+Category selection should navigate to filtered product results.
+
+---
+
+## 6.3 Promotional / curated banner
+
+Create a seasonal promotional banner.
+
+Possible themes:
+
+- Christmas thrift finds
+- Vintage winter outfits
+- Săn đồ độc lạ
+- Món quà secondhand ý nghĩa
+
+The banner may contain subtle Christmas decorations.
+
+Use appropriate imagery.
+
+Make the banner interactive.
+
+Do not create a decorative banner with no action.
+
+---
+
+# 7. AUCTION SECTION — HORIZONTAL CAROUSEL
+
+The existing auction items are currently displayed vertically.
+
+Change them into a horizontally scrollable carousel.
+
+Requirements:
+
+- Horizontal swipe gestures.
+- Show approximately 1.5–2 cards at once, depending on screen size.
+- Consistent card width.
+- Smooth scrolling.
+- Visual indication that more cards exist.
+- No full-width vertical auction listing inside Home.
+
+Each auction card should display:
+
+- Product image
+- Auction title
+- Current highest bid
+- Starting price if relevant
+- Countdown
+- Auction status
+- Number of bidders or participants
+- CTA: "Tham gia" / "Đấu giá ngay"
+
+Status:
+
+- Sắp diễn ra
+- Đang diễn ra
+- Sắp kết thúc
+
+The entire card should be tappable.
+
+Navigate to the existing auction detail/room.
+
+Countdowns must use actual time data when available.
+
+Do not create fake countdowns that never update.
+
+---
+
+# 8. NEW ARRIVALS — HORIZONTAL CAROUSEL
+
+Change the existing "Hàng mới lên kệ" section into a horizontal carousel.
+
+Requirements:
+
+- Horizontal scrolling.
+- Show approximately 1.5–2 cards at once.
+- Attractive product images.
+- Consistent card width.
+- Product title.
+- Price.
+- Condition.
+- Category.
+- Seller information if available.
+
+Tapping a product opens its existing product detail screen.
+
+Do not create excessively tall cards.
+
+---
+
+# 9. NEARBY SECONDHAND STORES
+
+Rename the existing:
+
+"Tiệm đồ si uy tín"
+
+to:
+
+**"Tiệm đồ si được yêu thích gần bạn"**
+
+This section should appear below New Arrivals.
+
+The purpose is to discover nearby sellers and secondhand products.
+
+Do not display this section as a vertical full-width list.
+
+Use a two-column product grid.
+
+## Product cards
+
+Each card must display:
+
+### Product image
+
+A real, relevant product image.
+
+### Product title
+
+Readable, preferably limited to two lines.
+
+### Price
+
+Prominently displayed.
+
+Vietnamese currency formatting:
+
+Example:
+
+`250.000đ`
+
+### Distance
+
+Display kilometers.
+
+Examples:
+
+- 1,2 km
+- 3,5 km
+- 8 km
+
+Use actual location/distance data when available.
+
+If precise location is unavailable, use demo-compatible data.
+
+### Condition percentage
+
+Display the item's estimated condition.
+
+Examples:
+
+- 95%
+- 90%
+- 80%
+
+Use the existing condition system.
+
+If only condition enums are available, use a consistent presentation mapping:
+
+- NEW_WITH_TAGS: 100%
+- LIKE_NEW: 95%
+- GOOD: 85%
+- FAIR: 70%
+- VINTAGE_WORN: 60%
+
+These are frontend demo presentation values, not new backend business rules.
+
+### Category
+
+Examples:
+
+- Quần
+- Áo
+- Giày
+- Túi
+- Phụ kiện
+- Đồ cổ
+
+### Seller
+
+Display the seller/store name if available.
+
+Optionally:
+
+- Avatar
+- Verified badge
+
+## Grid requirements
+
+- Two cards per row.
+- Scroll vertically.
+- Product image ratio approximately 4:5.
+- White surfaces.
+- Subtle border.
+- Rounded corners.
+- Minimal shadow.
+- Compact metadata.
+- Price visually emphasized.
+
+Tapping a card opens the product detail page.
+
+Support favorite functionality if already implemented.
+
+---
+
+# 10. PRODUCT DISCOVERY FEED — PASS ĐỒ 2HAND
+
+Below the nearby popular secondhand stores section, create a product discovery feed.
+
+Use a two-column grid.
+
+The feed should display products that are publicly approved and available.
+
+Product cards should include:
+
+- Image
+- Title
+- Price
+- Category
+- Condition percentage
+- Distance if available
+- Seller
+- Favorite button
+
+Use realistic product data.
+
+Avoid placeholder product names.
+
+Ensure the feed uses the existing product data architecture.
+
+Do not publish pending listings in public feeds.
+
+---
+
+# 11. SELLING ENTRY POINT
+
+The central bottom navigation button is:
+
+**Đăng bán**
+
+When tapped, open a polished bottom sheet with two clear options.
+
+## Option 1 — Đăng bán sản phẩm
+
+Description:
+
+"Đăng món đồ với giá cố định. Người mua có thể đặt mua ngay."
+
+Navigate to the existing fixed-price product listing creation flow.
+
+## Option 2 — Tạo phiên đấu giá
+
+Description:
+
+"Tạo phiên đấu giá với giá khởi điểm và thời gian tham gia."
+
+Navigate to the existing auction creation flow.
+
+Use:
+
+- Appropriate icons
+- Product imagery where useful
+- Clear descriptions
+- Primary CTA
+- Interactive feedback
+
+Do not create duplicate forms.
+
+Authentication should follow existing logic.
+
+---
+
+# 12. FIXED-PRICE SELLER FLOW
+
+Inspect the current product listing creation implementation.
+
+Upgrade it if necessary.
+
+Seller should be able to:
+
+- Add multiple images.
+- Preview images.
+- Remove images.
+- Select cover image.
+- Enter title.
+- Enter description.
+- Select category.
+- Select subcategory if supported.
+- Select condition.
+- Enter price.
+- Enter quantity.
+- Enter location.
+- Provide shipping details if applicable.
+
+Use existing models and services.
+
+Validate:
+
+- Title required.
+- Category required.
+- Price valid and greater than zero.
+- Required images.
+- Required fields.
+
+Use Vietnamese error messages.
+
+## Moderation workflow
+
+New listings must not immediately appear publicly.
+
+Workflow:
+
+`Seller creates listing → Submits → Pending approval → Admin reviews → Approved → Public marketplace`
+
+Display:
+
+"Đã gửi bài đăng. Bài đăng của bạn đang chờ duyệt."
+
+Statuses:
+
+- Draft
+- Pending approval
+- Approved
+- Rejected
+- Sold
+
+Integrate with existing backend moderation if available.
+
+If moderation is not connected, implement a demo-compatible workflow using existing architecture.
+
+Do not automatically publish unapproved listings.
+
+---
+
+# 13. SELLER LISTING MANAGEMENT
+
+In the Profile section, provide access to:
+
+- My listings
+- Pending approval
+- Approved/active
+- Rejected
+- Sold
+
+Display status badges.
+
+For rejected listings:
+
+- Display rejection reason if available.
+- Allow editing/resubmission if supported.
+
+For approved listings:
+
+- Allow existing management actions.
+
+Do not break seller functionality.
+
+---
+
+# 14. AUCTION CENTER — DEDICATED TAB
+
+The Auction tab should be a dedicated auction center.
+
+It should not be merely another product feed.
+
+## Structure
+
+### Header
+
+Title:
+
+"Đấu giá"
+
+Subtitle:
+
+"Săn món đồ độc đáo với mức giá của bạn."
+
+### Sections / filters
+
+- Tất cả
+- Sắp diễn ra
+- Đang diễn ra
+- Sắp kết thúc
+
+## Upcoming auctions
+
+Display:
+
+- Product image
+- Auction title
+- Starting price
+- Start date/time
+- Countdown
+- Participants
+- CTA: "Đăng ký tham gia"
+
+## Live auctions
+
+Display:
+
+- Product image
+- Current highest bid
+- Countdown
+- Bidder count
+- Live status
+- CTA: "Vào phòng đấu giá"
+
+## Ending soon
+
+Highlight auctions ending soon.
+
+Use distinctive countdown indicators.
+
+## My auctions
+
+Provide access to:
+
+- Registered auctions
+- Participating auctions
+- Won auctions
+- Lost auctions
+
+Reuse existing auction functionality.
+
+---
+
+# 15. CREATE AUCTION FLOW
+
+Create or improve the auction creation screen.
+
+Fields:
+
+- Product images
+- Title
+- Description
+- Category
+- Condition
+- Starting price
+- Minimum bid increment
+- Auction start date
+- Start time
+- End time or duration
+- Quantity
+
+Respect existing auction business rules.
+
+For demo auctions, quantity should generally be one if the existing system requires it.
+
+Provide:
+
+- Validation
+- Preview
+- Clear Vietnamese labels
+- Friendly error messages
+
+New auctions must follow the existing moderation workflow.
+
+Workflow:
+
+`Create auction → Pending approval → Approved → Scheduled → Live → Ended`
+
+Unapproved auctions must not appear publicly.
+
+---
+
+# 16. AUCTION DETAIL & PARTICIPATION
+
+Upcoming auction detail should display:
+
+- Product image gallery
+- Title
+- Description
+- Starting price
+- Current price
+- Start date/time
+- Countdown
+- Seller information
+- Product condition
+- Participant count
+- Auction rules
+- Bid increment
+
+Primary CTA:
+
+"Đăng ký tham gia đấu giá"
+
+or
+
+"Giữ chỗ tham gia"
+
+After registration:
+
+- Display success state.
+- Display registration status.
+- Add auction to registered auctions.
+- Allow cancellation if supported.
+- Show reminders/notifications if supported.
+
+---
+
+# 17. AUCTION ROOM
+
+Create or improve the live auction room.
+
+This should be a polished, interactive screen.
+
+## Product section
+
+- Image
+- Title
+- Product condition
+- Seller
+
+## Auction status
+
+- Live indicator
+- Countdown
+- Auction status
+
+## Bid information
+
+- Current highest bid
+- Starting price
+- Minimum next bid
+- Bid increment
+
+## Bid history
+
+Display:
+
+- Bidder avatar or identifier
+- Bid amount
+- Time
+
+Highlight the current highest bid.
+
+## Bidding controls
+
+Provide:
+
+- Bid amount input.
+- Quick increment buttons if appropriate.
+- CTA: "Đặt giá"
+
+Validate minimum bid.
+
+When a bid is submitted:
+
+- Update bid history.
+- Update highest bid.
+- Update minimum next bid.
+- Show success/error feedback.
+
+Use backend bidding if available.
+
+Otherwise, implement a demo-compatible simulation.
+
+Do not falsely claim real payment or real transactions.
+
+## Auction result
+
+When the auction ends:
+
+- Display winner.
+- Winning price.
+- Result state.
+
+If current user wins:
+
+- Provide CTA to existing checkout/payment.
+
+If current user loses:
+
+- Display clear result.
+
+Do not create a duplicate payment implementation.
+
+---
+
+# 18. MESSAGING — CHECK EXISTING IMPLEMENTATION FIRST
+
+I am not certain whether messaging has already been developed.
+
+Before implementing messaging:
+
+**Inspect the entire existing codebase and determine whether messaging/chat functionality already exists.**
+
+Inspect:
+
+- Chat screens
+- Message models
+- Conversation models
+- Repositories
+- Services
+- API endpoints
+- WebSocket/realtime implementation if any
+- Navigation routes
+- Existing image upload functionality
+- Existing notification integration
+
+If messaging already exists:
+
+- Do not create a duplicate system.
+- Improve and integrate it into the new bottom navigation.
+- Preserve its existing functionality.
+- Upgrade its UI to match the new brand identity.
+
+If messaging does NOT exist, implement the simplest functional demo-compatible messaging feature.
+
+---
+
+# 19. MESSAGING — REQUIRED BASIC FUNCTIONALITY
+
+The new bottom navigation destination is:
+
+**Tin nhắn**
+
+## 19.1 Conversation list
+
+Create a conversation list screen.
+
+Each conversation should display:
+
+- User avatar
+- User name
+- Last message
+- Timestamp
+- Unread message count
+- Online status if available
+
+Optional:
+
+- Product context for the conversation
+- Product thumbnail
+- Conversation category
+
+Include:
+
+- Empty state
+- Search conversations if practical
+
+Tapping a conversation opens the chat screen.
+
+## 19.2 Chat screen
+
+Users should be able to send and receive text messages.
+
+Requirements:
+
+- Message bubbles.
+- Sender/receiver distinction.
+- Timestamps.
+- Scrollable message history.
+- Text input.
+- Send button.
+- Keyboard handling.
+- Auto-scroll to latest message when appropriate.
+
+## 19.3 Emoji
+
+Users must be able to send emojis.
+
+Implement a simple emoji picker or integrate an existing emoji solution if already available.
+
+Support emojis within ordinary text messages.
+
+Do not unnecessarily overcomplicate the feature.
+
+## 19.4 Image attachments
+
+Users must be able to:
+
+- Select images from their device.
+- Preview before sending.
+- Send images within chat.
+- View sent images.
+- Handle image loading errors.
+
+Use the existing image picker and upload infrastructure where available.
+
+If the environment cannot access gallery functionality, create a demo-compatible solution and clearly report the limitation.
+
+## 19.5 Video attachments
+
+Users must be able to:
+
+- Select videos from their device.
+- Preview the selected video or its thumbnail.
+- Send video attachments.
+- Display a video thumbnail in the conversation.
+- Open/play the video using the existing supported player or platform functionality.
+
+Implement sensible file size and type validation where appropriate.
+
+If video upload/backend support does not exist, use a demo-compatible local attachment flow and clearly identify its limitation.
+
+Do not claim videos are uploaded to a remote server if they are only stored locally.
+
+## 19.6 Conversation entry points
+
+Users should be able to open a conversation from appropriate places:
+
+- Product detail → Chat with seller
+- Seller profile → Message seller
+- Auction detail → Message seller, if supported
+- Existing conversation list
+
+When opening a conversation from a product:
+
+- Preserve product context where possible.
+- Display a compact product reference in the chat.
+- Avoid creating duplicate conversations with the same seller unnecessarily.
+
+## 19.7 Demo compatibility
+
+If the backend currently has no messaging support:
+
+Implement a coherent local/demo messaging architecture.
+
+Users should be able to demonstrate:
+
+1. Open conversation.
+2. Send text.
+3. Send emoji.
+4. Attach image.
+5. Attach video.
+6. View messages in conversation history.
+7. Navigate back to conversation list.
+
+Do not leave nonfunctional controls.
+
+Clearly distinguish local/demo functionality from real backend messaging in your final report.
+
+---
+
+# 20. PERSONAL PROFILE — USER PROFILE & MARKETPLACE ACTIVITY
+
+Redesign the Profile tab.
+
+The profile should be more than a settings page.
+
+It should represent the user's identity and marketplace activity.
+
+## 20.1 Upper profile section
+
+Display:
+
+- Avatar
+- Username
+- Display name
+- Basic personal information
+- Seller information if applicable
+- Edit profile button
+
+Use a clean profile layout.
+
+Do not overload the header with too many details.
+
+## 20.2 Marketplace profile content
+
+Below the profile information, display the user's content feed.
+
+The profile should show:
+
+- User posts
+- Products currently listed for sale
+- Products already sold
+
+Create a clear organization.
+
+Possible tabs/segmented controls:
+
+### Bài đăng
+
+User's posts and marketplace-related posts.
+
+### Đang bán
+
+Currently approved and available products.
+
+### Đã bán
+
+Previously sold products.
+
+If useful, also provide:
+
+- Đang chờ duyệt
+- Đấu giá của tôi
+
+But do not overload the profile with too many tabs.
+
+Keep the most important sections visible.
+
+## 20.3 Profile product grid
+
+Use a two-column product grid.
+
+Display:
+
+- Product image
+- Title
+- Price
+- Status
+- Condition
+- Category
+
+For sold products:
+
+- Display a clear "Đã bán" badge.
+- Do not display sold products as available for purchase.
+
+For pending listings:
+
+- Display "Chờ duyệt".
+
+For rejected listings:
+
+- Display "Bị từ chối" and the reason if available.
+
+## 20.4 User posts
+
+If the application supports social posts:
+
+Display user posts in a feed or card layout.
+
+Posts should support the existing post functionality.
+
+If posts contain products:
+
+- Show relevant product details.
+- Show purchase/auction status.
+- Link to the relevant product or auction.
+
+## 20.5 Profile navigation
+
+Retain existing features:
+
+- Edit personal information
+- Purchase history
+- Favorites
+- My listings
+- Seller hub
+- My auctions
+- Registered auctions
+- Won auctions
+- Settings
+
+Organize them clearly.
+
+Do not remove existing profile functionality.
+
+---
+
+# 21. PRODUCT IMAGES — MAJOR IMPROVEMENT
+
+Currently, many products throughout the application do not have appropriate images.
+
+This must be fixed.
+
+Product imagery is essential for a secondhand marketplace.
+
+## Image requirements
+
+Every product card should have an image.
+
+Ensure images exist for:
+
+- Home auction carousel
+- New arrivals carousel
+- Nearby products
+- Marketplace discovery feed
+- Search results
+- Auction center
+- Auction detail
+- Auction room
+- Product detail
+- Seller listing preview
+
+## Image strategy
+
+Inspect the current image architecture.
+
+Prefer:
+
+1. Existing assets.
+2. Existing product image URLs.
+3. Bundled local assets.
+4. Appropriate demo product imagery.
+5. Stable image sources compatible with the current implementation.
+
+Avoid:
+
+- Empty image containers.
+- Generic placeholders.
+- Repeating the same unrelated image for every product.
+- Random abstract graphics.
+- Broken URLs.
+
+Use appropriate imagery representing:
+
+- Vintage shirts
+- Jackets
+- Jeans
+- Trousers
+- Sneakers
+- Bags
+- Accessories
+- Watches
+- Vintage collectibles
+- Secondhand fashion
+
+Ensure:
+
+- Loading states
+- Error fallbacks
+- Proper cropping
+- Consistent aspect ratios
+- Image caching if supported
+
+The images should look like believable product photography.
+
+If the environment supports creating or bundling local image assets, add suitable assets for demo products.
+
+---
+
+# 22. WEBSITE UI REDESIGN — APPLY THE SAME BRAND IDENTITY
+
+The project may contain an existing website or web interface.
+
+Inspect the existing website source and determine its structure.
+
+I want the website UI to be redesigned to match the new izithrift Design Brief.
+
+The website and mobile application should feel like the same brand.
+
+## Website color system
+
+Use:
+
+- Background `#F4F5F7`
+- Surface `#FFFFFF`
+- Primary `#174D38`
+- CTA `#C65335`
+- Accent `#D6AE55`
+
+Use Be Vietnam Pro consistently.
+
+## Website brand header
+
+Use the same logo and wordmark.
+
+Create a consistent header:
+
+`[Logo] [izithrift] [Navigation / flexible space] [Search or relevant actions] [Notifications if applicable] [Cart] [Profile]`
+
+Adapt to the website layout appropriately.
+
+Do not blindly copy the mobile navigation onto desktop.
+
+## Website layout
+
+- Responsive.
+- Modern marketplace.
+- Product-first.
+- Clean white cards.
+- Subtle borders.
+- Minimal shadows.
+- Rounded corners.
+- Horizontal product carousels where appropriate.
+- Two-column or multi-column product grid depending on viewport.
+
+## Website Home
+
+Use a clear marketplace hierarchy:
+
+- Header
+- Search
+- Categories
+- Seasonal banner
+- Featured auctions
+- New arrivals
+- Nearby/featured sellers
+- Marketplace product grid
+
+## Website Christmas theme
+
+Apply subtle seasonal decorations:
+
+- Pine branches
+- Warm lights
+- Snow
+- Gift accents
+- Christmas-themed promotional banners
+
+Keep decorations subtle.
+
+Do not obscure the products.
+
+## Website consistency
+
+Ensure the website:
+
+- Uses the same logo.
+- Uses the same typography.
+- Uses the same colors.
+- Uses the same brand personality.
+- Uses similar product card design.
+- Uses the same status/badge system.
+
+Do not rebuild the entire website architecture.
+
+Do not change backend functionality.
+
+Do not introduce unnecessary dependencies.
+
+Prioritize UI and responsive design.
+
+---
+
+# 23. COMPONENT REUSE AND DESIGN SYSTEM
+
+Create or improve a shared design system.
+
+Where appropriate, standardize:
+
+- Color tokens
+- Typography
+- Spacing
+- Radius
+- Card styles
+- Buttons
+- Badges
+- Navigation
+- Headers
+- Dialogs
+- Bottom sheets
+- Product cards
+- Auction cards
+- Image containers
+- Loading states
+- Empty states
+
+Create reusable components rather than duplicating visual implementations.
+
+The global header must be reusable.
+
+Product cards should have consistent behavior and visual styling.
+
+Auction cards should have a distinct visual identity but remain consistent with the marketplace.
+
+---
+
+# 24. FUNCTIONALITY PRESERVATION
+
+Before modifying source code, inspect the existing implementation.
+
+Do not break:
+
+- Authentication
+- Product listing
+- Product detail
+- Fixed-price purchasing
+- Shopping cart
+- Checkout
+- QR payment demo
+- Payment success
+- Order history
+- Auction creation
+- Auction registration
+- Auction bidding
+- Auction results
+- Seller functionality
+- Product approval
+- Profile editing
+- Favorites
+- Notifications
+- Existing API integration
+
+Preserve business logic.
+
+Do not change database schemas or backend contracts unless absolutely necessary.
+
+Prioritize demo-ready frontend flows.
+
+---
+
+# 25. NAVIGATION FLOW SUMMARY
+
+## Main navigation
+
+`Trang chủ | Tin nhắn | Đăng bán | Đấu giá | Cá nhân`
+
+## Fixed-price selling
+
+`Bottom Navigation → Đăng bán → Đăng sản phẩm → Preview → Submit → Pending Approval → Seller Listings`
+
+## Auction creation
+
+`Bottom Navigation → Đăng bán → Tạo đấu giá → Preview → Submit → Pending Approval → Seller Auction Management`
+
+## Auction participation
+
+`Bottom Navigation → Đấu giá → Upcoming Auction → Register → Auction Room → Bid → Result → Checkout if Won`
+
+## Product discovery
+
+`Home → New Arrivals → Product Detail`
+
+`Home → Nearby Popular Secondhand Stores → Product Detail`
+
+`Home → Marketplace Feed → Product Detail`
+
+## Messaging
+
+`Home/Product Detail → Message Seller → Chat`
+
+`Bottom Navigation → Tin nhắn → Conversation → Send Text/Emoji/Image/Video`
+
+## Profile
+
+`Bottom Navigation → Cá nhân → Profile Information → User Posts / Active Listings / Sold Items`
+
+## Shopping
+
+`Global Header → Cart → Checkout → QR Payment → Payment Success`
+
+## Notifications
+
+`Global Header → Notifications → Relevant Product/Order/Auction/Message`
+
+---
+
+# 26. IMPLEMENTATION APPROACH
+
+Before implementation:
+
+1. Inspect the repository.
+2. Identify mobile and website codebases.
+3. Inspect existing navigation.
+4. Inspect the current upper navigation/header.
+5. Inspect the bottom navigation.
+6. Inspect Explore and Search.
+7. Inspect messaging implementation.
+8. Inspect Profile.
+9. Inspect listing creation.
+10. Inspect auction functionality.
+11. Inspect product image architecture.
+12. Inspect website components.
+13. Identify reusable components.
+14. Identify existing functionality that must be preserved.
+
+Then implement the changes directly.
+
+You are authorized to make the necessary UI and frontend implementation changes within the existing architecture.
+
+Do not stop after writing a plan.
+
+Do not only produce static designs.
+
+Do not create a second application.
+
+Do not remove working functionality.
+
+Do not make unnecessary backend changes.
+
+---
+
+# 27. TESTING AND QUALITY ASSURANCE
+
+After implementation:
+
+## Flutter
+
+- Run Dart format.
+- Run Flutter analyze.
+- Fix issues introduced by the implementation.
+- Run relevant tests.
+- Run the full test suite if possible.
+
+## Website
+
+- Run the existing build.
+- Fix build errors introduced by the changes.
+- Verify responsive behavior.
+- Check desktop and mobile layouts.
+
+## Functional verification
+
+Verify:
+
+- Bottom navigation.
+- Home.
+- Search.
+- Notifications.
+- Cart.
+- Messaging.
+- Text messages.
+- Emojis.
+- Image attachments.
+- Video attachments.
+- Selling modal.
+- Fixed-price listing flow.
+- Listing moderation.
+- Auction creation.
+- Auction registration.
+- Auction room.
+- Bidding.
+- Auction result.
+- Profile.
+- User posts.
+- Active listings.
+- Sold listings.
+- Product details.
+- Checkout.
+- QR payment demo.
+
+## Visual verification
+
+Check:
+
+- Consistent upper navigation.
+- Logo.
+- Typography.
+- Color palette.
+- Product imagery.
+- Horizontal carousels.
+- Two-column product grid.
+- Bottom navigation.
+- Christmas decoration.
+- Responsive behavior.
+- Overflow.
+- Keyboard handling.
+- Empty/loading/error states.
+
+Do not falsely claim that tests passed if the environment could not execute them.
+
+---
+
+# 28. FINAL REPORT
+
+At the end, provide a detailed implementation report.
+
+## A. Brand and design
+
+- Logo created.
+- Brand colors applied.
+- Typography applied.
+- Christmas theme applied.
+- Mobile design updated.
+- Website design updated.
+
+## B. Navigation
+
+- New bottom navigation.
+- Explore removed.
+- Search migrated.
+- Global upper navigation standardized.
+
+## C. Home Feed
+
+- Search.
+- Categories.
+- Banner.
+- Auction carousel.
+- New arrivals carousel.
+- Nearby popular secondhand stores.
+- Two-column marketplace feed.
+
+## D. Messaging
+
+State whether messaging already existed.
+
+If it existed, describe improvements.
+
+If implemented from scratch, list:
+
+- Conversation list
+- Text messaging
+- Emoji
+- Image attachments
+- Video attachments
+
+Clearly distinguish backend-connected features from demo/local features.
+
+## E. Profile
+
+- Basic profile.
+- User posts.
+- Active listings.
+- Sold products.
+- Seller management.
+
+## F. Selling and Auctions
+
+Describe the completed workflows.
+
+## G. Website
+
+Describe the pages/components redesigned.
+
+## H. Files modified
+
+List relevant files.
+
+## I. Testing
+
+Provide exact results:
+
+- Flutter analyze.
+- Flutter tests.
+- Website build.
+- Any tests not executed.
+
+## J. Remaining issues
+
+Clearly list unfinished features and limitations.
+
+---
+
+# FINAL OBJECTIVE
+
+The final application should feel like a coherent, polished, modern C2C secondhand marketplace with a distinctive Cozy Vintage Christmas identity.
+
+The mobile app should have five clear destinations:
+
+**Trang chủ — Browse and discover**
+
+**Tin nhắn — Communicate with buyers and sellers**
+
+**Đăng bán — Create a fixed-price listing or auction**
+
+**Đấu giá — Discover and participate in auctions**
+
+**Cá nhân — Manage profile and marketplace activity**
+
+The global upper navigation should consistently display:
+
+**[Logo] [izithrift] [Flexible Space] [Notifications] [Shopping Cart]**
+
+The Home Feed should prioritize products, auctions, and discovery.
+
+Messaging should support text, emoji, image, and video attachments.
+
+Profile should display the user's basic information and marketplace content, including posts, currently listed products, and sold products.
+
+The website and mobile application should share the same brand identity and design language.
+
+**Implement the changes directly in the existing codebase. Prioritize usability, visual consistency, working interactions, and demonstrable end-to-end flows.**

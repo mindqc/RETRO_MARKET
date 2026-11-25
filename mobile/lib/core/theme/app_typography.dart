@@ -4,26 +4,27 @@ import 'app_colors.dart';
 
 /// Typography tokens for RETRO MARKET (izithrift).
 ///
-/// Editorial headlines & brand wordmark use Fraunces; interface text uses Be Vietnam Pro.
-/// Prices use crisp crimson tabular figures (#BC2D25) matching the approved Home Page reference.
+/// Uses Be Vietnam Pro consistently across brand wordmarks, headers, body text,
+/// buttons, product titles, prices, metadata, badges, and dialogs for crisp
+/// Vietnamese diacritic readability and modern e-commerce clarity.
 class AppTypography {
   AppTypography._();
 
-  static const String fontHeading = 'Fraunces';
+  static const String fontHeading = 'BeVietnamPro';
   static const String fontBody = 'BeVietnamPro';
 
-  static const List<String> headingFallbacks = ['Georgia', 'serif'];
+  static const List<String> headingFallbacks = ['Roboto', 'Arial', 'sans-serif'];
   static const List<String> bodyFallbacks = ['Roboto', 'Arial', 'sans-serif'];
 
   // Brand wordmark
   static const TextStyle brandWordmark = TextStyle(
     fontFamily: fontHeading,
     fontFamilyFallback: headingFallbacks,
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: FontWeight.w800,
     color: AppColors.pineDeep,
     height: 1.1,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
   );
 
   // Display and editorial headings

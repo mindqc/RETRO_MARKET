@@ -7,11 +7,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/auction_card_model.dart';
 import '../viewmodels/my_auctions_view_model.dart';
 
-/// Screen M-AC-02: My Auctions (Participating, Watchlist, Won)
+/// Screen M-AC-02: My Auctions (Participating, Watchlist / Reserved, Won)
 class MyAuctionsScreen extends ConsumerStatefulWidget {
   const MyAuctionsScreen({super.key});
 
@@ -79,7 +80,9 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
         ),
         title: Text(
           'Đấu Giá Của Tôi',
-          style: AppTypography.headingMedium.copyWith(color: AppColors.pineDeep),
+          style: AppTypography.headingMedium.copyWith(
+            color: AppColors.pineDeep,
+          ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
@@ -179,9 +182,7 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
-          color: item.isOutbid
-              ? AppColors.ctaTerracotta
-              : AppColors.borderWarm,
+          color: item.isOutbid ? AppColors.ctaTerracotta : AppColors.borderWarm,
           width: item.isOutbid ? 1.5 : 1,
         ),
         boxShadow: DesignTokens.cardElevation,
@@ -232,6 +233,47 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
               ),
             ),
           ],
+          if (currentTab == 'watchlist') ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              color: item.isScheduled
+                  ? AppColors.verifiedLeafBg
+                  : AppColors.creamBadgeSoft,
+              child: Row(
+                children: [
+                  Icon(
+                    item.isScheduled
+                        ? Icons.notifications_active_rounded
+                        : Icons.gavel_rounded,
+                    size: 16,
+                    color: item.isScheduled
+                        ? AppColors.verifiedLeaf
+                        : AppColors.priceCrimson,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.isScheduled
+                        ? '⏰ ĐÃ GIỮ CHỖ • SẮP DIỄN RA'
+                        : (item.isLive
+                              ? '🔴 ĐANG DIỄN RA'
+                              : '✓ ĐÃ KẾT THÚC'),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: item.isScheduled
+                          ? AppColors.verifiedLeaf
+                          : AppColors.priceCrimson,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${item.watchCount} người quan tâm',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (currentTab == 'won') ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -265,29 +307,14 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
+                  RetroProductImage(
+                    imageUrl: item.primaryImageUrl,
+                    title: item.productTitle,
+                    categoryName: item.categoryName,
+                    productId: item.productId,
+                    width: 88,
+                    height: 88,
                     borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 88,
-                      height: 88,
-                      color: AppColors.surfaceWarm,
-                      child: item.primaryImageUrl != null &&
-                              item.primaryImageUrl!.isNotEmpty
-                          ? Image.network(
-                              item.primaryImageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(
-                                Icons.image_not_supported_outlined,
-                                color: AppColors.textMuted,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.gavel_rounded,
-                              color: AppColors.pineDeep,
-                              size: 34,
-                            ),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -306,11 +333,15 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
                         Row(
                           children: [
                             Text(
-                              'Cao nhất: ',
+                              item.isScheduled ? 'Khởi điểm: ' : 'Cao nhất: ',
                               style: AppTypography.caption,
                             ),
                             Text(
-                              VndFormatter.format(item.currentHighestBid),
+                              VndFormatter.format(
+                                item.isScheduled
+                                    ? item.startingPrice
+                                    : item.currentHighestBid,
+                              ),
                               style: AppTypography.priceMedium.copyWith(
                                 color: AppColors.priceCrimson,
                                 fontSize: 15.5,
@@ -340,6 +371,52 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
               ),
             ),
           ),
+          if (currentTab == 'watchlist') ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ref
+                            .read(myAuctionsViewModelProvider.notifier)
+                            .toggleWatch(item.id);
+                      },
+                      icon: const Icon(
+                        Icons.notifications_off_outlined,
+                        size: 16,
+                      ),
+                      label: Text(
+                        item.isScheduled ? 'Hủy giữ chỗ' : 'Bỏ theo dõi',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textMuted,
+                        side: const BorderSide(color: AppColors.borderWarm),
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          context.push(AppRoutes.auctionRoomPath(item.id)),
+                      icon: const Icon(Icons.gavel_rounded, size: 16),
+                      label: Text(
+                        item.isLive ? 'Vào đấu giá' : 'Xem chi tiết',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.pineBanner,
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (currentTab == 'participating' && item.isOutbid) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
