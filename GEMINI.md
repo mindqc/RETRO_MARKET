@@ -34,6 +34,8 @@
 3. **Append-Only Financial Ledger:** Never `UPDATE` or `DELETE` records in `escrow_transactions` or `wallet_transactions`. Use `DECIMAL/NUMERIC` for currency.
 4. **Order Snapshot:** Store product name, price, condition, and image snapshot in `order_items` at checkout time.
 5. **Concurrency & Locking:** Use `DB::transaction()` and `lockForUpdate()` for simultaneous auction bids, order creation, and escrow releases.
+
+/// test gas
 6. **Fixed Expiration Timestamps & Demo Mode:** Store explicit timestamps (`payment_expires_at`, `auto_complete_at`, `auction_ends_at`) on records. Support `DEMO_MODE=true` with configurable durations and Admin Developer Tools calling idempotent Service classes.
 
 ## 4. Controlled Development Task Protocol
