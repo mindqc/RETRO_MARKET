@@ -32,9 +32,9 @@ class DefectAuthenticityBox extends StatelessWidget {
             title: 'Lý do từ chối duyệt (DEC-05)',
             description: rejectionReason!,
             icon: Icons.cancel_outlined,
-            backgroundColor: const Color(0xFFFDE8E8),
-            borderColor: const Color(0xFFF8B4B4),
-            primaryColor: AppColors.statusDanger,
+            backgroundColor: AppColors.priceCrimsonSoft,
+            borderColor: AppColors.priceCrimsonBorder,
+            primaryColor: AppColors.priceCrimson,
           ),
           if (hasDefect) const SizedBox(height: DesignTokens.spaceMd),
         ],
@@ -43,9 +43,9 @@ class DefectAuthenticityBox extends StatelessWidget {
             title: 'Lưu ý khuyết tật & hao mòn vintage (BR-PR-03)',
             description: defectInfo!,
             icon: Icons.info_outline,
-            backgroundColor: const Color(0xFFFFF9E6),
-            borderColor: const Color(0xFFFFE799),
-            primaryColor: const Color(0xFFB47800),
+            backgroundColor: AppColors.creamBadgeSoft,
+            borderColor: AppColors.creamBadgeBorder,
+            primaryColor: AppColors.creamBadgeText,
           ),
       ],
     );
@@ -61,10 +61,10 @@ class DefectAuthenticityBox extends StatelessWidget {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(

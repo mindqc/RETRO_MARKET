@@ -1,15 +1,16 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
-import '../../../core/widgets/status_pill_badge.dart';
 import '../../../core/widgets/state_feedback_views.dart';
+import '../../../core/widgets/status_pill_badge.dart';
 import '../models/seller_product_item_model.dart';
 import '../viewmodels/seller_listings_view_model.dart';
 
@@ -22,7 +23,8 @@ class SellerListingsScreen extends ConsumerStatefulWidget {
   const SellerListingsScreen({super.key, this.initialStatus});
 
   @override
-  ConsumerState<SellerListingsScreen> createState() => _SellerListingsScreenState();
+  ConsumerState<SellerListingsScreen> createState() =>
+      _SellerListingsScreenState();
 }
 
 class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
@@ -80,44 +82,79 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
     final vm = ref.watch(sellerListingsViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        title: const Text('Quản lý bài đăng'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: AppColors.primaryTerracotta,
-          labelColor: AppColors.primaryTerracotta,
-          unselectedLabelColor: AppColors.textMuted,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          tabs: _tabs.map((tab) => Tab(text: tab.title)).toList(),
+        backgroundColor: AppColors.canvasParchment,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Quản lý bài đăng',
+          style: AppTypography.headingMedium.copyWith(fontSize: 20),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(46),
+          child: Container(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              indicatorColor: AppColors.priceCrimson,
+              indicatorWeight: 2.5,
+              labelColor: AppColors.priceCrimson,
+              unselectedLabelColor: AppColors.textMuted,
+              labelStyle: AppTypography.labelStrong.copyWith(fontSize: 13),
+              unselectedLabelStyle: AppTypography.bodySmall.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: _tabs.map((tab) => Tab(text: tab.title)).toList(),
+            ),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('fab_create_listing'),
-        backgroundColor: AppColors.primaryTerracotta,
+        backgroundColor: AppColors.ctaTerracotta,
         foregroundColor: AppColors.textLight,
-        icon: const Icon(Icons.add),
-        label: const Text('Đăng bán mới', style: TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 3,
+        shape: const StadiumBorder(),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Đăng bán mới',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         onPressed: () => context.push(AppRoutes.sellerCreateListing),
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primaryTerracotta,
-          onRefresh: () => ref.read(sellerListingsViewModelProvider).loadProducts(refresh: true),
+          color: AppColors.ctaTerracotta,
+          onRefresh: () => ref
+              .read(sellerListingsViewModelProvider)
+              .loadProducts(refresh: true),
           child: vm.state.when(
-            initial: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
+            initial: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.pineDeep),
+            ),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.pineDeep),
+            ),
             error: (msg, err) => RetroErrorRetryView(
               errorMessage: msg,
-              onRetry: () => ref.read(sellerListingsViewModelProvider).loadProducts(refresh: true),
+              onRetry: () => ref
+                  .read(sellerListingsViewModelProvider)
+                  .loadProducts(refresh: true),
             ),
             empty: (msg) => RetroEmptyStateView(
               title: 'Chưa có sản phẩm',
               message: msg ?? 'Không có sản phẩm nào trong mục này.',
               icon: Icons.inventory_2_outlined,
               actionLabel: 'Tải lại',
-              onAction: () => ref.read(sellerListingsViewModelProvider).loadProducts(refresh: true),
+              onAction: () => ref
+                  .read(sellerListingsViewModelProvider)
+                  .loadProducts(refresh: true),
             ),
             success: (items) => _buildProductList(items, vm),
           ),
@@ -126,62 +163,69 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
     );
   }
 
-  Widget _buildProductList(List<SellerProductItemModel> items, SellerListingsViewModel vm) {
+  Widget _buildProductList(
+    List<SellerProductItemModel> items,
+    SellerListingsViewModel vm,
+  ) {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(
-        left: DesignTokens.spaceMd,
-        right: DesignTokens.spaceMd,
-        top: DesignTokens.spaceMd,
-        bottom: 80, // Space for FAB
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 92),
       itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: DesignTokens.spaceMd),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return _buildProductCard(item, vm);
-      },
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => _buildProductCard(items[index], vm),
     );
   }
 
-  Widget _buildProductCard(SellerProductItemModel item, SellerListingsViewModel vm) {
+  Widget _buildProductCard(
+    SellerProductItemModel item,
+    SellerListingsViewModel vm,
+  ) {
     final isAuction = item.listingType == 'AUCTION';
+    final isRejected = item.status == 'REJECTED';
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(
-          color: item.status == 'REJECTED'
-              ? AppColors.statusDanger.withValues(alpha: 0.5)
+          color: isRejected
+              ? AppColors.priceCrimsonBorder
               : AppColors.borderWarm,
+          width: isRejected ? 1.3 : 1,
         ),
         boxShadow: DesignTokens.cardElevation,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // If rejected, show top warning strip
-          if (item.status == 'REJECTED' && item.rejectionReason != null)
+          // Rejected warning strip (DEC-05)
+          if (isRejected && item.rejectionReason != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: const BoxDecoration(
-                color: Color(0xFFFDE8E8),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(DesignTokens.radiusMd),
-                  topRight: Radius.circular(DesignTokens.radiusMd),
+                color: AppColors.priceCrimsonSoft,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(DesignTokens.radiusLg - 1),
+                ),
+                border: Border(
+                  bottom: BorderSide(color: AppColors.priceCrimsonBorder),
                 ),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.statusDanger),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 17,
+                    color: AppColors.priceCrimson,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Lý do từ chối: ${item.rejectionReason}',
                       style: AppTypography.caption.copyWith(
-                        color: AppColors.statusDanger,
-                        fontWeight: FontWeight.w600,
+                        color: AppColors.priceCrimson,
+                        fontWeight: FontWeight.w700,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -192,18 +236,19 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
             ),
 
           Padding(
-            padding: const EdgeInsets.all(DesignTokens.spaceMd),
+            padding: const EdgeInsets.all(14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product Thumbnail
+                // Thumbnail
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  borderRadius: DesignTokens.borderRadiusMd,
                   child: Container(
-                    width: 88,
-                    height: 88,
+                    width: 86,
+                    height: 86,
                     color: AppColors.surfaceWarm,
-                    child: item.primaryImageUrl != null && item.primaryImageUrl!.isNotEmpty
+                    child: item.primaryImageUrl != null &&
+                            item.primaryImageUrl!.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: item.primaryImageUrl!,
                             fit: BoxFit.cover,
@@ -214,73 +259,80 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
                           )
                         : const Icon(
                             Icons.checkroom_outlined,
-                            size: 36,
-                            color: Color(0xFF84664C),
+                            size: 34,
+                            color: AppColors.primaryVintageBrown,
                           ),
                   ),
                 ),
-
-                const SizedBox(width: DesignTokens.spaceMd),
+                const SizedBox(width: 12),
 
                 // Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Text(
                         item.title,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.labelStrong.copyWith(
+                          fontSize: 14.5,
                           color: AppColors.textCharcoal,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-
-                      // Price & Listing Type
+                      const SizedBox(height: 5),
                       Row(
                         children: [
                           Text(
                             VndFormatter.format(item.price),
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppColors.primaryTerracotta,
-                              fontWeight: FontWeight.bold,
+                            style: AppTypography.priceDisplay.copyWith(
+                              fontSize: 15.5,
+                              color: AppColors.priceCrimson,
                             ),
                           ),
                           const SizedBox(width: 8),
                           if (isAuction)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFDE8E8),
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusXs),
+                                color: AppColors.pineDeep,
+                                borderRadius: DesignTokens.borderRadiusFull,
                               ),
                               child: Text(
                                 '🔨 Đấu giá',
                                 style: AppTypography.caption.copyWith(
-                                  color: AppColors.statusDanger,
+                                  color: AppColors.creamBadgeBg,
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-
-                      // Condition & Status Pills
+                      const SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
-                        runSpacing: 4,
+                        runSpacing: 5,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          ConditionBadge(condition: item.condition, isCompact: true),
-                          StatusPillBadge(status: item.status, isCompact: true),
+                          ConditionBadge(
+                            condition: item.condition,
+                            isCompact: true,
+                          ),
+                          StatusPillBadge(
+                            status: item.status,
+                            isCompact: true,
+                          ),
                           if (!isAuction)
                             Text(
                               'Kho: ${item.availableQuantity}',
-                              style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                         ],
                       ),
@@ -291,11 +343,11 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
             ),
           ),
 
-          const Divider(height: 1, color: AppColors.borderWarm),
+          const Divider(height: 1, color: AppColors.borderSubtle),
 
           // Contextual Action Buttons
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: _buildContextActions(item, vm),
           ),
         ],
@@ -303,24 +355,29 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
     );
   }
 
-  Widget _buildContextActions(SellerProductItemModel item, SellerListingsViewModel vm) {
-    // 1. REJECTED: Button to inspect reason & resubmit (DEC-05)
+  Widget _buildContextActions(
+    SellerProductItemModel item,
+    SellerListingsViewModel vm,
+  ) {
+    // 1. REJECTED: Inspect reason & resubmit (DEC-05)
     if (item.status == 'REJECTED') {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           ElevatedButton.icon(
             key: Key('btn_resubmit_${item.id}'),
-            icon: const Icon(Icons.edit_note, size: 18),
+            icon: const Icon(Icons.edit_note_rounded, size: 18),
             label: const Text('Xem lý do & Gửi duyệt lại'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.statusDanger,
+              backgroundColor: AppColors.priceCrimson,
               foregroundColor: AppColors.textLight,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
               ),
+              shape: const StadiumBorder(),
             ),
             onPressed: () {
               context.push(
@@ -333,23 +390,25 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
       );
     }
 
-    // 2. Can Relist (e.g. Unsold Auction DEC-02)
+    // 2. Can Relist (Unsold Auction DEC-02)
     if (item.canRelist) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           ElevatedButton.icon(
             key: Key('btn_relist_${item.id}'),
-            icon: const Icon(Icons.replay, size: 16),
+            icon: const Icon(Icons.replay_rounded, size: 16),
             label: const Text('Tái đăng đấu giá'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondaryPineGreen,
+              backgroundColor: AppColors.pineDeep,
               foregroundColor: AppColors.textLight,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              textStyle: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
               ),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => _showRelistConfirmDialog(item, vm),
           ),
@@ -365,12 +424,10 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
           OutlinedButton(
             key: Key('btn_delete_draft_${item.id}'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.statusDanger,
-              side: const BorderSide(color: AppColors.statusDanger),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-              ),
+              foregroundColor: AppColors.priceCrimson,
+              side: const BorderSide(color: AppColors.priceCrimsonBorder),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => _confirmDeleteDraft(item.id, vm),
             child: const Text('Xóa nháp', style: TextStyle(fontSize: 12)),
@@ -379,12 +436,11 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
           ElevatedButton(
             key: Key('btn_edit_draft_${item.id}'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
+              backgroundColor: AppColors.ctaTerracotta,
               foregroundColor: AppColors.textLight,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-              ),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              shape: const StadiumBorder(),
             ),
             onPressed: () {
               context.push(
@@ -392,7 +448,10 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
                 extra: item,
               );
             },
-            child: const Text('Tiếp tục sửa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Tiếp tục sửa',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       );
@@ -406,26 +465,36 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
         children: [
           OutlinedButton.icon(
             key: Key('btn_toggle_visibility_${item.id}'),
-            icon: Icon(isApproved ? Icons.visibility_off : Icons.visibility, size: 16),
+            icon: Icon(
+              isApproved
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              size: 16,
+            ),
             label: Text(isApproved ? 'Ẩn bài' : 'Hiện lại'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: isApproved ? const Color(0xFF84664C) : AppColors.secondaryPineGreen,
+              foregroundColor: isApproved
+                  ? AppColors.primaryVintageBrown
+                  : AppColors.verifiedLeaf,
               side: BorderSide(
-                color: isApproved ? AppColors.borderWarm : AppColors.secondaryPineGreen,
+                color:
+                    isApproved ? AppColors.borderWarm : AppColors.verifiedLeaf,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              shape: const StadiumBorder(),
             ),
             onPressed: () async {
               final ok = await vm.toggleVisibility(item.id, item.status);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(ok
-                        ? (isApproved ? 'Đã ẩn bài đăng thành công' : 'Đã hiện lại bài đăng')
-                        : 'Không thể cập nhật trạng thái bài đăng'),
+                    content: Text(
+                      ok
+                          ? (isApproved
+                              ? 'Đã ẩn bài đăng thành công'
+                              : 'Đã hiện lại bài đăng')
+                          : 'Không thể cập nhật trạng thái bài đăng',
+                    ),
                   ),
                 );
               }
@@ -443,19 +512,21 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
               backgroundColor: AppColors.surfaceWarm,
               foregroundColor: AppColors.textCharcoal,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                side: const BorderSide(color: AppColors.borderWarm),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              shape: const StadiumBorder(
+                side: BorderSide(color: AppColors.borderWarm),
               ),
             ),
-            child: const Text('Chỉnh sửa', style: TextStyle(fontSize: 12)),
+            child: const Text(
+              'Chỉnh sửa',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       );
     }
 
-    // Default for other states (e.g. SOLD, ARCHIVED, PENDING_REVIEW)
+    // Default for other states (SOLD, ARCHIVED, PENDING_REVIEW)
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -466,7 +537,14 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
               extra: item,
             );
           },
-          child: const Text('Xem chi tiết', style: TextStyle(fontSize: 12, color: Color(0xFF84664C))),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.pineDeep,
+            shape: const StadiumBorder(),
+          ),
+          child: const Text(
+            'Xem chi tiết',
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
@@ -476,44 +554,81 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận xóa bản nháp'),
-        content: const Text('Bạn có chắc chắn muốn xóa bài đăng nháp này không? Thao tác này không thể hoàn tác.'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+          side: const BorderSide(color: AppColors.borderWarm),
+        ),
+        title: Text(
+          'Xác nhận xóa bản nháp',
+          style: AppTypography.headingSmall.copyWith(fontSize: 17),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa bài đăng nháp này không? Thao tác này không thể hoàn tác.',
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusDanger),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.priceCrimson,
+              foregroundColor: AppColors.textLight,
+              shape: const StadiumBorder(),
+              elevation: 0,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               final ok = await vm.deleteDraft(productId);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ok ? 'Đã xóa bản nháp' : 'Xóa thất bại')),
+                  SnackBar(
+                    content: Text(ok ? 'Đã xóa bản nháp' : 'Xóa thất bại'),
+                  ),
                 );
               }
             },
-            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            child: const Text('Xóa'),
           ),
         ],
       ),
     );
   }
 
-  void _showRelistConfirmDialog(SellerProductItemModel item, SellerListingsViewModel vm) {
+  void _showRelistConfirmDialog(
+    SellerProductItemModel item,
+    SellerListingsViewModel vm,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Tái đăng đấu giá'),
-        content: Text('Bạn có muốn mở lại phiên đấu giá cho sản phẩm "${item.title}" với cấu hình tương tự không?'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+          side: const BorderSide(color: AppColors.borderWarm),
+        ),
+        title: Text(
+          'Tái đăng đấu giá',
+          style: AppTypography.headingSmall.copyWith(fontSize: 17),
+        ),
+        content: Text(
+          'Bạn có muốn mở lại phiên đấu giá cho sản phẩm "${item.title}" với cấu hình tương tự không?',
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Đóng'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondaryPineGreen),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.pineDeep,
+              foregroundColor: AppColors.textLight,
+              shape: const StadiumBorder(),
+              elevation: 0,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               final ok = await vm.relistProduct(item.id, {
@@ -523,11 +638,17 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
               });
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ok ? 'Đã tái đăng đấu giá thành công' : 'Lỗi khi tái đăng')),
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? 'Đã tái đăng đấu giá thành công'
+                          : 'Lỗi khi tái đăng',
+                    ),
+                  ),
                 );
               }
             },
-            child: const Text('Tái đăng ngay', style: TextStyle(color: Colors.white)),
+            child: const Text('Tái đăng ngay'),
           ),
         ],
       ),

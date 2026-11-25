@@ -28,10 +28,12 @@ class BidPlacementBottomSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<BidPlacementBottomSheet> createState() => _BidPlacementBottomSheetState();
+  ConsumerState<BidPlacementBottomSheet> createState() =>
+      _BidPlacementBottomSheetState();
 }
 
-class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomSheet> {
+class _BidPlacementBottomSheetState
+    extends ConsumerState<BidPlacementBottomSheet> {
   final TextEditingController _amountController = TextEditingController();
   double? _selectedBidAmount;
   String? _validationError;
@@ -39,16 +41,15 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initDefaultBid();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initDefaultBid());
   }
 
   void _initDefaultBid() {
     final vm = ref.read(liveAuctionViewModelProvider(widget.auctionId));
     final auction = vm.auction;
     if (auction != null) {
-      final defaultBid = vm.outbidConflict?.minimumNextBid ?? auction.minimumNextBid;
+      final defaultBid =
+          vm.outbidConflict?.minimumNextBid ?? auction.minimumNextBid;
       setState(() {
         _selectedBidAmount = defaultBid;
         _amountController.text = defaultBid.toStringAsFixed(0);
@@ -75,7 +76,8 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
     setState(() {
       _selectedBidAmount = parsed;
       if (parsed == null || parsed < minNextBid) {
-        _validationError = 'Mức giá đặt phải từ ${VndFormatter.format(minNextBid)} trở lên.';
+        _validationError =
+            'Mức giá đặt phải từ ${VndFormatter.format(minNextBid)} trở lên.';
       } else {
         _validationError = null;
       }
@@ -86,7 +88,8 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
     final bid = _selectedBidAmount ?? minNextBid;
     if (bid < minNextBid) {
       setState(() {
-        _validationError = 'Mức giá đặt phải từ ${VndFormatter.format(minNextBid)} trở lên.';
+        _validationError =
+            'Mức giá đặt phải từ ${VndFormatter.format(minNextBid)} trở lên.';
       });
       return;
     }
@@ -98,20 +101,19 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('🎉 Bạn đã đặt giá thành công: ${VndFormatter.format(bid)}!'),
-          backgroundColor: AppColors.primaryForestGreen,
+          content: Text(
+            '🎉 Bạn đã đặt giá thành công: ${VndFormatter.format(bid)}!',
+          ),
+          backgroundColor: AppColors.pineDeep,
         ),
       );
-    } else {
-      // If 409 conflict occurred, the sheet stays open and adapts to vm.outbidConflict!
-      if (vm.outbidConflict != null) {
-        final newMin = vm.outbidConflict!.minimumNextBid;
-        setState(() {
-          _selectedBidAmount = newMin;
-          _amountController.text = newMin.toStringAsFixed(0);
-          _validationError = null;
-        });
-      }
+    } else if (vm.outbidConflict != null) {
+      final newMin = vm.outbidConflict!.minimumNextBid;
+      setState(() {
+        _selectedBidAmount = newMin;
+        _amountController.text = newMin.toStringAsFixed(0);
+        _validationError = null;
+      });
     }
   }
 
@@ -122,18 +124,22 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
 
     if (auction == null) {
       return Container(
-        padding: const EdgeInsets.all(DesignTokens.spacingLg),
+        padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusLg)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(DesignTokens.radius2xl),
+          ),
         ),
-        child: const Center(child: CircularProgressIndicator()),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
+        ),
       );
     }
 
-    // Determine current effective minimum next bid (considers 409 latest_state if present)
     final conflict = vm.outbidConflict;
-    final effectiveMinNextBid = conflict?.minimumNextBid ?? auction.minimumNextBid;
+    final effectiveMinNextBid =
+        conflict?.minimumNextBid ?? auction.minimumNextBid;
     final increment = auction.minBidIncrement;
 
     if (_selectedBidAmount == null) {
@@ -150,235 +156,272 @@ class _BidPlacementBottomSheetState extends ConsumerState<BidPlacementBottomShee
       child: Container(
         decoration: const BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusLg)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(DesignTokens.radius2xl),
+          ),
         ),
-        padding: const EdgeInsets.all(DesignTokens.spacingLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderWarm,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderWarm,
+                    borderRadius: DesignTokens.borderRadiusFull,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: DesignTokens.spacingMd),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    '🔨 Đặt Giá Thầu',
+                    style: AppTypography.headingMedium.copyWith(
+                      color: AppColors.pineDeep,
+                      fontSize: 19,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                    onPressed: () {
+                      vm.clearConflict();
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
-            // Header
-            Row(
-              children: [
-                Text(
-                  '🔨 Đặt Giá Thầu',
-                  style: AppTypography.headingMedium.copyWith(color: AppColors.primaryForestGreen),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textCharcoalMuted),
-                  onPressed: () {
-                    vm.clearConflict();
-                    Navigator.of(context).pop();
-                  },
+              if (conflict != null) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.priceCrimsonSoft,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.priceCrimsonBorder,
+                      width: 1.4,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.bolt_rounded,
+                            color: AppColors.priceCrimson,
+                            size: 20,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Mức giá vừa bị người khác vượt qua!',
+                              style: TextStyle(
+                                color: AppColors.priceCrimson,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Đã có người nhanh tay hơn trả ${VndFormatter.format(conflict.currentHighestBid)}. Mức giá tối thiểu mới là ${VndFormatter.format(effectiveMinNextBid)}.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textCharcoal,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: DesignTokens.spacingSm),
 
-            // 409 Conflict Banner (Sticky on Sheet)
-            if (conflict != null) ...[
               Container(
-                margin: const EdgeInsets.only(bottom: DesignTokens.spacingMd),
-                padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  border: Border.all(color: Colors.red.shade300, width: 1.5),
+                  color: AppColors.creamBadgeSoft,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.creamBadgeBorder),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.flash_on, color: Colors.red, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Mức giá vừa bị người khác vượt qua!',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: Colors.red.shade900,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        Text('Giá cao nhất:', style: AppTypography.caption),
+                        Text(
+                          VndFormatter.format(
+                            conflict?.currentHighestBid ??
+                                auction.currentHighestBid,
+                          ),
+                          style: AppTypography.priceMedium.copyWith(
+                            color: AppColors.priceCrimson,
+                            fontSize: 18,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Đã có người nhanh tay hơn trả ${VndFormatter.format(conflict.currentHighestBid)}. Mức giá tối thiểu mới là ${VndFormatter.format(effectiveMinNextBid)}.',
-                      style: AppTypography.bodySmall.copyWith(color: Colors.brown.shade800),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('Bước giá tối thiểu:',
+                            style: AppTypography.caption),
+                        Text(
+                          '+${VndFormatter.format(increment)}',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
+              const SizedBox(height: 16),
 
-            // Current Info Row
-            Container(
-              padding: const EdgeInsets.all(DesignTokens.spacingSm + 4),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceWarm,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              Text(
+                'Chọn nhanh mức giá thầu:',
+                style: AppTypography.bodySmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Giá cao nhất:', style: AppTypography.bodySmall),
-                      Text(
-                        VndFormatter.format(conflict?.currentHighestBid ?? auction.currentHighestBid),
-                        style: AppTypography.priceMedium.copyWith(
-                          color: AppColors.accentBurgundy,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('Bước giá tối thiểu:', style: AppTypography.bodySmall),
-                      Text(
-                        '+${VndFormatter.format(increment)}',
-                        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
+                  _buildBidChip(chip1, 'Tối thiểu'),
+                  _buildBidChip(chip2, '+1 bước'),
+                  _buildBidChip(chip3, '+2 bước'),
                 ],
               ),
-            ),
-            const SizedBox(height: DesignTokens.spacingMd),
+              const SizedBox(height: 16),
 
-            // Quick Bid Chips
-            Text(
-              'Chọn nhanh mức giá thầu:',
-              style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: DesignTokens.spacingSm),
-            Wrap(
-              spacing: DesignTokens.spacingSm,
-              children: [
-                _buildBidChip(chip1, 'Tối thiểu', effectiveMinNextBid),
-                _buildBidChip(chip2, '+1 bước', effectiveMinNextBid),
-                _buildBidChip(chip3, '+2 bước', effectiveMinNextBid),
-              ],
-            ),
-            const SizedBox(height: DesignTokens.spacingMd),
-
-            // Custom Input
-            Text(
-              'Hoặc nhập mức giá tùy chỉnh:',
-              style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: DesignTokens.spacingSm),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              onChanged: (val) => _onAmountChanged(val, effectiveMinNextBid),
-              decoration: InputDecoration(
-                suffixText: 'đ',
-                suffixStyle: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                filled: true,
-                fillColor: AppColors.surfaceWarm,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                  borderSide: const BorderSide(color: AppColors.borderWarm),
+              Text(
+                'Hoặc nhập mức giá tùy chỉnh:',
+                style: AppTypography.bodySmall.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                  borderSide: const BorderSide(color: AppColors.primaryForestGreen, width: 2),
-                ),
-                errorText: _validationError ?? (conflict == null ? vm.bidErrorMessage : null),
               ),
-            ),
-            const SizedBox(height: DesignTokens.spacingLg),
-
-            // Submit CTA Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: vm.isSubmittingBid
-                    ? null
-                    : () => _submitBid(vm, effectiveMinNextBid),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentBurgundy,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                onChanged: (val) => _onAmountChanged(val, effectiveMinNextBid),
+                decoration: InputDecoration(
+                  suffixText: 'đ',
+                  suffixStyle: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
+                  filled: true,
+                  fillColor: AppColors.surfaceSection,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 13,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: AppColors.pineBanner,
+                      width: 1.6,
+                    ),
+                  ),
+                  errorText: _validationError ??
+                      (conflict == null ? vm.bidErrorMessage : null),
                 ),
-                child: vm.isSubmittingBid
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                      )
-                    : Text(
-                        _selectedBidAmount != null
-                            ? 'Xác nhận đặt giá • ${VndFormatter.format(_selectedBidAmount!)}'
-                            : 'Xác nhận đặt giá',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
               ),
-            ),
-          ],
+              const SizedBox(height: 18),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: vm.isSubmittingBid
+                      ? null
+                      : () => _submitBid(vm, effectiveMinNextBid),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.ctaTerracotta,
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: vm.isSubmittingBid
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _selectedBidAmount != null
+                              ? 'Xác nhận đặt giá • ${VndFormatter.format(_selectedBidAmount!)}'
+                              : 'Xác nhận đặt giá',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBidChip(double amount, String subtitle, double minNextBid) {
+  Widget _buildBidChip(double amount, String subtitle) {
     final isSelected = _selectedBidAmount == amount;
     return ChoiceChip(
       selected: isSelected,
       onSelected: (_) => _onChipSelected(amount),
-      selectedColor: AppColors.primaryForestGreen,
-      backgroundColor: AppColors.surfaceWarm,
+      selectedColor: AppColors.pineDeep,
+      backgroundColor: AppColors.creamBadgeSoft,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: isSelected ? AppColors.pineDeep : AppColors.creamBadgeBorder,
+        ),
+      ),
       label: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             VndFormatter.format(amount),
             style: AppTypography.bodySmall.copyWith(
-              color: isSelected ? Colors.white : AppColors.textDarkCharcoal,
-              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : AppColors.textCharcoal,
+              fontWeight: FontWeight.w800,
             ),
           ),
           Text(
             subtitle,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.caption.copyWith(
               fontSize: 10,
-              color: isSelected ? Colors.white70 : AppColors.textCharcoalMuted,
+              color: isSelected
+                  ? AppColors.creamBadgeBg
+                  : AppColors.creamBadgeText,
             ),
           ),
         ],
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-        side: BorderSide(
-          color: isSelected ? AppColors.primaryForestGreen : AppColors.borderWarm,
-        ),
       ),
     );
   }

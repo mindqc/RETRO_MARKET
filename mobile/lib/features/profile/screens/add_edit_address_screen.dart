@@ -14,7 +14,8 @@ class AddEditAddressScreen extends ConsumerStatefulWidget {
   const AddEditAddressScreen({super.key, this.addressToEdit});
 
   @override
-  ConsumerState<AddEditAddressScreen> createState() => _AddEditAddressScreenState();
+  ConsumerState<AddEditAddressScreen> createState() =>
+      _AddEditAddressScreenState();
 }
 
 class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
@@ -103,8 +104,12 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppColors.secondaryPineGreen,
-            content: Text(_isEditMode ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ mới thành công!'),
+            backgroundColor: AppColors.pineDeep,
+            content: Text(
+              _isEditMode
+                  ? 'Cập nhật địa chỉ thành công!'
+                  : 'Thêm địa chỉ mới thành công!',
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -121,8 +126,9 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
         title: Text(_isEditMode ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới'),
       ),
       body: SafeArea(
@@ -137,124 +143,182 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
                   Container(
                     padding: const EdgeInsets.all(DesignTokens.spaceMd),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFDE8E8),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                      border: Border.all(color: const Color(0xFFF8B4B4)),
+                      color: AppColors.priceCrimsonSoft,
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      border: Border.all(color: AppColors.priceCrimsonBorder),
                     ),
                     child: Text(
                       _lastApiException!.message,
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.statusDanger),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.priceCrimson,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: DesignTokens.spaceLg),
                 ],
 
-                // Recipient Name
-                Text('Tên người nhận', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Họ và tên người nhận hàng',
-                    prefixIcon: Icon(Icons.person_outline, size: 20),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Vui lòng nhập tên người nhận.';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-
-                // Recipient Phone
-                Text('Số điện thoại', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    hintText: '0901234567',
-                    prefixIcon: Icon(Icons.phone_outlined, size: 20),
-                  ),
-                  validator: _validateVietnamesePhone,
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-
-                // Province / City
-                Text('Tỉnh / Thành phố', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _provinceController,
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: TP. Hồ Chí Minh, Hà Nội, Đà Nẵng...',
-                    prefixIcon: Icon(Icons.map_outlined, size: 20),
-                  ),
-                  validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập Tỉnh/Thành phố.' : null,
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-
-                // District / Ward
-                Text('Quận / Huyện, Phường / Xã', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _districtController,
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: Phường Bến Nghé, Quận 1',
-                    prefixIcon: Icon(Icons.location_city_outlined, size: 20),
-                  ),
-                  validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập Quận/Huyện, Phường/Xã.' : null,
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-
-                // Street Address
-                Text('Địa chỉ chi tiết (Số nhà, tên đường, tòa nhà)', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _streetController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: Số 45 Lê Duẩn, Chung cư X...',
-                  ),
-                  validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập số nhà, tên đường.' : null,
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-
-                // Default Switch
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd, vertical: 8),
+                  padding: const EdgeInsets.all(DesignTokens.spaceLg),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                    borderRadius: DesignTokens.borderRadiusBanner,
                     border: Border.all(color: AppColors.borderWarm),
+                    boxShadow: DesignTokens.cardElevation,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Đặt làm địa chỉ mặc định', style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-                          Text('Tự động chọn khi thanh toán đơn mua', style: AppTypography.caption),
-                        ],
+                      // Recipient Name
+                      Text('Tên người nhận', style: AppTypography.labelMedium),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Họ và tên người nhận hàng',
+                          prefixIcon: Icon(Icons.person_outline, size: 20),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Vui lòng nhập tên người nhận.';
+                          }
+                          return null;
+                        },
                       ),
-                      Switch(
-                        value: _isDefault,
-                        activeColor: AppColors.primaryTerracotta,
-                        onChanged: (val) => setState(() => _isDefault = val),
+                      const SizedBox(height: DesignTokens.spaceLg),
+
+                      // Recipient Phone
+                      Text('Số điện thoại', style: AppTypography.labelMedium),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          hintText: '0901234567',
+                          prefixIcon: Icon(Icons.phone_outlined, size: 20),
+                        ),
+                        validator: _validateVietnamesePhone,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
+
+                      // Province / City
+                      Text(
+                        'Tỉnh / Thành phố',
+                        style: AppTypography.labelMedium,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _provinceController,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Ví dụ: TP. Hồ Chí Minh, Hà Nội, Đà Nẵng...',
+                          prefixIcon: Icon(Icons.map_outlined, size: 20),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Vui lòng nhập Tỉnh/Thành phố.'
+                            : null,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
+
+                      // District / Ward
+                      Text(
+                        'Quận / Huyện, Phường / Xã',
+                        style: AppTypography.labelMedium,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _districtController,
+                        decoration: const InputDecoration(
+                          hintText: 'Ví dụ: Phường Bến Nghé, Quận 1',
+                          prefixIcon:
+                              Icon(Icons.location_city_outlined, size: 20),
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Vui lòng nhập Quận/Huyện, Phường/Xã.'
+                            : null,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
+
+                      // Street Address
+                      Text(
+                        'Địa chỉ chi tiết (Số nhà, tên đường, tòa nhà)',
+                        style: AppTypography.labelMedium,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _streetController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          hintText: 'Ví dụ: Số 45 Lê Duẩn, Chung cư X...',
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Vui lòng nhập số nhà, tên đường.'
+                            : null,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
+
+                      // Default Switch
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: DesignTokens.spaceMd,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceWarm,
+                          borderRadius: DesignTokens.borderRadiusMd,
+                          border: Border.all(color: AppColors.borderWarm),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Đặt làm địa chỉ mặc định',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Tự động chọn khi thanh toán đơn mua',
+                                    style: AppTypography.caption,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _isDefault,
+                              activeColor: AppColors.ctaTerracotta,
+                              onChanged: (val) =>
+                                  setState(() => _isDefault = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXl),
+
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _submitAddress,
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.textLight,
+                                  ),
+                                )
+                              : Text(
+                                  _isEditMode ? 'Lưu cập nhật' : 'Thêm địa chỉ',
+                                ),
+                        ),
                       ),
                     ],
-                  ),
-                ),
-
-                const SizedBox(height: DesignTokens.space2xl),
-
-                // Save Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitAddress,
-                    child: _isSubmitting
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textLight))
-                        : Text(_isEditMode ? 'Lưu cập nhật' : 'Thêm địa chỉ'),
                   ),
                 ),
               ],

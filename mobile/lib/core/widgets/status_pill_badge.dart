@@ -21,22 +21,22 @@ class StatusPillBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 6 : 8,
-        vertical: isCompact ? 2 : 4,
+        horizontal: isCompact ? 8 : 10,
+        vertical: isCompact ? 2.5 : 4,
       ),
       decoration: BoxDecoration(
         color: config.backgroundColor,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+        borderRadius: DesignTokens.borderRadiusFull,
         border: Border.all(color: config.borderColor, width: 1),
       ),
       child: Text(
         config.label,
         style: (isCompact ? AppTypography.caption : AppTypography.bodySmall)
             .copyWith(
-              color: config.textColor,
-              fontWeight: FontWeight.w600,
-              fontSize: isCompact ? 10 : 11,
-            ),
+          color: config.textColor,
+          fontWeight: FontWeight.w700,
+          fontSize: isCompact ? 10.5 : 11.5,
+        ),
       ),
     );
   }
@@ -47,7 +47,7 @@ class StatusPillBadge extends StatelessWidget {
       case 'DRAFT':
         return const _StatusConfig(
           'Bản nháp',
-          Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );
@@ -55,49 +55,49 @@ class StatusPillBadge extends StatelessWidget {
       case 'PENDING_REVIEW':
         return const _StatusConfig(
           'Chờ duyệt',
-          Color(0xFFFFF9E6),
-          Color(0xFFB47800),
-          Color(0xFFFFE799),
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
         );
       case 'APPROVED':
         return const _StatusConfig(
           'Đã duyệt',
-          Color(0xFFEBF5EE),
-          AppColors.secondaryPineGreen,
-          Color(0xFFBCE3C6),
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
         );
       case 'HIDDEN':
         return const _StatusConfig(
           'Đã ẩn',
-          Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );
       case 'REJECTED':
         return const _StatusConfig(
           'Bị từ chối',
-          Color(0xFFFDE8E8),
-          AppColors.statusDanger,
-          Color(0xFFF8B4B4),
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
         );
       case 'SUSPENDED':
         return const _StatusConfig(
           'Tạm ngưng',
-          Color(0xFFFDF0EB),
-          AppColors.primaryTerracotta,
-          Color(0xFFF7CFBE),
+          AppColors.priceCrimsonSoft,
+          AppColors.ctaTerracotta,
+          AppColors.priceCrimsonBorder,
         );
       case 'SOLD':
         return const _StatusConfig(
           'Đã bán',
-          Color(0xFFEDE7F6),
-          Color(0xFF5E35B1),
-          Color(0xFFD1C4E9),
+          AppColors.creamBadgeBg,
+          AppColors.pineDeep,
+          AppColors.creamBadgeBorder,
         );
       case 'ARCHIVED':
         return const _StatusConfig(
           'Đã lưu trữ',
-          Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );
@@ -106,109 +106,109 @@ class StatusPillBadge extends StatelessWidget {
       case 'SCHEDULED':
         return const _StatusConfig(
           'Sắp diễn ra',
-          Color(0xFFE3F2FD),
-          Color(0xFF0277BD),
-          Color(0xFF90CAF9),
+          AppColors.creamBadgeSoft,
+          AppColors.pineDeep,
+          AppColors.creamBadgeBorder,
         );
       case 'LIVE':
         return const _StatusConfig(
           'Đang đấu giá',
-          Color(0xFFFDE8E8),
-          AppColors.christmasBerryRed,
-          Color(0xFFF8B4B4),
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
         );
       case 'ENDED_PENDING_PAYMENT':
         return const _StatusConfig(
           'Chờ thanh toán',
-          Color(0xFFFFF9E6),
-          Color(0xFFB47800),
-          Color(0xFFFFE799),
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
         );
       case 'ENDED_UNSOLD':
         return const _StatusConfig(
           'Không có người mua',
-          Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );
       case 'WINNER_DEFAULTED':
         return const _StatusConfig(
           'Người thắng bỏ cọc',
-          Color(0xFFFDE8E8),
-          AppColors.statusDanger,
-          Color(0xFFF8B4B4),
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
         );
 
       // Order States
       case 'PENDING_PAYMENT':
         return const _StatusConfig(
           'Chờ thanh toán',
-          Color(0xFFFFF9E6),
-          Color(0xFFB47800),
-          Color(0xFFFFE799),
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
         );
       case 'PAID':
         return const _StatusConfig(
           'Đã thanh toán',
-          Color(0xFFEBF5EE),
-          AppColors.secondaryPineGreen,
-          Color(0xFFBCE3C6),
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
         );
       case 'HELD':
       case 'ESCROW_HELD':
         return const _StatusConfig(
           'Đang giữ ký quỹ',
-          Color(0xFFEBF5EE),
-          AppColors.secondaryPineGreen,
-          Color(0xFFBCE3C6),
+          AppColors.verifiedLeafBg,
+          AppColors.pineDeep,
+          Color(0xFFB7DEC4),
         );
       case 'PREPARING':
         return const _StatusConfig(
           'Đang chuẩn bị',
-          Color(0xFFE3F2FD),
-          Color(0xFF0277BD),
-          Color(0xFF90CAF9),
+          AppColors.creamBadgeSoft,
+          AppColors.primaryVintageBrown,
+          AppColors.creamBadgeBorder,
         );
       case 'SHIPPED':
         return const _StatusConfig(
           'Đang giao hàng',
-          Color(0xFFE1F5FE),
-          Color(0xFF0288D1),
-          Color(0xFF81D4FA),
+          Color(0xFFE7F2F8),
+          Color(0xFF0E6390),
+          Color(0xFFB5D8EB),
         );
       case 'DELIVERED':
         return const _StatusConfig(
           'Đã giao hàng',
-          Color(0xFFE8F5E9),
-          Color(0xFF2E7D32),
-          Color(0xFFA5D6A7),
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
         );
       case 'COMPLETED':
         return const _StatusConfig(
           'Đã hoàn thành',
-          Color(0xFFE8F5E9),
-          AppColors.statusSuccess,
-          Color(0xFFA5D6A7),
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
         );
       case 'CANCELLED':
         return const _StatusConfig(
           'Đã hủy',
-          Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );
       case 'DISPUTED':
         return const _StatusConfig(
           'Đang khiếu nại',
-          Color(0xFFFDE8E8),
-          AppColors.statusDanger,
-          Color(0xFFF8B4B4),
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
         );
 
       default:
         return _StatusConfig(
           rawStatus,
-          const Color(0xFFF0EAE1),
+          AppColors.surfaceWarm,
           AppColors.textMuted,
           AppColors.borderWarm,
         );

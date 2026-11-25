@@ -8,7 +8,6 @@ import '../../../core/theme/design_tokens.dart';
 import '../models/payment_session_model.dart';
 
 /// M-PM-03: Payment Failure / Expired Screen.
-/// Allows the buyer to retry with a new backend-issued payment session.
 class PaymentFailureScreen extends StatelessWidget {
   final int paymentId;
   final PaymentSessionModel? session;
@@ -27,12 +26,12 @@ class PaymentFailureScreen extends StatelessWidget {
     final retrySession = session?.retrySession;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
         title: const Text('Thanh toán chưa hoàn tất'),
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         foregroundColor: AppColors.textCharcoal,
       ),
       body: SafeArea(
@@ -67,37 +66,39 @@ class PaymentFailureScreen extends StatelessWidget {
         vertical: DesignTokens.spaceXl,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0E8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(color: const Color(0xFFF0D2C2)),
+        color: AppColors.surfaceCard,
+        borderRadius: DesignTokens.borderRadiusBanner,
+        border: Border.all(color: AppColors.priceCrimsonBorder),
+        boxShadow: DesignTokens.cardElevation,
       ),
       child: Column(
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: 92,
+            height: 92,
             decoration: const BoxDecoration(
-              color: Color(0xFFFFDFD1),
+              color: AppColors.priceCrimsonSoft,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.error_outline_rounded,
-              color: AppColors.primaryTerracotta,
-              size: 66,
+              color: AppColors.priceCrimson,
+              size: 56,
             ),
           ),
           const SizedBox(height: DesignTokens.spaceLg),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFC85A32).withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+              color: AppColors.priceCrimsonSoft,
+              borderRadius: DesignTokens.borderRadiusFull,
+              border: Border.all(color: AppColors.priceCrimsonBorder),
             ),
             child: const Text(
               'PAYMENT NOT COMPLETED',
               style: TextStyle(
-                color: AppColors.primaryTerracotta,
-                fontSize: 11,
+                color: AppColors.priceCrimson,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.8,
               ),
@@ -108,7 +109,7 @@ class PaymentFailureScreen extends StatelessWidget {
             'Thanh toán chưa thành công',
             textAlign: TextAlign.center,
             style: AppTypography.headingLarge.copyWith(
-              color: AppColors.primaryTerracotta,
+              color: AppColors.priceCrimson,
               fontSize: 22,
               fontWeight: FontWeight.w800,
             ),
@@ -118,7 +119,8 @@ class PaymentFailureScreen extends StatelessWidget {
             'Đơn hàng của bạn vẫn đang chờ thanh toán. Bạn có thể thử lại bằng phiên thanh toán mới.',
             textAlign: TextAlign.center,
             style: AppTypography.bodySmall.copyWith(
-              color: const Color(0xFF79594A),
+              color: AppColors.textMuted,
+              height: 1.45,
             ),
           ),
         ],
@@ -132,7 +134,7 @@ class PaymentFailureScreen extends StatelessWidget {
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -143,11 +145,16 @@ class PaymentFailureScreen extends StatelessWidget {
             children: [
               const Icon(
                 Icons.info_outline_rounded,
-                color: AppColors.primaryTerracotta,
-                size: 21,
+                color: AppColors.priceCrimson,
+                size: 20,
               ),
               const SizedBox(width: 8),
-              Text('Thông tin giao dịch', style: AppTypography.headingSmall),
+              Text(
+                'Thông tin giao dịch',
+                style: AppTypography.headingSmall.copyWith(
+                  color: AppColors.pineDeep,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: DesignTokens.spaceMd),
@@ -155,13 +162,14 @@ class PaymentFailureScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(DesignTokens.spaceMd),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF3ED),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+              color: AppColors.priceCrimsonSoft,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(color: AppColors.priceCrimsonBorder),
             ),
             child: Text(
               reason,
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primaryTerracotta,
+                color: AppColors.priceCrimson,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -176,24 +184,24 @@ class PaymentFailureScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF5DE),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        border: Border.all(color: const Color(0xFFFFDF9B)),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.lightbulb_outline_rounded,
-            color: Color(0xFF946200),
-            size: 21,
+            color: AppColors.creamBadgeText,
+            size: 20,
           ),
           const SizedBox(width: 9),
           Expanded(
             child: Text(
               'Bạn chưa hoàn tất thanh toán. Hãy sử dụng phiên thanh toán mới nếu có, hoặc quay lại đơn hàng để tiếp tục.',
               style: AppTypography.bodySmall.copyWith(
-                color: const Color(0xFF795300),
+                color: AppColors.creamBadgeText,
               ),
             ),
           ),
@@ -221,14 +229,11 @@ class PaymentFailureScreen extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
+              backgroundColor: AppColors.ctaTerracotta,
               foregroundColor: AppColors.textLight,
-              disabledBackgroundColor: AppColors.primaryTerracotta.withValues(
-                alpha: 0.4,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              ),
+              disabledBackgroundColor:
+                  AppColors.ctaTerracotta.withValues(alpha: 0.4),
+              shape: const StadiumBorder(),
             ),
             onPressed: () {
               if (retrySession == null) {
@@ -255,14 +260,16 @@ class PaymentFailureScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(DesignTokens.spaceMd),
             decoration: BoxDecoration(
-              color: AppColors.surfaceWarm,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              border: Border.all(color: AppColors.borderWarm),
+              color: AppColors.verifiedLeafBg,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(
+                color: AppColors.verifiedLeaf.withValues(alpha: 0.3),
+              ),
             ),
             child: Text(
               'Phiên mới: ${retrySession.paymentCode}',
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primaryForestGreen,
+                color: AppColors.pineDeep,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -277,11 +284,9 @@ class PaymentFailureScreen extends StatelessWidget {
             icon: const Icon(Icons.home_outlined),
             label: const Text('Về trang chủ'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textCharcoal,
-              side: const BorderSide(color: AppColors.borderWarm),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              ),
+              foregroundColor: AppColors.pineDeep,
+              side: const BorderSide(color: AppColors.pineDeep),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => context.go(AppRoutes.home),
           ),

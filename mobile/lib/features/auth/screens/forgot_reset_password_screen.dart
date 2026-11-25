@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../repositories/auth_repository.dart';
 
 /// M-AU-05: Forgot & Reset Password Flow
@@ -13,10 +14,12 @@ class ForgotResetPasswordScreen extends ConsumerStatefulWidget {
   const ForgotResetPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotResetPasswordScreen> createState() => _ForgotResetPasswordScreenState();
+  ConsumerState<ForgotResetPasswordScreen> createState() =>
+      _ForgotResetPasswordScreenState();
 }
 
-class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordScreen> {
+class _ForgotResetPasswordScreenState
+    extends ConsumerState<ForgotResetPasswordScreen> {
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
 
@@ -50,7 +53,8 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
 
     final authRepo = ref.read(authRepositoryProvider);
     try {
-      final res = await authRepo.forgotPassword(email: _emailController.text.trim());
+      final res =
+          await authRepo.forgotPassword(email: _emailController.text.trim());
       final token = res['token']?.toString();
 
       setState(() {
@@ -91,8 +95,9 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: AppColors.secondaryPineGreen,
-            content: Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.'),
+            backgroundColor: AppColors.pineDeep,
+            content:
+                Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.'),
           ),
         );
         context.go(AppRoutes.login);
@@ -109,79 +114,135 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
         title: Text(_currentStep == 1 ? 'Quên mật khẩu' : 'Đặt lại mật khẩu'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(DesignTokens.spaceLg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _currentStep == 1 ? 'Khôi phục tài khoản' : 'Tạo mật khẩu mới',
-                style: AppTypography.headingLarge,
-              ),
-              const SizedBox(height: DesignTokens.spaceXs),
-              Text(
-                _currentStep == 1
-                    ? 'Nhập địa chỉ email đăng ký để nhận mã xác thực đặt lại mật khẩu.'
-                    : 'Nhập mã xác thực đã nhận cùng mật khẩu mới của bạn.',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-              ),
-              const SizedBox(height: DesignTokens.spaceLg),
-
-              if (_statusMessage != null) ...[
+      body: RetroAmbientSnowflakes(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(DesignTokens.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 2-Step Indicator Pill
                 Container(
-                  padding: const EdgeInsets.all(DesignTokens.spaceMd),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEBF5EE),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                    border: Border.all(color: const Color(0xFFBCE3C6)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, color: AppColors.secondaryPineGreen, size: 20),
-                      const SizedBox(width: DesignTokens.spaceSm),
-                      Expanded(
-                        child: Text(
-                          _statusMessage!,
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.secondaryPineGreen),
-                        ),
-                      ),
-                    ],
+                  decoration: BoxDecoration(
+                    color: AppColors.creamBadgeBg,
+                    borderRadius: DesignTokens.borderRadiusFull,
+                    border: Border.all(color: AppColors.creamBadgeBorder),
+                  ),
+                  child: Text(
+                    _currentStep == 1
+                        ? 'Bước 1 / 2 • Xác nhận email'
+                        : 'Bước 2 / 2 • Thiết lập mật khẩu mới',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.creamBadgeText,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spaceMd),
+                Text(
+                  _currentStep == 1 ? 'Khôi phục tài khoản' : 'Tạo mật khẩu mới',
+                  style: AppTypography.headingLarge.copyWith(
+                    color: AppColors.pineDeep,
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spaceXs),
+                Text(
+                  _currentStep == 1
+                      ? 'Nhập địa chỉ email đăng ký để nhận mã xác thực đặt lại mật khẩu.'
+                      : 'Nhập mã xác thực đã nhận cùng mật khẩu mới của bạn.',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: DesignTokens.spaceLg),
-              ],
 
-              if (_lastApiException != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(DesignTokens.spaceMd),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDE8E8),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                    border: Border.all(color: const Color(0xFFF8B4B4)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: AppColors.statusDanger, size: 20),
-                      const SizedBox(width: DesignTokens.spaceSm),
-                      Expanded(
-                        child: Text(
-                          _lastApiException!.message,
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.statusDanger),
-                        ),
+                if (_statusMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(DesignTokens.spaceMd),
+                    decoration: BoxDecoration(
+                      color: AppColors.verifiedLeafBg,
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      border: Border.all(
+                        color: AppColors.verifiedLeaf.withValues(alpha: 0.35),
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: AppColors.verifiedLeaf,
+                          size: 20,
+                        ),
+                        const SizedBox(width: DesignTokens.spaceSm),
+                        Expanded(
+                          child: Text(
+                            _statusMessage!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.pineDeep,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-              ],
+                  const SizedBox(height: DesignTokens.spaceLg),
+                ],
 
-              if (_currentStep == 1) _buildStep1Form() else _buildStep2Form(),
-            ],
+                if (_lastApiException != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(DesignTokens.spaceMd),
+                    decoration: BoxDecoration(
+                      color: AppColors.priceCrimsonSoft,
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      border: Border.all(color: AppColors.priceCrimsonBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.priceCrimson,
+                          size: 20,
+                        ),
+                        const SizedBox(width: DesignTokens.spaceSm),
+                        Expanded(
+                          child: Text(
+                            _lastApiException!.message,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.priceCrimson,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: DesignTokens.spaceLg),
+                ],
+
+                Container(
+                  padding: const EdgeInsets.all(DesignTokens.spaceLg),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    borderRadius: DesignTokens.borderRadiusBanner,
+                    border: Border.all(color: AppColors.borderWarm),
+                    boxShadow: DesignTokens.cardElevation,
+                  ),
+                  child: _currentStep == 1
+                      ? _buildStep1Form()
+                      : _buildStep2Form(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -204,8 +265,12 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
               prefixIcon: Icon(Icons.email_outlined, size: 20),
             ),
             validator: (val) {
-              if (val == null || val.trim().isEmpty) return 'Vui lòng nhập email.';
-              if (!val.contains('@') || !val.contains('.')) return 'Email không hợp lệ.';
+              if (val == null || val.trim().isEmpty) {
+                return 'Vui lòng nhập email.';
+              }
+              if (!val.contains('@') || !val.contains('.')) {
+                return 'Email không hợp lệ.';
+              }
               return null;
             },
           ),
@@ -215,7 +280,14 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
             child: ElevatedButton(
               onPressed: _isSubmitting ? null : _submitStep1,
               child: _isSubmitting
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textLight))
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textLight,
+                      ),
+                    )
                   : const Text('Gửi mã xác thực'),
             ),
           ),
@@ -238,7 +310,8 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
               hintText: 'Nhập mã token từ email',
               prefixIcon: Icon(Icons.vpn_key_outlined, size: 20),
             ),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập token.' : null,
+            validator: (val) =>
+                val == null || val.trim().isEmpty ? 'Vui lòng nhập token.' : null,
           ),
           const SizedBox(height: DesignTokens.spaceLg),
           Text('Mật khẩu mới', style: AppTypography.labelMedium),
@@ -250,7 +323,9 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
               hintText: 'Tối thiểu 8 ký tự',
               prefixIcon: Icon(Icons.lock_outline, size: 20),
             ),
-            validator: (val) => val == null || val.length < 8 ? 'Mật khẩu phải từ 8 ký tự trở lên.' : null,
+            validator: (val) => val == null || val.length < 8
+                ? 'Mật khẩu phải từ 8 ký tự trở lên.'
+                : null,
           ),
           const SizedBox(height: DesignTokens.spaceLg),
           Text('Xác nhận mật khẩu mới', style: AppTypography.labelMedium),
@@ -262,7 +337,9 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
               hintText: 'Nhập lại mật khẩu mới',
               prefixIcon: Icon(Icons.lock_reset_outlined, size: 20),
             ),
-            validator: (val) => val != _passwordController.text ? 'Mật khẩu xác nhận không khớp.' : null,
+            validator: (val) => val != _passwordController.text
+                ? 'Mật khẩu xác nhận không khớp.'
+                : null,
           ),
           const SizedBox(height: DesignTokens.spaceXl),
           SizedBox(
@@ -270,7 +347,14 @@ class _ForgotResetPasswordScreenState extends ConsumerState<ForgotResetPasswordS
             child: ElevatedButton(
               onPressed: _isSubmitting ? null : _submitStep2,
               child: _isSubmitting
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textLight))
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textLight,
+                      ),
+                    )
                   : const Text('Đặt lại mật khẩu'),
             ),
           ),

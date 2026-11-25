@@ -6,8 +6,8 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/state_feedback_views.dart';
 import '../viewmodels/catalog_search_view_model.dart';
 import '../widgets/product_filter_bottom_sheet.dart';
 
@@ -34,7 +34,6 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     );
     _scrollController.addListener(_onScroll);
 
-    // Initial search if keyword provided & load search history
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(catalogSearchViewModelProvider).loadRecentKeywords();
       if (widget.initialKeyword != null && widget.initialKeyword!.isNotEmpty) {
@@ -79,62 +78,71 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     final state = searchVM.state;
 
     return Scaffold(
-      backgroundColor: AppColors.warmIvory,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.warmIvory,
+        backgroundColor: AppColors.canvasParchment,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.borderSubtle),
-        ),
         title: Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: TextField(
-            controller: _searchController,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) => searchVM.setKeyword(value),
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'Tìm kiếm trên izithrift...',
-              hintStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textMuted,
-              ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.primaryForestGreen,
-                size: 20,
-              ),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.clear,
-                        size: 18,
-                        color: AppColors.textMuted,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: DesignTokens.borderRadiusFull,
+              boxShadow: DesignTokens.cardElevation,
+            ),
+            child: TextField(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (value) => searchVM.setKeyword(value),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm trên izithrift...',
+                hintStyle: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textCharcoal,
+                  size: 20,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          searchVM.setKeyword(null);
+                        },
+                      )
+                    : IconButton(
+                        icon: const Icon(
+                          Icons.tune_rounded,
+                          size: 19,
+                          color: AppColors.textCharcoal,
+                        ),
+                        onPressed: () => _openFilterBottomSheet(searchVM),
                       ),
-                      onPressed: () {
-                        _searchController.clear();
-                        searchVM.setKeyword(null);
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: AppColors.surfaceCard,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-                borderSide: const BorderSide(color: AppColors.borderWarm),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-                borderSide: const BorderSide(color: AppColors.borderWarm),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-                borderSide: const BorderSide(
-                  color: AppColors.primaryForestGreen,
-                  width: DesignTokens.borderMedium,
+                filled: true,
+                fillColor: AppColors.surfaceCard,
+                contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  borderSide: const BorderSide(color: AppColors.borderWarm),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  borderSide: const BorderSide(color: AppColors.borderWarm),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: DesignTokens.borderRadiusFull,
+                  borderSide: const BorderSide(
+                    color: AppColors.pineBanner,
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -143,53 +151,50 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
       ),
       body: Column(
         children: [
-          // Filter & Quick Chips Toolbar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: AppColors.warmIvory,
+          // Pill Filter & Quick Chips Toolbar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
             child: Row(
               children: [
-                // Filter BottomSheet trigger button
                 InkWell(
                   onTap: () => _openFilterBottomSheet(searchVM),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  borderRadius: DesignTokens.borderRadiusFull,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: currentQuery.hasActiveFilters
-                          ? AppColors.primaryForestGreenLight
-                          : AppColors.surfaceWarm,
-                      borderRadius: BorderRadius.circular(
-                        DesignTokens.radiusSm,
-                      ),
+                          ? AppColors.pineDeep
+                          : AppColors.surfaceCard,
+                      borderRadius: DesignTokens.borderRadiusFull,
                       border: Border.all(
                         color: currentQuery.hasActiveFilters
-                            ? AppColors.primaryForestGreen
+                            ? AppColors.pineDeep
                             : AppColors.borderWarm,
                       ),
+                      boxShadow: DesignTokens.cardElevation,
                     ),
                     child: Row(
                       children: [
                         Icon(
-                          Icons.tune,
-                          size: 16,
+                          Icons.tune_rounded,
+                          size: 15,
                           color: currentQuery.hasActiveFilters
-                              ? AppColors.primaryForestGreen
+                              ? AppColors.creamBadgeBg
                               : AppColors.textCharcoal,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 5),
                         Text(
                           currentQuery.hasActiveFilters
                               ? 'Bộ lọc (${currentQuery.activeFilterCount})'
                               : 'Bộ lọc',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             color: currentQuery.hasActiveFilters
-                                ? AppColors.primaryForestGreen
+                                ? Colors.white
                                 : AppColors.textCharcoal,
                           ),
                         ),
@@ -198,8 +203,6 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-
-                // Quick Chips
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -211,8 +214,8 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                           onTap: () {
                             final next =
                                 currentQuery.listingType == 'FIXED_PRICE'
-                                ? null
-                                : 'FIXED_PRICE';
+                                    ? null
+                                    : 'FIXED_PRICE';
                             searchVM.search(
                               currentQuery.copyWith(
                                 listingType: next,
@@ -221,7 +224,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                             );
                           },
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         _buildQuickFilterChip(
                           label: 'Đấu giá',
                           isActive: currentQuery.listingType == 'AUCTION',
@@ -237,7 +240,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                             );
                           },
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         _buildQuickFilterChip(
                           label: 'Độ mới 95%+',
                           isActive: currentQuery.condition == 'LIKE_NEW',
@@ -260,21 +263,18 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.borderWarm),
 
-          // Recent Searches Bar (M-DS-02 Polish)
           if (searchVM.recentKeywords.isNotEmpty &&
               (_searchController.text.trim().isEmpty || products.isEmpty))
             _buildRecentSearchesSection(searchVM),
 
-          // Main Search Results Area
           Expanded(
             child: Builder(
               builder: (context) {
                 if (state.isLoading && products.isEmpty) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: AppColors.primaryForestGreen,
+                      color: AppColors.ctaTerracotta,
                     ),
                   );
                 }
@@ -288,8 +288,9 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                 if (state.isEmpty || products.isEmpty) {
                   return RetroEmptyStateView(
                     title: 'Không tìm thấy sản phẩm',
-                    message: state.errorMessage ?? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc.',
-                    icon: Icons.search_off,
+                    message: state.errorMessage ??
+                        'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc.',
+                    icon: Icons.search_off_rounded,
                     actionLabel: currentQuery.hasActiveFilters
                         ? 'Xóa bộ lọc'
                         : null,
@@ -314,27 +315,22 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      borderRadius: DesignTokens.borderRadiusFull,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive
-              ? AppColors.primaryForestGreenLight
-              : AppColors.surfaceWarm,
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          color: isActive ? AppColors.creamBadgeBg : AppColors.surfaceCard,
+          borderRadius: DesignTokens.borderRadiusFull,
           border: Border.all(
-            color: isActive
-                ? AppColors.primaryForestGreen
-                : AppColors.borderWarm,
+            color: isActive ? AppColors.creamBadgeBorder : AppColors.borderWarm,
           ),
         ),
         child: Text(
           label,
           style: AppTypography.bodySmall.copyWith(
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: isActive
-                ? AppColors.primaryForestGreen
-                : AppColors.textCharcoal,
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+            color: isActive ? AppColors.creamBadgeText : AppColors.textCharcoal,
           ),
         ),
       ),
@@ -351,20 +347,20 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
         final crossAxisCount = constraints.maxWidth >= 1100
             ? 4
             : constraints.maxWidth >= 680
-            ? 3
-            : 2;
+                ? 3
+                : 2;
         final cardAspectRatio = crossAxisCount == 4
-            ? 0.68
+            ? 0.66
             : crossAxisCount == 3
-            ? 0.70
-            : 0.62;
+                ? 0.68
+                : 0.60;
 
         return RefreshIndicator(
           onRefresh: () => searchVM.search(),
-          color: AppColors.primaryForestGreen,
+          color: AppColors.ctaTerracotta,
           child: GridView.builder(
             controller: _scrollController,
-            padding: const EdgeInsets.all(DesignTokens.spaceLg),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             itemCount: productList.length + (searchVM.isLoadingMore ? 1 : 0),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
@@ -378,7 +374,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
                     child: CircularProgressIndicator(
-                      color: AppColors.primaryForestGreen,
+                      color: AppColors.ctaTerracotta,
                     ),
                   ),
                 );
@@ -409,10 +405,12 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
   Widget _buildRecentSearchesSection(CatalogSearchViewModel searchVM) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.warmIvory,
-        border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSection,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: AppColors.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,8 +420,12 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.history, size: 18, color: AppColors.textMuted),
-                  SizedBox(width: 6),
+                  const Icon(
+                    Icons.history_rounded,
+                    size: 17,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
                   Text(
                     'Tìm kiếm gần đây',
                     style: AppTypography.labelMedium.copyWith(
@@ -439,7 +441,11 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: Text(
                     'Xóa tất cả',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.ctaTerracotta,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -458,10 +464,11 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                     color: AppColors.textCharcoal,
                   ),
                 ),
-                backgroundColor: AppColors.surfaceWarm,
+                backgroundColor: AppColors.surfaceCard,
                 side: const BorderSide(color: AppColors.borderWarm),
+                shape: const StadiumBorder(),
                 deleteIcon: const Icon(
-                  Icons.close,
+                  Icons.close_rounded,
                   size: 14,
                   color: AppColors.textMuted,
                 ),

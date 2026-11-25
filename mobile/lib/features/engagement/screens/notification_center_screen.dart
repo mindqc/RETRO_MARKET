@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -13,10 +14,12 @@ class NotificationCenterScreen extends ConsumerStatefulWidget {
   const NotificationCenterScreen({super.key});
 
   @override
-  ConsumerState<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
+  ConsumerState<NotificationCenterScreen> createState() =>
+      _NotificationCenterScreenState();
 }
 
-class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScreen> {
+class _NotificationCenterScreenState
+    extends ConsumerState<NotificationCenterScreen> {
   @override
   void initState() {
     super.initState();
@@ -30,36 +33,42 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
     final notifVm = ref.watch(notificationViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textCharcoal),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textCharcoal,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Thông Báo',
-          style: AppTypography.headingSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textCharcoal,
-          ),
+          style: AppTypography.headingMedium.copyWith(fontSize: 20),
         ),
         actions: [
           if (notifVm.unreadCount > 0)
             TextButton(
               onPressed: () => notifVm.markAllAsRead(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pineDeep,
+                shape: const StadiumBorder(),
+              ),
               child: Text(
                 'Đọc tất cả',
-                style: AppTypography.button.copyWith(
-                  color: AppColors.secondaryPineGreen,
+                style: AppTypography.labelStrong.copyWith(
+                  color: AppColors.pineDeep,
                   fontSize: 13,
                 ),
               ),
             ),
+          const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: const Size.fromHeight(50),
           child: _buildFilterTabBar(notifVm),
         ),
       ),
@@ -67,7 +76,7 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
         builder: (context) {
           if (notifVm.isLoading && notifVm.notifications.isEmpty) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.secondaryPineGreen),
+              child: CircularProgressIndicator(color: AppColors.pineDeep),
             );
           }
 
@@ -83,15 +92,16 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
           if (list.isEmpty) {
             return RefreshIndicator(
               onRefresh: () => notifVm.fetchNotifications(),
-              color: AppColors.secondaryPineGreen,
+              color: AppColors.pineDeep,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.18),
                   const RetroEmptyStateView(
-                    icon: Icons.notifications_none_outlined,
+                    icon: Icons.notifications_none_rounded,
                     title: 'Chưa có thông báo nào',
-                    message: 'Các cập nhật về đơn hàng, phòng đấu giá và tin tức hệ thống sẽ hiển thị tại đây.',
+                    message:
+                        'Các cập nhật về đơn hàng, phòng đấu giá và tin tức hệ thống sẽ hiển thị tại đây.',
                   ),
                 ],
               ),
@@ -100,21 +110,14 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
 
           return RefreshIndicator(
             onRefresh: () => notifVm.fetchNotifications(),
-            color: AppColors.secondaryPineGreen,
+            color: AppColors.pineDeep,
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spaceSm),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               itemCount: list.length,
-              separatorBuilder: (context, index) => const Divider(
-                height: 1,
-                thickness: 0.5,
-                color: AppColors.borderWarm,
-                indent: 68,
-              ),
-              itemBuilder: (context, index) {
-                final item = list[index];
-                return _buildNotificationTile(context, item, notifVm);
-              },
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) =>
+                  _buildNotificationTile(context, list[index], notifVm),
             ),
           );
         },
@@ -124,10 +127,10 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
 
   Widget _buildFilterTabBar(NotificationViewModel notifVm) {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundCream,
+        color: AppColors.canvasParchment,
         border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
       ),
       child: ListView(
@@ -135,23 +138,24 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
         children: NotificationTabFilter.values.map((tab) {
           final isSelected = notifVm.selectedTab == tab;
           return Padding(
-            padding: const EdgeInsets.only(right: DesignTokens.spaceSm),
+            padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
               label: Text(
                 tab.label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.white : AppColors.textCharcoal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.creamBadgeBg
+                      : AppColors.textCharcoal,
                 ),
               ),
               selected: isSelected,
-              selectedColor: AppColors.secondaryPineGreen,
-              backgroundColor: AppColors.surfaceWarm,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusRound),
+              selectedColor: AppColors.pineDeep,
+              backgroundColor: AppColors.surfaceCard,
+              shape: StadiumBorder(
                 side: BorderSide(
-                  color: isSelected ? AppColors.secondaryPineGreen : AppColors.borderWarm,
+                  color: isSelected ? AppColors.pineDeep : AppColors.borderWarm,
                 ),
               ),
               onSelected: (_) => notifVm.selectTab(tab),
@@ -173,96 +177,107 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
 
     if (item.isOrderType) {
       icon = Icons.local_shipping_outlined;
-      iconColor = AppColors.primaryTerracotta;
-      iconBg = const Color(0xFFFBECE6);
+      iconColor = AppColors.ctaTerracotta;
+      iconBg = AppColors.priceCrimsonSoft;
     } else if (item.isAuctionType) {
       icon = Icons.gavel_rounded;
-      iconColor = AppColors.accentVintageGold;
-      iconBg = const Color(0xFFFDF8E8);
+      iconColor = AppColors.creamBadgeText;
+      iconBg = AppColors.creamBadgeSoft;
     } else {
       icon = Icons.campaign_outlined;
-      iconColor = AppColors.secondaryPineGreen;
-      iconBg = const Color(0xFFEBF1EC);
+      iconColor = AppColors.verifiedLeaf;
+      iconBg = AppColors.verifiedLeafBg;
     }
 
-    return InkWell(
-      onTap: () => notifVm.handleNotificationTap(context, item),
-      child: Container(
-        color: item.isRead ? Colors.transparent : AppColors.surfaceWarm.withValues(alpha: 0.6),
-        padding: const EdgeInsets.symmetric(
-          horizontal: DesignTokens.spaceLg,
-          vertical: DesignTokens.spaceMd,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Category Icon
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-                border: Border.all(color: iconColor.withValues(alpha: 0.3)),
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
+    return Material(
+      color: item.isRead ? AppColors.surfaceCard : AppColors.surfaceSection,
+      borderRadius: DesignTokens.borderRadiusLg,
+      child: InkWell(
+        borderRadius: DesignTokens.borderRadiusLg,
+        onTap: () => notifVm.handleNotificationTap(context, item),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: DesignTokens.borderRadiusLg,
+            border: Border.all(
+              color: item.isRead
+                  ? AppColors.borderWarm
+                  : AppColors.creamBadgeBorder,
+              width: item.isRead ? 1 : 1.3,
             ),
-            const SizedBox(width: DesignTokens.spaceMd),
+            boxShadow: DesignTokens.cardElevation,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Category Icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: iconColor.withValues(alpha: 0.28)),
+                ),
+                child: Icon(icon, color: iconColor, size: 21),
+              ),
+              const SizedBox(width: 12),
 
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: item.isRead ? FontWeight.w600 : FontWeight.bold,
-                            color: AppColors.textCharcoal,
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelStrong.copyWith(
+                              fontSize: 14,
+                              color: AppColors.textCharcoal,
+                            ),
                           ),
                         ),
-                      ),
-                      if (!item.isRead) ...[
-                        const SizedBox(width: DesignTokens.spaceSm),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.christmasBerryRed,
-                            shape: BoxShape.circle,
+                        if (!item.isRead) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.priceCrimson,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.body,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                      height: 1.35,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.formattedTime,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 11,
+                    const SizedBox(height: 4),
+                    Text(
+                      item.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                        height: 1.4,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      item.formattedTime,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

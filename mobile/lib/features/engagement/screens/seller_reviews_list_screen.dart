@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -22,10 +23,12 @@ class SellerReviewsListScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SellerReviewsListScreen> createState() => _SellerReviewsListScreenState();
+  ConsumerState<SellerReviewsListScreen> createState() =>
+      _SellerReviewsListScreenState();
 }
 
-class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScreen> {
+class _SellerReviewsListScreenState
+    extends ConsumerState<SellerReviewsListScreen> {
   @override
   void initState() {
     super.initState();
@@ -40,34 +43,28 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
     final summary = reviewVm.reviewsSummary;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textCharcoal),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textCharcoal,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Đánh Giá Tiệm',
-          style: AppTypography.headingSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textCharcoal,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppColors.borderWarm,
-            height: 1.0,
-          ),
+          style: AppTypography.headingMedium.copyWith(fontSize: 20),
         ),
       ),
       body: Builder(
         builder: (context) {
           if (reviewVm.isLoading && summary == null) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+              child: CircularProgressIndicator(color: AppColors.pineDeep),
             );
           }
 
@@ -82,20 +79,16 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
 
           return RefreshIndicator(
             onRefresh: () => reviewVm.loadSellerReviews(widget.sellerId),
-            color: AppColors.primaryTerracotta,
+            color: AppColors.ctaTerracotta,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 28),
               children: [
-                // Top Aggregate Score & Breakdown Box
                 if (summary != null) _buildSummaryHeader(summary),
-
-                // Star Filter Row
                 _buildStarFilterRow(reviewVm),
-
-                // Review items
                 if (reviews.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: DesignTokens.space2xl),
+                    padding: const EdgeInsets.symmetric(vertical: 32),
                     child: RetroEmptyStateView(
                       icon: Icons.rate_review_outlined,
                       title: 'Chưa có đánh giá nào',
@@ -105,20 +98,16 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
                     ),
                   )
                 else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: reviews.length,
-                    separatorBuilder: (context, index) => const Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: AppColors.borderWarm,
-                      indent: DesignTokens.spaceLg,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: reviews.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) =>
+                          _buildReviewTile(context, reviews[index]),
                     ),
-                    itemBuilder: (context, index) {
-                      final item = reviews[index];
-                      return _buildReviewTile(context, item);
-                    },
                   ),
               ],
             ),
@@ -130,27 +119,28 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
 
   Widget _buildSummaryHeader(SellerReviewsSummaryModel summary) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
-      margin: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left: Big Score
+          // Big Score
           Column(
             children: [
               Text(
                 summary.averageRating.toStringAsFixed(1),
                 style: AppTypography.displayMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryTerracotta,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.priceCrimson,
                 ),
               ),
+              const SizedBox(height: 2),
               Row(
                 children: List.generate(5, (index) {
                   final starVal = index + 1;
@@ -159,47 +149,57 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
                         ? Icons.star_rounded
                         : Icons.star_outline_rounded,
                     size: 16,
-                    color: AppColors.accentVintageGold,
+                    color: AppColors.starGold,
                   );
                 }),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 5),
               Text(
                 '${summary.totalReviews} đánh giá',
-                style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-          const SizedBox(width: DesignTokens.spaceLg),
+          const SizedBox(width: 20),
 
-          // Right: Star Distribution Bars
+          // Star Distribution Bars
           Expanded(
             child: Column(
               children: [5, 4, 3, 2, 1].map((star) {
                 final count = summary.starDistribution[star] ?? 0;
-                final percentage = summary.totalReviews > 0 ? count / summary.totalReviews : 0.0;
+                final percentage =
+                    summary.totalReviews > 0 ? count / summary.totalReviews : 0.0;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 2.5),
                   child: Row(
                     children: [
                       Text(
                         '$star',
                         style: AppTypography.caption.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textCharcoal,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.star, size: 12, color: AppColors.accentVintageGold),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 13,
+                        color: AppColors.starGold,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusRound),
+                          borderRadius: DesignTokens.borderRadiusFull,
                           child: LinearProgressIndicator(
                             value: percentage,
-                            minHeight: 6,
+                            minHeight: 7,
                             backgroundColor: AppColors.surfaceWarm,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentVintageGold),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.starGold,
+                            ),
                           ),
                         ),
                       ),
@@ -212,6 +212,7 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
                           style: AppTypography.caption.copyWith(
                             color: AppColors.textMuted,
                             fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -238,31 +239,32 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
 
     return Container(
       height: 44,
-      margin: const EdgeInsets.only(bottom: DesignTokens.spaceSm),
-      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: filters.map((f) {
           final val = f['value'] as int?;
           final isSelected = reviewVm.activeStarFilter == val;
           return Padding(
-            padding: const EdgeInsets.only(right: DesignTokens.spaceSm),
+            padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
               label: Text(
                 f['label'] as String,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.white : AppColors.textCharcoal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.creamBadgeBg
+                      : AppColors.textCharcoal,
                 ),
               ),
               selected: isSelected,
-              selectedColor: AppColors.primaryTerracotta,
-              backgroundColor: AppColors.surfaceWarm,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusRound),
+              selectedColor: AppColors.pineDeep,
+              backgroundColor: AppColors.surfaceCard,
+              shape: StadiumBorder(
                 side: BorderSide(
-                  color: isSelected ? AppColors.primaryTerracotta : AppColors.borderWarm,
+                  color: isSelected ? AppColors.pineDeep : AppColors.borderWarm,
                 ),
               ),
               onSelected: (_) => reviewVm.setStarFilter(val),
@@ -279,61 +281,81 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
         : '';
 
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
-      color: AppColors.backgroundCream,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(color: AppColors.borderWarm),
+        boxShadow: DesignTokens.cardElevation,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.surfaceWarm,
-                backgroundImage: (item.userAvatarUrl != null && item.userAvatarUrl!.isNotEmpty)
+                radius: 18,
+                backgroundColor: AppColors.categoryCircleStart,
+                backgroundImage: (item.userAvatarUrl != null &&
+                        item.userAvatarUrl!.isNotEmpty)
                     ? NetworkImage(item.userAvatarUrl!)
                     : null,
-                child: (item.userAvatarUrl == null || item.userAvatarUrl!.isEmpty)
+                child: (item.userAvatarUrl == null ||
+                        item.userAvatarUrl!.isEmpty)
                     ? Text(
-                        item.userName.isNotEmpty ? item.userName.substring(0, 1).toUpperCase() : 'K',
-                        style: AppTypography.caption.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryTerracotta,
+                        item.userName.isNotEmpty
+                            ? item.userName.substring(0, 1).toUpperCase()
+                            : 'K',
+                        style: AppTypography.labelStrong.copyWith(
+                          color: AppColors.pineDeep,
+                          fontSize: 13,
                         ),
                       )
                     : null,
               ),
-              const SizedBox(width: DesignTokens.spaceSm),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text(
-                          item.userName,
-                          style: AppTypography.bodySmall.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textCharcoal,
+                        Flexible(
+                          child: Text(
+                            item.userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelStrong.copyWith(
+                              fontSize: 13.5,
+                              color: AppColors.textCharcoal,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: DesignTokens.spaceSm),
+                        const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusRound),
+                            color: AppColors.verifiedLeafBg,
+                            borderRadius: DesignTokens.borderRadiusFull,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified, size: 10, color: AppColors.secondaryPineGreen),
-                              const SizedBox(width: 2),
+                              const Icon(
+                                Icons.verified_rounded,
+                                size: 11,
+                                color: AppColors.verifiedLeaf,
+                              ),
+                              const SizedBox(width: 3),
                               Text(
                                 'Đã mua hàng',
                                 style: AppTypography.caption.copyWith(
-                                  color: AppColors.secondaryPineGreen,
+                                  color: AppColors.verifiedLeaf,
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],
@@ -341,27 +363,31 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
                         Row(
                           children: List.generate(5, (index) {
                             final filled = index < item.rating;
                             return Icon(
-                              filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                              size: 13,
-                              color: AppColors.accentVintageGold,
+                              filled
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              size: 14,
+                              color: AppColors.starGold,
                             );
                           }),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          dateStr,
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textMuted,
-                            fontSize: 11,
+                        if (dateStr.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            dateStr,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                              fontSize: 11,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],
@@ -369,27 +395,28 @@ class _SellerReviewsListScreenState extends ConsumerState<SellerReviewsListScree
               ),
             ],
           ),
-          const SizedBox(height: DesignTokens.spaceSm),
+          const SizedBox(height: 10),
           Text(
             item.comment,
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textCharcoal,
-              height: 1.4,
+              height: 1.45,
             ),
           ),
           if (item.productTitle != null) ...[
-            const SizedBox(height: DesignTokens.spaceSm),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.surfaceWarm,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                borderRadius: DesignTokens.borderRadiusSm,
               ),
               child: Text(
                 'Món đồ: ${item.productTitle}',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textMuted,
-                  fontSize: 11,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

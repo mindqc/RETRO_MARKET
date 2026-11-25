@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -37,7 +38,8 @@ class ReportAndBlockModal extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ReportAndBlockModal> createState() => _ReportAndBlockModalState();
+  ConsumerState<ReportAndBlockModal> createState() =>
+      _ReportAndBlockModalState();
 }
 
 class _ReportAndBlockModalState extends ConsumerState<ReportAndBlockModal> {
@@ -84,14 +86,17 @@ class _ReportAndBlockModalState extends ConsumerState<ReportAndBlockModal> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã gửi báo cáo vi phạm thành công. Đội ngũ kiểm duyệt izithrift sẽ xử lý.'),
-            backgroundColor: AppColors.secondaryPineGreen,
+            content: Text(
+              'Đã gửi báo cáo vi phạm thành công. Đội ngũ kiểm duyệt izithrift sẽ xử lý.',
+            ),
+            backgroundColor: AppColors.pineDeep,
           ),
         );
         Navigator.of(context).pop(true);
       } else {
         setState(() {
-          _validationError = chatVm.errorMessage ?? 'Không thể gửi báo cáo vi phạm';
+          _validationError =
+              chatVm.errorMessage ?? 'Không thể gửi báo cáo vi phạm';
         });
       }
     }
@@ -106,222 +111,254 @@ class _ReportAndBlockModalState extends ConsumerState<ReportAndBlockModal> {
       color: Colors.transparent,
       child: Container(
         decoration: const BoxDecoration(
-          color: AppColors.backgroundCream,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusXl)),
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: DesignTokens.modalElevation,
         ),
-        padding: EdgeInsets.fromLTRB(
-          DesignTokens.spaceLg,
-          DesignTokens.spaceLg,
-          DesignTokens.spaceLg,
-          DesignTokens.spaceLg + bottomInset,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: DesignTokens.spaceMd),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderWarm,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusRound),
-                  ),
-                ),
-              ),
-
-              // Title
-              Row(
-                children: [
-                  const Icon(Icons.shield_outlined, color: AppColors.christmasBerryRed, size: 24),
-                  const SizedBox(width: DesignTokens.spaceSm),
-                  Expanded(
-                    child: Text(
-                      'Báo Cáo & Chặn Người Dùng',
-                      style: AppTypography.headingSmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textCharcoal,
-                      ),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomInset),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderWarm,
+                      borderRadius: DesignTokens.borderRadiusFull,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Đối tượng: ${widget.targetUserName}',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-              ),
-              const SizedBox(height: DesignTokens.spaceLg),
-
-              // Reason Category
-              Text(
-                'LÝ DO VI PHẠM',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textCharcoal,
                 ),
-              ),
-              const SizedBox(height: DesignTokens.spaceSm),
 
-              Material(
-                color: AppColors.surfaceCard,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    border: Border.all(color: AppColors.borderWarm),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.priceCrimsonSoft,
+                        border: Border.all(color: AppColors.priceCrimsonBorder),
+                      ),
+                      child: const Icon(
+                        Icons.shield_outlined,
+                        color: AppColors.priceCrimson,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Báo Cáo & Chặn Người Dùng',
+                            style: AppTypography.headingSmall.copyWith(
+                              fontSize: 17.5,
+                              color: AppColors.textCharcoal,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Đối tượng: ${widget.targetUserName}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // Reason Category
+                Text(
+                  'LÝ DO VI PHẠM',
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: AppColors.textCharcoal,
                   ),
+                ),
+                const SizedBox(height: 8),
+
+                Material(
+                  color: AppColors.surfaceSection,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: DesignTokens.borderRadiusLg,
+                    side: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: _reasons.entries.map((entry) {
                       final isSelected = _selectedReason == entry.key;
                       return RadioListTile<String>(
                         value: entry.key,
                         groupValue: _selectedReason,
+                        dense: true,
                         title: Text(
                           entry.value,
                           style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontSize: 13.5,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: AppColors.textCharcoal,
                           ),
                         ),
-                        activeColor: AppColors.primaryTerracotta,
+                        activeColor: AppColors.priceCrimson,
                         onChanged: (val) {
                           if (val != null) {
-                            setState(() {
-                              _selectedReason = val;
-                            });
+                            setState(() => _selectedReason = val);
                           }
                         },
                       );
                     }).toList(),
                   ),
                 ),
-              ),
-              const SizedBox(height: DesignTokens.spaceLg),
+                const SizedBox(height: 16),
 
-              // Description input
-              Text(
-                'MÔ TẢ CHI TIẾT VI PHẠM',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textCharcoal,
-                ),
-              ),
-              const SizedBox(height: DesignTokens.spaceSm),
-              TextField(
-                controller: _descController,
-                maxLines: 3,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: 'Cung cấp bằng chứng hoặc bối cảnh cuộc trò chuyện để admin thẩm tra...',
-                  hintStyle: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-                  filled: true,
-                  fillColor: AppColors.surfaceCard,
-                  contentPadding: const EdgeInsets.all(DesignTokens.spaceMd),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.borderWarm),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.borderWarm),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.primaryTerracotta, width: 1.5),
+                // Description input
+                Text(
+                  'MÔ TẢ CHI TIẾT VI PHẠM',
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: AppColors.textCharcoal,
                   ),
                 ),
-              ),
-
-              // Block toggle switch
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: DesignTokens.spaceMd),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.spaceMd,
-                  vertical: DesignTokens.spaceSm,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceWarm,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  border: Border.all(color: AppColors.borderWarm),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Chặn người này',
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textCharcoal,
-                            ),
-                          ),
-                          Text(
-                            'Không cho phép gửi hoặc nhận tin nhắn mới trong cuộc trò chuyện này.',
-                            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-                          ),
-                        ],
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _descController,
+                  maxLines: 3,
+                  maxLength: 500,
+                  decoration: InputDecoration(
+                    hintText: 'Cung cấp bằng chứng hoặc bối cảnh cuộc trò chuyện để admin thẩm tra...',
+                    hintStyle: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.surfaceWarm,
+                    contentPadding: const EdgeInsets.all(14),
+                    border: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      borderSide: const BorderSide(color: AppColors.borderWarm),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      borderSide: const BorderSide(color: AppColors.borderWarm),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      borderSide: const BorderSide(
+                        color: AppColors.priceCrimson,
+                        width: 1.5,
                       ),
                     ),
-                    Switch(
-                      value: _blockConversation,
-                      activeColor: AppColors.christmasBerryRed,
-                      onChanged: (val) {
-                        setState(() {
-                          _blockConversation = val;
-                        });
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
 
-              if (_validationError != null) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: DesignTokens.spaceMd),
-                  child: Text(
-                    _validationError!,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.statusDanger,
-                      fontWeight: FontWeight.bold,
+                // Block toggle switch
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWarm,
+                    borderRadius: DesignTokens.borderRadiusLg,
+                    border: Border.all(color: AppColors.borderWarm),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Chặn người này',
+                              style: AppTypography.labelStrong.copyWith(
+                                fontSize: 14,
+                                color: AppColors.textCharcoal,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Không cho phép gửi hoặc nhận tin nhắn mới trong cuộc trò chuyện này.',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _blockConversation,
+                        activeColor: AppColors.priceCrimson,
+                        onChanged: (val) {
+                          setState(() => _blockConversation = val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_validationError != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _validationError!,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.priceCrimson,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Submit CTA
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: chatVm.isReporting ? null : _submitReport,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.priceCrimson,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                    ),
+                    icon: chatVm.isReporting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.flag_outlined, size: 19),
+                    label: Text(
+                      chatVm.isReporting
+                          ? 'Đang gửi báo cáo...'
+                          : 'Gửi Báo Cáo Vi Phạm',
+                      style: AppTypography.button.copyWith(color: Colors.white),
                     ),
                   ),
                 ),
               ],
-
-              // Submit CTA
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: chatVm.isReporting ? null : _submitReport,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.christmasBerryRed,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: DesignTokens.spaceMd),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    ),
-                  ),
-                  icon: chatVm.isReporting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.flag_outlined, size: 20),
-                  label: Text(
-                    chatVm.isReporting ? 'Đang gửi báo cáo...' : 'Gửi Báo Cáo Vi Phạm',
-                    style: AppTypography.button.copyWith(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

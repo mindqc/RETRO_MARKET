@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
@@ -26,7 +27,7 @@ class VerificationBadge extends StatelessWidget {
         message: config.label,
         child: Icon(
           config.icon,
-          size: isCompact ? 14 : 18,
+          size: isCompact ? 15 : 18,
           color: config.iconColor,
         ),
       );
@@ -34,12 +35,12 @@ class VerificationBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 6 : 8,
-        vertical: isCompact ? 2 : 4,
+        horizontal: isCompact ? 8 : 10,
+        vertical: isCompact ? 2.5 : 4,
       ),
       decoration: BoxDecoration(
         color: config.backgroundColor,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+        borderRadius: DesignTokens.borderRadiusFull,
         border: Border.all(color: config.borderColor, width: 1),
       ),
       child: Row(
@@ -47,16 +48,17 @@ class VerificationBadge extends StatelessWidget {
         children: [
           Icon(
             config.icon,
-            size: isCompact ? 12 : 14,
+            size: isCompact ? 12.5 : 14.5,
             color: config.iconColor,
           ),
           const SizedBox(width: 4),
           Text(
             config.label,
-            style: (isCompact ? AppTypography.caption : AppTypography.bodySmall).copyWith(
+            style: (isCompact ? AppTypography.caption : AppTypography.bodySmall)
+                .copyWith(
               color: config.textColor,
-              fontWeight: FontWeight.w600,
-              fontSize: isCompact ? 10 : 11,
+              fontWeight: FontWeight.w700,
+              fontSize: isCompact ? 10.5 : 11.5,
             ),
           ),
         ],
@@ -70,38 +72,38 @@ class VerificationBadge extends StatelessWidget {
         return const _VerificationConfig(
           label: 'Xác minh giá trị cao',
           icon: Icons.verified_user,
-          iconColor: AppColors.accentVintageGold,
-          backgroundColor: Color(0xFFFFFBEB),
-          textColor: Color(0xFF946200),
-          borderColor: Color(0xFFFFE082),
+          iconColor: AppColors.starGold,
+          backgroundColor: AppColors.creamBadgeSoft,
+          textColor: AppColors.creamBadgeText,
+          borderColor: AppColors.creamBadgeBorder,
         );
       case 'MODERATOR_REVIEWED':
         return const _VerificationConfig(
           label: 'Đã kiểm duyệt',
           icon: Icons.verified,
-          iconColor: AppColors.secondaryPineGreen,
-          backgroundColor: Color(0xFFEBF5EE),
-          textColor: AppColors.secondaryPineGreen,
-          borderColor: Color(0xFFBCE3C6),
+          iconColor: AppColors.verifiedLeaf,
+          backgroundColor: AppColors.verifiedLeafBg,
+          textColor: AppColors.verifiedLeaf,
+          borderColor: Color(0xFFB7DEC4),
         );
       case 'EVIDENCE_PROVIDED':
       case 'BASIC_CHECKED':
         return const _VerificationConfig(
           label: 'Có chứng từ gốc',
           icon: Icons.assignment_turned_in_outlined,
-          iconColor: AppColors.statusInfo,
-          backgroundColor: Color(0xFFE3F2FD),
-          textColor: Color(0xFF0277BD),
-          borderColor: Color(0xFF90CAF9),
+          iconColor: AppColors.pineDeep,
+          backgroundColor: Color(0xFFE7F2F8),
+          textColor: AppColors.pineDeep,
+          borderColor: Color(0xFFB5D8EB),
         );
       case 'NONE':
       case 'UNVERIFIED':
       default:
         return const _VerificationConfig(
           label: 'Chưa kiểm định',
-          icon: Icons.help_outline,
+          icon: Icons.help_outline_rounded,
           iconColor: AppColors.textMuted,
-          backgroundColor: Color(0xFFF4EFE6),
+          backgroundColor: AppColors.surfaceWarm,
           textColor: AppColors.textMuted,
           borderColor: AppColors.borderWarm,
         );

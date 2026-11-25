@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/seasonal_decor_provider.dart';
 import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
 import '../viewmodels/profile_view_model.dart';
 
@@ -15,10 +18,12 @@ class UnifiedPersonalHubScreen extends ConsumerStatefulWidget {
   const UnifiedPersonalHubScreen({super.key});
 
   @override
-  ConsumerState<UnifiedPersonalHubScreen> createState() => _UnifiedPersonalHubScreenState();
+  ConsumerState<UnifiedPersonalHubScreen> createState() =>
+      _UnifiedPersonalHubScreenState();
 }
 
-class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScreen> {
+class _UnifiedPersonalHubScreenState
+    extends ConsumerState<UnifiedPersonalHubScreen> {
   @override
   void initState() {
     super.initState();
@@ -33,32 +38,42 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
   Widget build(BuildContext context) {
     final authVm = ref.watch(authViewModelProvider);
     final profileVm = ref.watch(profileViewModelProvider);
+    final isSeasonal = ref.watch(seasonalDecorProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        title: const Text('izithrift • Cá nhân'),
+        backgroundColor: AppColors.canvasParchment,
+        title: RetroBrandWordmark(
+          titleText: 'izithrift • Cá nhân',
+          showSeasonalAccent: isSeasonal,
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
+          RetroHeaderIconButton(
+            icon: Icons.settings_outlined,
+            tooltip: 'Cài đặt',
             onPressed: () => context.push(AppRoutes.settings),
           ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: AppColors.primaryTerracotta,
-          onRefresh: () async {
-            if (authVm.isAuthenticated) {
-              await ref.read(profileViewModelProvider).loadProfileSummary();
-            }
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(DesignTokens.spaceLg),
-            child: authVm.isAuthenticated
-                ? _buildAuthenticatedHub(authVm, profileVm)
-                : _buildGuestPrompt(),
+      body: RetroAmbientSnowflakes(
+        enabled: isSeasonal,
+        child: SafeArea(
+          child: RefreshIndicator(
+            color: AppColors.ctaTerracotta,
+            onRefresh: () async {
+              if (authVm.isAuthenticated) {
+                await ref.read(profileViewModelProvider).loadProfileSummary();
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(DesignTokens.spaceLg),
+              child: authVm.isAuthenticated
+                  ? _buildAuthenticatedHub(authVm, profileVm)
+                  : _buildGuestPrompt(),
+            ),
           ),
         ),
       ),
@@ -68,36 +83,47 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
   Widget _buildGuestPrompt() {
     return Column(
       children: [
-        const SizedBox(height: DesignTokens.space2xl),
-        Container(
+        const SizedBox(height: DesignTokens.spaceXl),
+        RetroSectionContainer(
           padding: const EdgeInsets.all(DesignTokens.space2xl),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            border: Border.all(color: AppColors.borderWarm),
-            boxShadow: DesignTokens.cardElevation,
-          ),
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(DesignTokens.spaceLg),
-                decoration: const BoxDecoration(
-                  color: AppColors.surfaceWarm,
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  gradient: const RadialGradient(
+                    colors: [
+                      AppColors.categoryCircleStart,
+                      AppColors.categoryCircleEnd,
+                    ],
+                  ),
                   shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.creamBadgeBorder),
+                  boxShadow: DesignTokens.cardElevation,
                 ),
-                child: const Icon(Icons.person_outline, size: 56, color: AppColors.primaryTerracotta),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  size: 46,
+                  color: AppColors.pineDeep,
+                ),
               ),
               const SizedBox(height: DesignTokens.spaceLg),
               Text(
                 'Tham gia cộng đồng izithrift',
                 textAlign: TextAlign.center,
-                style: AppTypography.headingLarge,
+                style: AppTypography.headingLarge.copyWith(
+                  color: AppColors.pineDeep,
+                ),
               ),
               const SizedBox(height: DesignTokens.spaceSm),
               Text(
                 'Đăng nhập để theo dõi đơn mua, quản lý tiệm bán đồ vintage và tham gia các phiên đấu giá trực tiếp.',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: DesignTokens.spaceXl),
               SizedBox(
@@ -114,7 +140,10 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
     );
   }
 
-  Widget _buildAuthenticatedHub(AuthViewModel authVm, ProfileViewModel profileVm) {
+  Widget _buildAuthenticatedHub(
+    AuthViewModel authVm,
+    ProfileViewModel profileVm,
+  ) {
     final summary = profileVm.profileSummary;
     final user = summary?.user ?? authVm.currentUser!;
     final sellerProfile = user.sellerProfile;
@@ -127,7 +156,7 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
           padding: const EdgeInsets.all(DesignTokens.spaceLg),
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+            borderRadius: DesignTokens.borderRadiusBanner,
             border: Border.all(color: AppColors.borderWarm),
             boxShadow: DesignTokens.cardElevation,
           ),
@@ -141,7 +170,9 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
                   children: [
                     Text(
                       user.displayName,
-                      style: AppTypography.headingSmall,
+                      style: AppTypography.headingSmall.copyWith(
+                        color: AppColors.pineDeep,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -152,40 +183,66 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Row(
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF9E6),
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusXs),
-                            border: Border.all(color: const Color(0xFFFFE799)),
+                            color: AppColors.creamBadgeSoft,
+                            borderRadius: DesignTokens.borderRadiusFull,
+                            border: Border.all(
+                              color: AppColors.creamBadgeBorder,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.star, size: 12, color: Color(0xFFB47800)),
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 13,
+                                color: AppColors.starGold,
+                              ),
                               const SizedBox(width: 3),
                               Text(
                                 'Uy tín: ${sellerProfile?.trustScore.toStringAsFixed(0) ?? '100'}%',
                                 style: AppTypography.caption.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFFB47800),
-                                  fontSize: 10,
+                                  color: AppColors.creamBadgeText,
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
+                        ),
+                        const RetroVerifiedShopChip(
+                          label: 'Tài khoản hợp nhất',
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
-                onPressed: () => context.push(AppRoutes.editProfile),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWarm,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.borderWarm),
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: AppColors.pineDeep,
+                  ),
+                  onPressed: () => context.push(AppRoutes.editProfile),
+                ),
               ),
             ],
           ),
@@ -193,62 +250,80 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
 
         const SizedBox(height: DesignTokens.spaceLg),
 
-        // 2. Seller Mode Switch Banner (NAV-DEC-02)
-        InkWell(
-          onTap: () => context.push(AppRoutes.sellerHub),
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-          child: Container(
-            padding: const EdgeInsets.all(DesignTokens.spaceMd),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF294638), Color(0xFF1E352A)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              boxShadow: DesignTokens.cardElevation,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(DesignTokens.spaceSm),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+        // 2. Seller Mode Switch Banner (NAV-DEC-02) — Deep Pine Spotlight
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(AppRoutes.sellerHub),
+            borderRadius: DesignTokens.borderRadiusBanner,
+            child: RetroPineSpotlightContainer(
+              padding: const EdgeInsets.all(DesignTokens.spaceLg),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.creamBadgeBg.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.creamBadgeBg.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      color: AppColors.creamBadgeBg,
+                      size: 24,
+                    ),
                   ),
-                  child: const Icon(Icons.storefront, color: AppColors.textLight, size: 24),
-                ),
-                const SizedBox(width: DesignTokens.spaceMd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Kênh Người bán izithrift',
-                            style: AppTypography.headingSmall.copyWith(
-                              color: AppColors.textLight,
-                              fontSize: 15,
+                  const SizedBox(width: DesignTokens.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Kênh Người bán izithrift',
+                                style: AppTypography.headingSmall.copyWith(
+                                  color: AppColors.textLight,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text('🛍️'),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Ví: ${VndFormatter.format(sellerProfile?.walletBalance ?? 0)} • Đang giữ Ký quỹ: ${VndFormatter.format(sellerProfile?.escrowHeldBalance ?? 0)}',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textLight.withValues(alpha: 0.8),
-                          fontSize: 11,
+                            const SizedBox(width: 4),
+                            const Text('🛍️'),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ví: ${VndFormatter.format(sellerProfile?.walletBalance ?? 0)} • Đang giữ Ký quỹ: ${VndFormatter.format(sellerProfile?.escrowHeldBalance ?? 0)}',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.creamBadgeBg,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const Icon(Icons.arrow_forward_ios, color: AppColors.textLight, size: 14),
-              ],
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.creamBadgeBg,
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -256,26 +331,24 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
         const SizedBox(height: DesignTokens.spaceXl),
 
         // 3. Order Status Counters
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Đơn mua của tôi', style: AppTypography.headingSmall),
-            TextButton(
-              onPressed: () => context.push(AppRoutes.myOrders),
-              child: Text(
-                'Xem tất cả',
-                style: AppTypography.caption.copyWith(color: AppColors.primaryTerracotta, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
+        RetroSectionHeader(
+          title: 'Đơn mua của tôi',
+          icon: Icons.shopping_bag_outlined,
+          iconColor: AppColors.ctaTerracotta,
+          actionLabel: 'Xem tất cả',
+          onAction: () => context.push(AppRoutes.myOrders),
         ),
         const SizedBox(height: DesignTokens.spaceSm),
         Container(
-          padding: const EdgeInsets.symmetric(vertical: DesignTokens.spaceMd),
+          padding: const EdgeInsets.symmetric(
+            vertical: DesignTokens.spaceMd,
+            horizontal: DesignTokens.spaceXs,
+          ),
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+            borderRadius: DesignTokens.borderRadiusLg,
             border: Border.all(color: AppColors.borderWarm),
+            boxShadow: DesignTokens.cardElevation,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -288,7 +361,8 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
               ),
               _buildOrderStatusItem(
                 label: 'Chờ gửi hàng',
-                count: (summary?.paidCount ?? 0) + (summary?.preparingCount ?? 0),
+                count:
+                    (summary?.paidCount ?? 0) + (summary?.preparingCount ?? 0),
                 icon: Icons.inventory_2_outlined,
                 onTap: () => context.push(AppRoutes.myOrders),
               ),
@@ -302,7 +376,7 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
                 label: 'Khiếu nại',
                 count: summary?.disputedCount ?? 0,
                 icon: Icons.report_problem_outlined,
-                badgeColor: AppColors.statusDanger,
+                badgeColor: AppColors.priceCrimson,
                 onTap: () => context.push(AppRoutes.myOrders),
               ),
             ],
@@ -312,41 +386,63 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
         const SizedBox(height: DesignTokens.spaceXl),
 
         // 4. Menu Items
-        Text('Tiện ích & Quản lý', style: AppTypography.headingSmall),
+        const RetroSectionHeader(
+          title: 'Tiện ích & Quản lý',
+          icon: Icons.auto_awesome_outlined,
+          iconColor: AppColors.starGold,
+        ),
         const SizedBox(height: DesignTokens.spaceSm),
-        Material(
-          color: AppColors.surfaceCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            side: const BorderSide(color: AppColors.borderWarm),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: DesignTokens.borderRadiusLg,
+            boxShadow: DesignTokens.cardElevation,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              _buildMenuItem(
-                icon: Icons.gavel_outlined,
-                title: 'Phiên đấu giá đang tham gia',
-                onTap: () => context.push(AppRoutes.auctions),
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildMenuItem(
-                icon: Icons.location_on_outlined,
-                title: 'Sổ địa chỉ nhận hàng',
-                onTap: () => context.push(AppRoutes.addresses),
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildMenuItem(
-                icon: Icons.favorite_border,
-                title: 'Món đồ đã thích (${summary?.favoritesCount ?? 0})',
-                onTap: () => context.push(AppRoutes.favorites),
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildMenuItem(
-                icon: Icons.settings_outlined,
-                title: 'Cài đặt ứng dụng & Giao diện',
-                onTap: () => context.push(AppRoutes.settings),
-              ),
-            ],
+          child: Material(
+            color: AppColors.surfaceCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: DesignTokens.borderRadiusLg,
+              side: const BorderSide(color: AppColors.borderWarm),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _buildMenuItem(
+                  icon: Icons.gavel_rounded,
+                  title: 'Phiên đấu giá đang tham gia',
+                  onTap: () => context.push(AppRoutes.auctions),
+                ),
+                const Divider(
+                  height: 1,
+                  indent: 64,
+                  color: AppColors.borderSubtle,
+                ),
+                _buildMenuItem(
+                  icon: Icons.location_on_outlined,
+                  title: 'Sổ địa chỉ nhận hàng',
+                  onTap: () => context.push(AppRoutes.addresses),
+                ),
+                const Divider(
+                  height: 1,
+                  indent: 64,
+                  color: AppColors.borderSubtle,
+                ),
+                _buildMenuItem(
+                  icon: Icons.favorite_border_rounded,
+                  title: 'Món đồ đã thích (${summary?.favoritesCount ?? 0})',
+                  onTap: () => context.push(AppRoutes.favorites),
+                ),
+                const Divider(
+                  height: 1,
+                  indent: 64,
+                  color: AppColors.borderSubtle,
+                ),
+                _buildMenuItem(
+                  icon: Icons.settings_outlined,
+                  title: 'Cài đặt ứng dụng & Giao diện',
+                  onTap: () => context.push(AppRoutes.settings),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -355,14 +451,20 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
 
   Widget _buildAvatar(String? url, String displayName) {
     if (url != null && url.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          width: 54,
-          height: 54,
-          fit: BoxFit.cover,
-          errorWidget: (_, _, _) => _buildFallbackAvatar(displayName),
+      return Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
+        ),
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: url,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            errorWidget: (_, _, _) => _buildFallbackAvatar(displayName),
+          ),
         ),
       );
     }
@@ -372,17 +474,21 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
   Widget _buildFallbackAvatar(String name) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     return Container(
-      width: 54,
-      height: 54,
+      width: 58,
+      height: 58,
       decoration: BoxDecoration(
-        color: AppColors.primaryTerracotta.withValues(alpha: 0.15),
+        gradient: const RadialGradient(
+          colors: [AppColors.categoryCircleStart, AppColors.categoryCircleEnd],
+        ),
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primaryTerracotta, width: 1.5),
+        border: Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
       ),
       child: Center(
         child: Text(
           initial,
-          style: AppTypography.headingMedium.copyWith(color: AppColors.primaryTerracotta),
+          style: AppTypography.headingMedium.copyWith(
+            color: AppColors.pineDeep,
+          ),
         ),
       ),
     );
@@ -397,21 +503,39 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      borderRadius: DesignTokens.borderRadiusMd,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Column(
           children: [
             Badge(
               isLabelVisible: count > 0,
               label: Text('$count'),
-              backgroundColor: badgeColor ?? AppColors.primaryTerracotta,
-              child: Icon(icon, size: 24, color: AppColors.textCharcoal),
+              backgroundColor: badgeColor ?? AppColors.priceCrimson,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: const RadialGradient(
+                    colors: [
+                      AppColors.categoryCircleStart,
+                      AppColors.categoryCircleEnd,
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.creamBadgeBorder),
+                ),
+                child: Icon(icon, size: 21, color: AppColors.pineDeep),
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               label,
-              style: AppTypography.caption.copyWith(fontSize: 11),
+              style: AppTypography.caption.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textCharcoal,
+              ),
             ),
           ],
         ),
@@ -425,9 +549,26 @@ class _UnifiedPersonalHubScreenState extends ConsumerState<UnifiedPersonalHubScr
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.primaryTerracotta, size: 22),
-      title: Text(title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textMuted),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: AppColors.creamBadgeSoft,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.creamBadgeBorder),
+        ),
+        child: Icon(icon, color: AppColors.pineDeep, size: 19),
+      ),
+      title: Text(
+        title,
+        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: AppColors.textMuted,
+      ),
       onTap: onTap,
     );
   }

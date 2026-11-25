@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/server_countdown_timer.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/payment_session_model.dart';
@@ -51,11 +52,11 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
     final vm = ref.watch(paymentViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
         title: const Text('Thanh toán đơn hàng'),
         elevation: 0,
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         foregroundColor: AppColors.textCharcoal,
       ),
       body: SafeArea(
@@ -100,18 +101,9 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Payment summary
-  // ---------------------------------------------------------------------------
-
   Widget _buildPaymentSummary(PaymentSessionModel session) {
-    return Container(
+    return RetroPineSpotlightContainer(
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
-      decoration: BoxDecoration(
-        color: AppColors.primaryForestGreen,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        boxShadow: DesignTokens.cardElevation,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -119,7 +111,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             children: [
               const Icon(
                 Icons.lock_outline_rounded,
-                color: Color(0xFFDCE9D9),
+                color: AppColors.creamBadgeBg,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -127,22 +119,23 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                 child: Text(
                   'Đơn hàng đang chờ thanh toán',
                   style: TextStyle(
-                    color: Color(0xFFDCE9D9),
+                    color: AppColors.creamBadgeBg,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE5B4),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+                  color: AppColors.creamBadgeBg,
+                  borderRadius: DesignTokens.borderRadiusFull,
                 ),
                 child: const Text(
                   'PENDING',
                   style: TextStyle(
-                    color: Color(0xFF77500C),
+                    color: AppColors.creamBadgeText,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
@@ -159,7 +152,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
           const SizedBox(height: 4),
           Text(
             VndFormatter.format(session.amount),
-            style: AppTypography.headingLarge.copyWith(
+            style: AppTypography.priceLarge.copyWith(
               color: Colors.white,
               fontSize: 30,
               fontWeight: FontWeight.w800,
@@ -170,14 +163,14 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             padding: const EdgeInsets.all(DesignTokens.spaceMd),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+              borderRadius: DesignTokens.borderRadiusMd,
               border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.receipt_long_outlined,
-                  color: Color(0xFFDCE9D9),
+                  color: AppColors.creamBadgeBg,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -199,7 +192,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             children: [
               const Icon(
                 Icons.timer_outlined,
-                color: Color(0xFFFFD98A),
+                color: AppColors.starGold,
                 size: 19,
               ),
               const SizedBox(width: 7),
@@ -227,16 +220,12 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // QR panel
-  // ---------------------------------------------------------------------------
-
   Widget _buildQrPanel(PaymentSessionModel session) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -247,15 +236,15 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             children: [
               const Icon(
                 Icons.qr_code_2_rounded,
-                color: AppColors.primaryTerracotta,
+                color: AppColors.ctaTerracotta,
                 size: 23,
               ),
               const SizedBox(width: 8),
               Text(
                 'QUÉT MÃ QR',
                 style: AppTypography.headingSmall.copyWith(
-                  color: AppColors.textCharcoal,
-                  fontSize: 14,
+                  color: AppColors.pineDeep,
+                  fontSize: 15,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -268,13 +257,13 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             style: AppTypography.caption.copyWith(fontSize: 12),
           ),
           const SizedBox(height: DesignTokens.spaceLg),
-
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              border: Border.all(color: AppColors.primaryForestGreen, width: 2),
+              borderRadius: DesignTokens.borderRadiusLg,
+              border: Border.all(color: AppColors.pineDeep, width: 2),
+              boxShadow: DesignTokens.cardElevation,
             ),
             child: QrImageView(
               data: session.qrDisplayData,
@@ -284,23 +273,21 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
               errorCorrectionLevel: QrErrorCorrectLevel.M,
             ),
           ),
-
           const SizedBox(height: DesignTokens.spaceLg),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(DesignTokens.spaceMd),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF5DE),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              border: Border.all(color: const Color(0xFFFFDF9B)),
+              color: AppColors.creamBadgeSoft,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(color: AppColors.creamBadgeBorder),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(
                   Icons.info_outline_rounded,
-                  color: Color(0xFF946200),
+                  color: AppColors.creamBadgeText,
                   size: 19,
                 ),
                 const SizedBox(width: 9),
@@ -308,9 +295,9 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                   child: Text(
                     'QR mô phỏng RETRO MARKET. Không phải VietQR và không dùng để chuyển khoản thật.',
                     style: AppTypography.caption.copyWith(
-                      color: const Color(0xFF795300),
+                      color: AppColors.creamBadgeText,
                       fontWeight: FontWeight.w600,
-                      fontSize: 11,
+                      fontSize: 11.5,
                     ),
                   ),
                 ),
@@ -322,16 +309,12 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Transfer details
-  // ---------------------------------------------------------------------------
-
   Widget _buildTransferDetails(PaymentSessionModel session) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -342,11 +325,16 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             children: [
               const Icon(
                 Icons.description_outlined,
-                color: AppColors.primaryVintageBrown,
+                color: AppColors.pineDeep,
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text('Thông tin thanh toán', style: AppTypography.headingSmall),
+              Text(
+                'Thông tin thanh toán',
+                style: AppTypography.headingSmall.copyWith(
+                  color: AppColors.pineDeep,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: DesignTokens.spaceMd),
@@ -384,15 +372,15 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                   value,
                   style: AppTypography.bodyMedium.copyWith(
                     color: highlighted
-                        ? AppColors.primaryTerracotta
+                        ? AppColors.priceCrimson
                         : AppColors.textCharcoal,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               InkWell(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                borderRadius: DesignTokens.borderRadiusFull,
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: value));
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -404,13 +392,14 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceWarm,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                    color: AppColors.creamBadgeSoft,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.creamBadgeBorder),
                   ),
                   child: const Icon(
                     Icons.copy_rounded,
                     size: 16,
-                    color: AppColors.primaryVintageBrown,
+                    color: AppColors.pineDeep,
                   ),
                 ),
               ),
@@ -421,17 +410,13 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Demo controls
-  // ---------------------------------------------------------------------------
-
   Widget _buildDemoPanel(PaymentSessionModel session, PaymentViewModel vm) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4D8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(color: const Color(0xFFE9C86B), width: 1.5),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusBanner,
+        border: Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,18 +424,18 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE5A6),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                padding: const EdgeInsets.all(9),
+                decoration: const BoxDecoration(
+                  color: AppColors.creamBadgeBg,
+                  shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.science_outlined,
-                  color: Color(0xFF946200),
+                  color: AppColors.creamBadgeText,
                   size: 20,
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: 10),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +446,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         letterSpacing: 0.8,
-                        color: Color(0xFF7A5100),
+                        color: AppColors.creamBadgeText,
                       ),
                     ),
                     SizedBox(height: 2),
@@ -470,7 +455,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF7A5100),
+                        color: AppColors.creamBadgeText,
                       ),
                     ),
                   ],
@@ -478,35 +463,33 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             'Các nút bên dưới dùng để mô phỏng kết quả thanh toán trong buổi trình diễn. Không phát sinh giao dịch hoặc dòng tiền thật.',
             style: AppTypography.bodySmall.copyWith(
-              color: const Color(0xFF7A5100),
+              color: AppColors.creamBadgeText,
             ),
           ),
-
           if (vm.simulationMessage != null) ...[
             const SizedBox(height: DesignTokens.spaceMd),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(DesignTokens.spaceMd),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE8E8),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                color: AppColors.priceCrimsonSoft,
+                borderRadius: DesignTokens.borderRadiusMd,
+                border: Border.all(color: AppColors.priceCrimsonBorder),
               ),
               child: Text(
                 vm.simulationMessage!,
                 style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.statusDanger,
+                  color: AppColors.priceCrimson,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
-
           const SizedBox(height: DesignTokens.spaceLg),
-
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -518,13 +501,11 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryForestGreen,
+                backgroundColor: AppColors.pineDeep,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.primaryForestGreen
-                    .withValues(alpha: 0.45),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                ),
+                disabledBackgroundColor:
+                    AppColors.pineDeep.withValues(alpha: 0.45),
+                shape: const StadiumBorder(),
               ),
               onPressed: vm.isSimulating
                   ? null
@@ -541,9 +522,7 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                     },
             ),
           ),
-
           const SizedBox(height: DesignTokens.spaceSm),
-
           SizedBox(
             width: double.infinity,
             height: 46,
@@ -555,14 +534,12 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.statusDanger,
+                foregroundColor: AppColors.priceCrimson,
                 side: const BorderSide(
-                  color: AppColors.statusDanger,
+                  color: AppColors.priceCrimson,
                   width: 1.2,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                ),
+                shape: const StadiumBorder(),
               ),
               onPressed: vm.isSimulating
                   ? null
@@ -592,7 +569,7 @@ class _LoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+      child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
     );
   }
 }

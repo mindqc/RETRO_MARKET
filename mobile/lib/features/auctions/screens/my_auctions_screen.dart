@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -45,7 +46,8 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(myAuctionsViewModelProvider.notifier).loadMore();
     }
   }
@@ -63,39 +65,59 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
     final vm = ref.watch(myAuctionsViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
+        backgroundColor: AppColors.canvasParchment,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDarkCharcoal),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textCharcoal,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Đấu Giá Của Tôi',
-          style: AppTypography.headingMedium.copyWith(color: AppColors.primaryForestGreen),
+          style: AppTypography.headingMedium.copyWith(color: AppColors.pineDeep),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: const Size.fromHeight(50),
           child: Container(
-            color: AppColors.surfaceCard,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWarm,
+              borderRadius: DesignTokens.borderRadiusFull,
+              border: Border.all(color: AppColors.borderWarm),
+            ),
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              labelColor: AppColors.accentBurgundy,
-              unselectedLabelColor: AppColors.textCharcoalMuted,
-              indicatorColor: AppColors.accentBurgundy,
-              indicatorWeight: 3,
-              labelStyle: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-              tabs: _tabs.map((t) => Tab(text: t.label)).toList(),
+              padding: const EdgeInsets.all(3),
+              indicator: BoxDecoration(
+                color: AppColors.surfaceCard,
+                borderRadius: DesignTokens.borderRadiusFull,
+                boxShadow: DesignTokens.cardElevation,
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.priceCrimson,
+              unselectedLabelColor: AppColors.textMuted,
+              labelStyle: const TextStyle(
+                fontFamily: AppTypography.fontBody,
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
+              ),
+              tabs: _tabs.map((t) => Tab(height: 36, text: t.label)).toList(),
             ),
           ),
         ),
       ),
       body: RefreshIndicator(
-        color: AppColors.primaryForestGreen,
-        onRefresh: () => ref.read(myAuctionsViewModelProvider.notifier).fetchInitial(),
+        color: AppColors.ctaTerracotta,
+        onRefresh: () =>
+            ref.read(myAuctionsViewModelProvider.notifier).fetchInitial(),
         child: _buildBody(vm),
       ),
     );
@@ -104,14 +126,15 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
   Widget _buildBody(MyAuctionsViewModel vm) {
     if (vm.isLoading && vm.items.isEmpty) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryForestGreen),
+        child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
       );
     }
 
     if (vm.isError && vm.items.isEmpty) {
       return RetroErrorRetryView(
         errorMessage: vm.errorMessage ?? 'Không thể tải danh sách hoạt động.',
-        onRetry: () => ref.read(myAuctionsViewModelProvider.notifier).fetchInitial(),
+        onRetry: () =>
+            ref.read(myAuctionsViewModelProvider.notifier).fetchInitial(),
       );
     }
 
@@ -119,79 +142,89 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
       return const RetroEmptyStateView(
         title: 'Chưa có dữ liệu',
         message: 'Bạn chưa có phiên đấu giá nào trong mục này.',
+        icon: Icons.gavel_rounded,
       );
     }
 
     return ListView.separated(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(DesignTokens.spacingMd),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       itemCount: vm.items.length + (vm.isLoadingMore ? 1 : 0),
-      separatorBuilder: (context, index) => const SizedBox(height: DesignTokens.spacingMd),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         if (index >= vm.items.length) {
           return const Padding(
-            padding: EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
+            padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                color: AppColors.primaryForestGreen,
+                color: AppColors.ctaTerracotta,
               ),
             ),
           );
         }
-
-        final item = vm.items[index];
-        return _buildAuctionCard(context, item, vm.currentTab);
+        return _buildAuctionCard(context, vm.items[index], vm.currentTab);
       },
     );
   }
 
-  Widget _buildAuctionCard(BuildContext context, AuctionCardModel item, String currentTab) {
+  Widget _buildAuctionCard(
+    BuildContext context,
+    AuctionCardModel item,
+    String currentTab,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
-          color: item.isOutbid ? Colors.deepOrangeAccent : AppColors.borderWarm,
-          width: item.isOutbid ? 1.5 : DesignTokens.borderThin,
+          color: item.isOutbid
+              ? AppColors.ctaTerracotta
+              : AppColors.borderWarm,
+          width: item.isOutbid ? 1.5 : 1,
         ),
         boxShadow: DesignTokens.cardElevation,
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Status Badge
           if (currentTab == 'participating') ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: item.isLeading
-                    ? AppColors.primaryForestGreen.withAlpha(25)
-                    : Colors.deepOrange.withAlpha(25),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusMd)),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              color: item.isLeading
+                  ? AppColors.verifiedLeafBg
+                  : AppColors.priceCrimsonSoft,
               child: Row(
                 children: [
                   Icon(
-                    item.isLeading ? Icons.military_tech : Icons.warning_amber_rounded,
+                    item.isLeading
+                        ? Icons.military_tech_rounded
+                        : Icons.warning_amber_rounded,
                     size: 16,
-                    color: item.isLeading ? AppColors.primaryForestGreen : Colors.deepOrange,
+                    color: item.isLeading
+                        ? AppColors.verifiedLeaf
+                        : AppColors.priceCrimson,
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    item.isLeading ? '👑 BẠN ĐANG DẪN ĐẦU' : '⚠️ ĐÃ BỊ VƯỢT GIÁ',
+                    item.isLeading
+                        ? '👑 BẠN ĐANG DẪN ĐẦU'
+                        : '⚠️ ĐÃ BỊ VƯỢT GIÁ',
                     style: AppTypography.bodySmall.copyWith(
-                      color: item.isLeading ? AppColors.primaryForestGreen : Colors.deepOrange,
-                      fontWeight: FontWeight.bold,
+                      color: item.isLeading
+                          ? AppColors.verifiedLeaf
+                          : AppColors.priceCrimson,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
                     ),
                   ),
                   const Spacer(),
                   if (item.myHighestBid != null)
                     Text(
                       'Giá của bạn: ${VndFormatter.format(item.myHighestBid!)}',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textCharcoalMuted,
+                      style: AppTypography.caption.copyWith(
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -199,69 +232,73 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
               ),
             ),
           ],
-
           if (currentTab == 'won') ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.accentBurgundy.withAlpha(20),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusMd)),
-              ),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              color: AppColors.pineDeep,
+              child: const Row(
                 children: [
-                  const Icon(Icons.emoji_events, size: 18, color: AppColors.accentBurgundy),
-                  const SizedBox(width: 8),
-                  Text(
-                    '🏆 BẠN ĐÃ CHIẾN THẮNG PHIÊN ĐẤU GIÁ!',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.accentBurgundy,
-                      fontWeight: FontWeight.bold,
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    size: 18,
+                    color: AppColors.starGold,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '🏆 BẠN ĐÃ CHIẾN THẮNG PHIÊN ĐẤU GIÁ!',
+                      style: TextStyle(
+                        color: AppColors.creamBadgeBg,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-
-          // Card Content
           InkWell(
-            onTap: () {
-              context.push(AppRoutes.auctionRoomPath(item.id));
-            },
+            onTap: () => context.push(AppRoutes.auctionRoomPath(item.id)),
             child: Padding(
-              padding: const EdgeInsets.all(DesignTokens.spacingMd),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      width: 90,
-                      height: 90,
+                      width: 88,
+                      height: 88,
                       color: AppColors.surfaceWarm,
-                      child: item.primaryImageUrl != null && item.primaryImageUrl!.isNotEmpty
+                      child: item.primaryImageUrl != null &&
+                              item.primaryImageUrl!.isNotEmpty
                           ? Image.network(
                               item.primaryImageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.image_not_supported,
-                                color: AppColors.textCharcoalMuted,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.image_not_supported_outlined,
+                                color: AppColors.textMuted,
                               ),
                             )
-                          : const Icon(Icons.gavel, color: AppColors.primaryVintageBrown, size: 36),
+                          : const Icon(
+                              Icons.gavel_rounded,
+                              color: AppColors.pineDeep,
+                              size: 34,
+                            ),
                     ),
                   ),
-                  const SizedBox(width: DesignTokens.spacingMd),
-
-                  // Info
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           item.productTitle,
-                          style: AppTypography.headingSmall.copyWith(fontSize: 15),
+                          style: AppTypography.headingSmall.copyWith(
+                            fontSize: 15,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -270,13 +307,13 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
                           children: [
                             Text(
                               'Cao nhất: ',
-                              style: AppTypography.bodySmall.copyWith(color: AppColors.textCharcoalMuted),
+                              style: AppTypography.caption,
                             ),
                             Text(
                               VndFormatter.format(item.currentHighestBid),
                               style: AppTypography.priceMedium.copyWith(
-                                color: AppColors.accentBurgundy,
-                                fontWeight: FontWeight.bold,
+                                color: AppColors.priceCrimson,
+                                fontSize: 15.5,
                               ),
                             ),
                           ],
@@ -284,11 +321,15 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.history, size: 14, color: AppColors.textCharcoalMuted),
+                            const Icon(
+                              Icons.history_rounded,
+                              size: 14,
+                              color: AppColors.textMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${item.bidCount} lượt trả giá',
-                              style: AppTypography.bodySmall.copyWith(color: AppColors.textCharcoalMuted),
+                              style: AppTypography.caption,
                             ),
                           ],
                         ),
@@ -299,74 +340,75 @@ class _MyAuctionsScreenState extends ConsumerState<MyAuctionsScreen>
               ),
             ),
           ),
-
-          // Action CTA based on tab
           if (currentTab == 'participating' && item.isOutbid) ...[
             Padding(
-              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.push(AppRoutes.auctionRoomPath(item.id));
-                  },
-                  icon: const Icon(Icons.gavel, size: 18),
+                  onPressed: () =>
+                      context.push(AppRoutes.auctionRoomPath(item.id)),
+                  icon: const Icon(Icons.gavel_rounded, size: 17),
                   label: const Text('Trả giá lại ngay'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrange,
+                    backgroundColor: AppColors.ctaTerracotta,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                    ),
+                    shape: const StadiumBorder(),
                   ),
                 ),
               ),
             ),
           ],
-
           if (currentTab == 'won') ...[
             Container(
-              margin: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
-              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                border: Border.all(color: Colors.amber.shade300),
+                color: AppColors.creamBadgeSoft,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.creamBadgeBorder),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
-                      const Icon(Icons.timer, size: 16, color: Colors.amber),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Thời hạn thanh toán (30 phút - BR-AU-07):',
-                        style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 16,
+                        color: AppColors.ctaTerracotta,
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Thời hạn thanh toán (30 phút - BR-AU-07):',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: AppColors.creamBadgeText,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Vui lòng thanh toán sớm để không bị đánh dấu bùng cọc (WINNER_DEFAULTED).',
-                    style: AppTypography.bodySmall.copyWith(fontSize: 12, color: Colors.brown.shade800),
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textCharcoal,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Open purchase details or payment
-                        context.push(AppRoutes.myPurchases);
-                      },
-                      icon: const Icon(Icons.payment, size: 18),
+                      onPressed: () => context.push(AppRoutes.myPurchases),
+                      icon: const Icon(Icons.payment_rounded, size: 18),
                       label: const Text('Thanh toán đơn hàng ngay 💳'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryForestGreen,
+                        backgroundColor: AppColors.pineBanner,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                        ),
+                        shape: const StadiumBorder(),
                       ),
                     ),
                   ),

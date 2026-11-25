@@ -4,6 +4,7 @@ import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
 
 /// ConditionBadge displays Vietnamese secondhand condition ratings
+/// Styled in the warm cream-gold pill language from the approved Home Page reference.
 /// Maps standard DB codes: NEW_WITH_TAGS, LIKE_NEW, GOOD, FAIR, VINTAGE_WORN
 class ConditionBadge extends StatelessWidget {
   final String condition;
@@ -21,21 +22,23 @@ class ConditionBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 6 : 8,
-        vertical: isCompact ? 2 : 4,
+        horizontal: isCompact ? 8 : 10,
+        vertical: isCompact ? 3 : 4,
       ),
       decoration: BoxDecoration(
         color: styleConfig.backgroundColor,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXs),
-        border: Border.all(color: styleConfig.borderColor, width: 1),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+        border: Border.all(color: styleConfig.borderColor, width: 0.9),
       ),
       child: Text(
         styleConfig.label,
-        style: (isCompact ? AppTypography.caption : AppTypography.bodySmall).copyWith(
-          color: styleConfig.textColor,
-          fontWeight: FontWeight.w600,
-          fontSize: isCompact ? 10 : 11,
-        ),
+        style: (isCompact ? AppTypography.caption : AppTypography.bodySmall)
+            .copyWith(
+              color: styleConfig.textColor,
+              fontWeight: FontWeight.w700,
+              fontSize: isCompact ? 10 : 11,
+              height: 1.15,
+            ),
       ),
     );
   }
@@ -45,38 +48,38 @@ class ConditionBadge extends StatelessWidget {
       case 'NEW_WITH_TAGS':
         return const _ConditionConfig(
           label: 'Mới còn tag',
-          backgroundColor: Color(0xFFEBF5EE),
-          textColor: AppColors.secondaryPineGreen,
-          borderColor: Color(0xFFBCE3C6),
+          backgroundColor: AppColors.primaryForestGreenLight,
+          textColor: AppColors.pineDeep,
+          borderColor: Color(0xFFBBD6C2),
         );
       case 'LIKE_NEW':
         return const _ConditionConfig(
           label: 'Như mới (99%)',
-          backgroundColor: Color(0xFFEBF5EE),
-          textColor: AppColors.secondaryPineGreen,
-          borderColor: Color(0xFFBCE3C6),
+          backgroundColor: AppColors.creamBadgeBg,
+          textColor: AppColors.creamBadgeText,
+          borderColor: AppColors.creamBadgeBorder,
         );
       case 'GOOD':
         return const _ConditionConfig(
           label: 'Tốt (90%)',
-          backgroundColor: Color(0xFFFFF9E6),
-          textColor: Color(0xFFB47800),
-          borderColor: Color(0xFFFFE799),
+          backgroundColor: AppColors.creamBadgeSoft,
+          textColor: AppColors.creamBadgeText,
+          borderColor: AppColors.creamBadgeBorder,
         );
       case 'FAIR':
         return const _ConditionConfig(
           label: 'Khá (80%)',
-          backgroundColor: Color(0xFFFDF0EB),
-          textColor: AppColors.primaryTerracotta,
-          borderColor: Color(0xFFF7CFBE),
+          backgroundColor: Color(0xFFF9E6DC),
+          textColor: AppColors.ctaTerracotta,
+          borderColor: Color(0xFFEBC8B6),
         );
       case 'VINTAGE_WORN':
       default:
         return const _ConditionConfig(
           label: 'Dấu ấn vintage',
-          backgroundColor: Color(0xFFF4EFE6),
-          textColor: Color(0xFF755B49),
-          borderColor: AppColors.borderWarm,
+          backgroundColor: AppColors.creamBadgeBg,
+          textColor: Color(0xFF5A432C),
+          borderColor: AppColors.creamBadgeBorder,
         );
     }
   }

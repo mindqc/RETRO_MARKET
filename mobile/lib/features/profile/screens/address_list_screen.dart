@@ -29,18 +29,32 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xóa địa chỉ?'),
-        content: Text('Bạn có chắc chắn muốn xóa địa chỉ "${address.streetAddress}" khỏi sổ địa chỉ?'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+        ),
+        title: Text(
+          'Xóa địa chỉ?',
+          style: AppTypography.headingSmall.copyWith(color: AppColors.pineDeep),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa địa chỉ "${address.streetAddress}" khỏi sổ địa chỉ?',
+          style: AppTypography.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusDanger),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.priceCrimson,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref.read(addressViewModelProvider).deleteAddress(address.id);
+              await ref
+                  .read(addressViewModelProvider)
+                  .deleteAddress(address.id);
             },
             child: const Text('Xóa'),
           ),
@@ -55,14 +69,16 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
     final addresses = addressVm.addresses;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
         title: const Text('Sổ địa chỉ nhận hàng'),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primaryTerracotta,
+        backgroundColor: AppColors.ctaTerracotta,
         foregroundColor: AppColors.textLight,
-        icon: const Icon(Icons.add),
+        shape: const StadiumBorder(),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Thêm địa chỉ mới'),
         onPressed: () async {
           await Navigator.of(context).push(
@@ -72,11 +88,14 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primaryTerracotta,
-          onRefresh: () => ref.read(addressViewModelProvider).loadAddresses(),
+          color: AppColors.ctaTerracotta,
+          onRefresh: () =>
+              ref.read(addressViewModelProvider).loadAddresses(),
           child: addressVm.state.isLoading && addresses.isEmpty
               ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+                  child: CircularProgressIndicator(
+                    color: AppColors.ctaTerracotta,
+                  ),
                 )
               : addresses.isEmpty
                   ? SingleChildScrollView(
@@ -86,11 +105,14 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
                         child: RetroEmptyStateView(
                           icon: Icons.location_off_outlined,
                           title: 'Chưa có địa chỉ nhận hàng',
-                          message: 'Thêm địa chỉ giao nhận để sẵn sàng chốt đơn mua đồ vintage.',
+                          message:
+                              'Thêm địa chỉ giao nhận để sẵn sàng chốt đơn mua đồ vintage.',
                           actionLabel: 'Thêm địa chỉ ngay',
                           onAction: () async {
                             await Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const AddEditAddressScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const AddEditAddressScreen(),
+                              ),
                             );
                           },
                         ),
@@ -101,10 +123,11 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
                         left: DesignTokens.spaceLg,
                         right: DesignTokens.spaceLg,
                         top: DesignTokens.spaceLg,
-                        bottom: 80,
+                        bottom: 92,
                       ),
                       itemCount: addresses.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: DesignTokens.spaceMd),
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: DesignTokens.spaceMd),
                       itemBuilder: (context, index) {
                         final item = addresses[index];
                         return _buildAddressCard(item);
@@ -120,9 +143,11 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(
-          color: address.isDefault ? AppColors.primaryTerracotta : AppColors.borderWarm,
+          color: address.isDefault
+              ? AppColors.pineDeep
+              : AppColors.borderWarm,
           width: address.isDefault ? 1.5 : 1.0,
         ),
         boxShadow: DesignTokens.cardElevation,
@@ -136,30 +161,57 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      address.recipientName,
-                      style: AppTypography.headingSmall.copyWith(fontSize: 16),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AppColors.creamBadgeSoft,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.creamBadgeBorder),
+                      ),
+                      child: const Icon(
+                        Icons.location_on_outlined,
+                        size: 18,
+                        color: AppColors.pineDeep,
+                      ),
                     ),
-                    const SizedBox(width: DesignTokens.spaceSm),
-                    Text(
-                      address.recipientPhone,
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            address.recipientName,
+                            style: AppTypography.headingSmall.copyWith(
+                              fontSize: 15.5,
+                              color: AppColors.pineDeep,
+                            ),
+                          ),
+                          Text(
+                            address.recipientPhone,
+                            style: AppTypography.caption,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
               if (address.isDefault)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFDF0EB),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusXs),
-                    border: Border.all(color: const Color(0xFFF7CFBE)),
+                    color: AppColors.creamBadgeBg,
+                    borderRadius: DesignTokens.borderRadiusFull,
+                    border: Border.all(color: AppColors.creamBadgeBorder),
                   ),
                   child: Text(
                     'Mặc định',
                     style: AppTypography.caption.copyWith(
-                      color: AppColors.primaryTerracotta,
+                      color: AppColors.creamBadgeText,
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
                     ),
@@ -167,32 +219,55 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: DesignTokens.spaceSm),
+          const SizedBox(height: DesignTokens.spaceMd),
           Text(
             address.fullAddress,
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.textCharcoal),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textCharcoal,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderSubtle),
-          const SizedBox(height: DesignTokens.spaceSm),
+          const SizedBox(height: DesignTokens.spaceXs),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primaryTerracotta),
-                label: const Text('Chỉnh sửa'),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 16,
+                  color: AppColors.pineDeep,
+                ),
+                label: Text(
+                  'Chỉnh sửa',
+                  style: AppTypography.buttonMedium.copyWith(
+                    color: AppColors.pineDeep,
+                    fontSize: 13,
+                  ),
+                ),
                 onPressed: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => AddEditAddressScreen(addressToEdit: address)),
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AddEditAddressScreen(addressToEdit: address),
+                    ),
                   );
                 },
               ),
               const SizedBox(width: DesignTokens.spaceSm),
               TextButton.icon(
-                icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.statusDanger),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  size: 16,
+                  color: AppColors.priceCrimson,
+                ),
                 label: Text(
                   'Xóa',
-                  style: AppTypography.buttonMedium.copyWith(color: AppColors.statusDanger),
+                  style: AppTypography.buttonMedium.copyWith(
+                    color: AppColors.priceCrimson,
+                    fontSize: 13,
+                  ),
                 ),
                 onPressed: () => _confirmDelete(address),
               ),

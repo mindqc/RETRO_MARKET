@@ -9,8 +9,8 @@ import 'server_countdown_timer.dart';
 import 'status_pill_badge.dart';
 import 'state_feedback_views.dart';
 
-/// Editorial auction card with live status and server-synchronized countdown.
-/// Keeps BR-AC-02 ownership awareness and all existing auction data behavior.
+/// Editorial auction card with live status ribbon, server-synchronized countdown,
+/// crimson bid value, and warm cream-gold bid-count chip matching the reference.
 class RetroAuctionCard extends StatelessWidget {
   final int id;
   final String title;
@@ -60,57 +60,62 @@ class RetroAuctionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _buildAuctionImage(),
-                    Positioned(
-                      top: DesignTokens.spaceSm,
-                      right: DesignTokens.spaceSm,
-                      child: StatusPillBadge(status: status, isCompact: true),
-                    ),
-                    Positioned(
-                      bottom: isOwner ? 30 : DesignTokens.spaceSm,
-                      left: DesignTokens.spaceSm,
-                      child: ServerCountdownTimer(
-                        endsAt: endsAt,
-                        extendedCount: extendedCount,
-                        isCompact: true,
-                      ),
-                    ),
-                    if (isOwner)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: DesignTokens.spaceSm,
-                            vertical: DesignTokens.spaceXs,
-                          ),
-                          color: AppColors.primaryForestGreen.withValues(
-                            alpha: 0.92,
-                          ),
-                          child: Text(
-                            'Phiên đấu của bạn (BR-AC-02)',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
-                              fontWeight: FontWeight.w600,
-                            ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildAuctionImage(),
+                        Positioned(
+                          top: 7,
+                          left: 7,
+                          child: StatusPillBadge(
+                            status: status,
+                            isCompact: true,
                           ),
                         ),
-                      ),
-                  ],
+                        Positioned(
+                          bottom: isOwner ? 28 : 7,
+                          left: 7,
+                          child: ServerCountdownTimer(
+                            endsAt: endsAt,
+                            extendedCount: extendedCount,
+                            isCompact: true,
+                          ),
+                        ),
+                        if (isOwner)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: DesignTokens.spaceSm,
+                                vertical: DesignTokens.spaceXs,
+                              ),
+                              color: AppColors.pineDeep.withValues(alpha: 0.92),
+                              child: Text(
+                                'Phiên đấu của bạn (BR-AC-02)',
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textLight,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  DesignTokens.spaceMd,
-                  DesignTokens.spaceSm,
-                  DesignTokens.spaceMd,
-                  DesignTokens.spaceMd,
-                ),
+                padding: const EdgeInsets.fromLTRB(11, 9, 11, 11),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -119,11 +124,12 @@ class RetroAuctionCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.35,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: DesignTokens.spaceSm),
+                    const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -131,38 +137,53 @@ class RetroAuctionCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Giá hiện tại',
-                                style: AppTypography.caption,
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.gavel_rounded,
+                                    size: 11,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Giá hiện tại',
+                                    style: AppTypography.caption.copyWith(
+                                      fontSize: 10.5,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: DesignTokens.space2xs),
+                              const SizedBox(height: 2),
                               Text(
                                 VndFormatter.format(currentBid),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.priceMedium.copyWith(
-                                  color: AppColors.primaryForestGreen,
+                                  fontSize: 15.5,
+                                  color: AppColors.priceCrimson,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: DesignTokens.spaceXs),
+                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: DesignTokens.spaceSm,
-                            vertical: DesignTokens.spaceXs,
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryForestGreenLight,
-                            borderRadius: BorderRadius.circular(
-                              DesignTokens.radiusFull,
+                            color: AppColors.creamBadgeSoft,
+                            borderRadius: DesignTokens.borderRadiusFull,
+                            border: Border.all(
+                              color: AppColors.creamBadgeBorder,
                             ),
                           ),
                           child: Text(
                             '$bidCount lượt trả',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.primaryForestGreenDark,
+                              color: AppColors.creamBadgeText,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -206,7 +227,7 @@ class RetroAuctionCard extends StatelessWidget {
           child: Icon(
             Icons.broken_image_outlined,
             color: AppColors.textMuted,
-            size: 36,
+            size: 34,
           ),
         ),
       ),

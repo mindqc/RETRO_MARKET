@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/retro_auction_card.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/seasonal_decor_overlay.dart';
 import '../../../core/widgets/state_feedback_views.dart';
@@ -14,9 +16,6 @@ import '../models/seller_public_profile_model.dart';
 import '../viewmodels/seller_storefront_view_model.dart';
 
 /// Public Seller Storefront Screen (M-US-03).
-/// Displays vintage shop branding, Trust Score, followers, and 4 content tabs:
-/// 1. Active Listings, 2. Auctions, 3. Sold Archive, 4. Verified Buyer Reviews.
-/// Enforces BR-AC-02 (Self-follow forbidden) and DEC-01 (Guest login prompt).
 class PublicSellerStorefrontScreen extends ConsumerStatefulWidget {
   final int sellerId;
 
@@ -26,10 +25,12 @@ class PublicSellerStorefrontScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PublicSellerStorefrontScreen> createState() => _PublicSellerStorefrontScreenState();
+  ConsumerState<PublicSellerStorefrontScreen> createState() =>
+      _PublicSellerStorefrontScreenState();
 }
 
-class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStorefrontScreen>
+class _PublicSellerStorefrontScreenState
+    extends ConsumerState<PublicSellerStorefrontScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -39,9 +40,13 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        ref.read(sellerStorefrontViewModelProvider.notifier).setTabIndex(_tabController.index);
+        ref
+            .read(sellerStorefrontViewModelProvider.notifier)
+            .setTabIndex(_tabController.index);
         if (_tabController.index == 3) {
-          ref.read(sellerStorefrontViewModelProvider.notifier).loadReviews(widget.sellerId);
+          ref
+              .read(sellerStorefrontViewModelProvider.notifier)
+              .loadReviews(widget.sellerId);
         }
       }
     });
@@ -65,27 +70,35 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     final state = viewModel.state;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       body: state.when(
-        initial: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
+        initial: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
+        ),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
+        ),
         empty: (msg) => Scaffold(
+          backgroundColor: AppColors.canvasParchment,
           appBar: AppBar(title: const Text('Cửa hàng đồ si')),
           body: RetroEmptyStateView(
             title: 'Gian hàng không tồn tại',
-            message: msg ?? 'Người bán này không tồn tại hoặc đã tạm khóa gian hàng.',
+            message:
+                msg ?? 'Người bán này không tồn tại hoặc đã tạm khóa gian hàng.',
             actionLabel: 'Quay lại',
             onAction: () => context.pop(),
           ),
         ),
         error: (msg, error) => Scaffold(
+          backgroundColor: AppColors.canvasParchment,
           appBar: AppBar(title: const Text('Cửa hàng đồ si')),
           body: RetroErrorRetryView(
             errorMessage: msg,
             onRetry: () => viewModel.loadStorefront(widget.sellerId),
           ),
         ),
-        success: (seller) => _buildStorefrontContent(context, seller, viewModel),
+        success: (seller) =>
+            _buildStorefrontContent(context, seller, viewModel),
       ),
     );
   }
@@ -98,63 +111,81 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) {
         return [
-          // Collapsible Vintage Storefront Header
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 288,
             pinned: true,
-            backgroundColor: AppColors.secondaryPineGreen,
+            backgroundColor: AppColors.pineDeep,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Cover Photo
                   if (seller.coverImageUrl != null)
                     Image.network(
                       seller.coverImageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(color: AppColors.secondaryPineGreen),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(color: AppColors.pineDeep),
                     )
                   else
-                    Container(color: AppColors.secondaryPineGreen),
-
-                  // Dark gradient overlay
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.pineDeep, AppColors.pineBanner],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.black.withOpacity(0.3),
-                          Colors.black.withOpacity(0.75),
+                          AppColors.pineDeep.withValues(alpha: 0.35),
+                          AppColors.pineDeep.withValues(alpha: 0.88),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                     ),
                   ),
-
-                  // Optional Christmas decor overlay if enabled
                   if (seller.seasonalDecorEnabled)
-                    const Positioned.fill(child: SeasonalDecorOverlay(child: SizedBox.shrink())),
-
-                  // Seller Info Overlay
+                    const Positioned.fill(
+                      child: SeasonalDecorOverlay(child: SizedBox.shrink()),
+                    ),
                   Positioned(
-                    left: DesignTokens.spaceLg,
-                    right: DesignTokens.spaceLg,
-                    bottom: DesignTokens.spaceMd,
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 32,
-                              backgroundColor: AppColors.surfaceWarm,
-                              backgroundImage: seller.avatarUrl != null ? NetworkImage(seller.avatarUrl!) : null,
-                              child: seller.avatarUrl == null
-                                  ? const Icon(Icons.storefront, color: AppColors.primaryTerracotta, size: 32)
-                                  : null,
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.creamBadgeBg,
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 32,
+                                backgroundColor: AppColors.categoryCircleEnd,
+                                backgroundImage: seller.avatarUrl != null
+                                    ? NetworkImage(seller.avatarUrl!)
+                                    : null,
+                                child: seller.avatarUrl == null
+                                    ? const Icon(
+                                        Icons.storefront_rounded,
+                                        color: AppColors.pineDeep,
+                                        size: 30,
+                                      )
+                                    : null,
+                              ),
                             ),
-                            const SizedBox(width: DesignTokens.spaceMd),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,45 +195,62 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
                                     style: const TextStyle(
                                       fontFamily: AppTypography.fontHeading,
                                       color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   if (seller.shopSlug != null)
                                     Text(
                                       '@${seller.shopSlug}',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12.5,
+                                      ),
                                     ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 6),
                                   Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF2D5A3C).withOpacity(0.9),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: const Color(0xFF5BA872)),
+                                          color: AppColors.creamBadgeBg,
+                                          borderRadius:
+                                              DesignTokens.borderRadiusFull,
                                         ),
                                         child: Text(
                                           'Trust ${seller.trustScore.toStringAsFixed(0)}/100',
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.creamBadgeText,
                                             fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w800,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.star, color: Color(0xFFFFD700), size: 14),
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        color: AppColors.starGold,
+                                        size: 15,
+                                      ),
                                       const SizedBox(width: 2),
                                       Text(
                                         seller.averageRating.toStringAsFixed(1),
-                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 6),
                                       Text(
                                         '(${seller.reviewCount} đánh giá)',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 11,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -212,45 +260,73 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
                           ],
                         ),
                         if (seller.bio != null && seller.bio!.isNotEmpty) ...[
-                          const SizedBox(height: DesignTokens.spaceSm),
+                          const SizedBox(height: 10),
                           Text(
                             seller.bio!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12.5,
+                            ),
                           ),
                         ],
-                        const SizedBox(height: DesignTokens.spaceSm),
-                        // Stats & Action Buttons
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Text(
-                              '${seller.followersCount} người theo dõi  •  ${seller.completedOrdersCount} đơn thành công',
-                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            Expanded(
+                              child: Text(
+                                '${seller.followersCount} người theo dõi  •  ${seller.completedOrdersCount} đơn thành công',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.5,
+                                ),
+                              ),
                             ),
-                            const Spacer(),
                             if (!seller.isOwner)
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: seller.isFollowing ? AppColors.surfaceWarm : AppColors.primaryTerracotta,
-                                  foregroundColor: seller.isFollowing ? AppColors.textCharcoal : Colors.white,
+                                  backgroundColor: seller.isFollowing
+                                      ? AppColors.creamBadgeBg
+                                      : AppColors.ctaTerracotta,
+                                  foregroundColor: seller.isFollowing
+                                      ? AppColors.creamBadgeText
+                                      : Colors.white,
                                   visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  shape: const StadiumBorder(),
                                 ),
                                 onPressed: () => viewModel.toggleFollow(context),
-                                child: Text(seller.isFollowing ? 'Đang theo dõi' : '+ Theo dõi'),
+                                child: Text(
+                                  seller.isFollowing
+                                      ? 'Đang theo dõi'
+                                      : '+ Theo dõi',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               )
                             else
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 5,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: DesignTokens.borderRadiusFull,
                                 ),
                                 child: const Text(
                                   'Tiệm của bạn',
-                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                           ],
@@ -262,18 +338,21 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
               ),
             ),
           ),
-
-          // Pinned 4-Tab Navigation Bar
           SliverPersistentHeader(
             pinned: true,
             delegate: _SliverTabBarDelegate(
               TabBar(
                 controller: _tabController,
-                labelColor: AppColors.primaryTerracotta,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AppColors.priceCrimson,
                 unselectedLabelColor: AppColors.textMuted,
-                indicatorColor: AppColors.primaryTerracotta,
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                indicatorColor: AppColors.priceCrimson,
+                indicatorWeight: 2.5,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
                 tabs: [
                   Tab(text: 'Đang bán (${seller.activeListings.length})'),
                   Tab(text: 'Đấu giá (${seller.auctions.length})'),
@@ -288,23 +367,19 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: Active Listings
           _buildActiveListingsTab(context, seller),
-
-          // Tab 2: Auctions
           _buildAuctionsTab(context, seller),
-
-          // Tab 3: Sold Listings
           _buildSoldListingsTab(context, seller),
-
-          // Tab 4: Verified Buyer Reviews
           _buildReviewsTab(context, viewModel),
         ],
       ),
     );
   }
 
-  Widget _buildActiveListingsTab(BuildContext context, SellerPublicProfileModel seller) {
+  Widget _buildActiveListingsTab(
+    BuildContext context,
+    SellerPublicProfileModel seller,
+  ) {
     if (seller.activeListings.isEmpty) {
       return const RetroEmptyStateView(
         title: 'Chưa có sản phẩm mở bán',
@@ -313,10 +388,10 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.68,
+        childAspectRatio: 0.60,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -338,7 +413,10 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     );
   }
 
-  Widget _buildAuctionsTab(BuildContext context, SellerPublicProfileModel seller) {
+  Widget _buildAuctionsTab(
+    BuildContext context,
+    SellerPublicProfileModel seller,
+  ) {
     if (seller.auctions.isEmpty) {
       return const RetroEmptyStateView(
         title: 'Chưa có phiên đấu giá',
@@ -347,7 +425,7 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: const EdgeInsets.all(16),
       itemCount: seller.auctions.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, idx) {
@@ -366,19 +444,23 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     );
   }
 
-  Widget _buildSoldListingsTab(BuildContext context, SellerPublicProfileModel seller) {
+  Widget _buildSoldListingsTab(
+    BuildContext context,
+    SellerPublicProfileModel seller,
+  ) {
     if (seller.soldListings.isEmpty) {
       return const RetroEmptyStateView(
         title: 'Chưa có đồ vintage đã bán',
-        message: 'Lịch sử các sản phẩm đã giao dịch thành công sẽ xuất hiện tại đây.',
+        message:
+            'Lịch sử các sản phẩm đã giao dịch thành công sẽ xuất hiện tại đây.',
       );
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.68,
+        childAspectRatio: 0.60,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -386,7 +468,7 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
       itemBuilder: (context, idx) {
         final prod = seller.soldListings[idx];
         return Opacity(
-          opacity: 0.75,
+          opacity: 0.72,
           child: RetroProductCard(
             id: prod.id,
             title: prod.title,
@@ -403,125 +485,146 @@ class _PublicSellerStorefrontScreenState extends ConsumerState<PublicSellerStore
     );
   }
 
-  Widget _buildReviewsTab(BuildContext context, SellerStorefrontViewModel viewModel) {
+  Widget _buildReviewsTab(
+    BuildContext context,
+    SellerStorefrontViewModel viewModel,
+  ) {
     if (viewModel.isLoadingReviews) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
+      );
     }
 
     if (viewModel.reviews.isEmpty) {
       return const RetroEmptyStateView(
         title: 'Chưa có đánh giá nào',
-        message: 'Tiệm chưa nhận được đánh giá từ người mua đã hoàn thành đơn.',
+        message:
+            'Tiệm chưa nhận được đánh giá từ người mua đã hoàn thành đơn.',
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: const EdgeInsets.all(16),
       itemCount: viewModel.reviews.length,
-      separatorBuilder: (context, index) => const Divider(height: 24, color: AppColors.borderWarm),
-      itemBuilder: (context, idx) {
-        final review = viewModel.reviews[idx];
-        return _buildReviewTile(review);
-      },
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, idx) => _buildReviewTile(viewModel.reviews[idx]),
     );
   }
 
   Widget _buildReviewTile(ReviewItemModel review) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.surfaceWarm,
-              backgroundImage: review.reviewerAvatarUrl != null ? NetworkImage(review.reviewerAvatarUrl!) : null,
-              child: review.reviewerAvatarUrl == null
-                  ? const Icon(Icons.person, color: AppColors.textMuted, size: 16)
-                  : null,
-            ),
-            const SizedBox(width: DesignTokens.spaceSm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    review.reviewerName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  Row(
-                    children: [
-                      Row(
-                        children: List.generate(
-                          5,
-                          (i) => Icon(
-                            i < review.rating ? Icons.star : Icons.star_border,
-                            color: const Color(0xFFC5A66B),
-                            size: 13,
-                          ),
-                        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: AppColors.borderWarm),
+        boxShadow: DesignTokens.cardElevation,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.categoryCircleEnd,
+                backgroundImage: review.reviewerAvatarUrl != null
+                    ? NetworkImage(review.reviewerAvatarUrl!)
+                    : null,
+                child: review.reviewerAvatarUrl == null
+                    ? const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.pineDeep,
+                        size: 18,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.reviewerName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
                       ),
-                      if (review.isVerifiedPurchase) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEBF5EE),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: const Text(
-                            'Đã mua hàng',
-                            style: TextStyle(
-                              color: AppColors.secondaryPineGreen,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Row(
+                          children: List.generate(
+                            5,
+                            (i) => Icon(
+                              i < review.rating
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: AppColors.starGold,
+                              size: 14,
                             ),
                           ),
                         ),
+                        if (review.isVerifiedPurchase) ...[
+                          const SizedBox(width: 6),
+                          const RetroVerifiedShopChip(
+                            label: 'Đã mua hàng',
+                            fontSize: 10,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              if (review.createdAt != null)
+                Text(
+                  '${review.createdAt!.day}/${review.createdAt!.month}/${review.createdAt!.year}',
+                  style: AppTypography.caption.copyWith(fontSize: 11),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            review.comment,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textCharcoal,
+              height: 1.45,
+            ),
+          ),
+          if (review.productTitle != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSection,
+                borderRadius: DesignTokens.borderRadiusFull,
+                border: Border.all(color: AppColors.borderWarm),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 12,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      review.productTitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(fontSize: 11),
+                    ),
                   ),
                 ],
               ),
             ),
-            if (review.createdAt != null)
-              Text(
-                '${review.createdAt!.day}/${review.createdAt!.month}/${review.createdAt!.year}',
-                style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-              ),
           ],
-        ),
-        const SizedBox(height: DesignTokens.spaceSm),
-        Text(
-          review.comment,
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textCharcoal, height: 1.4),
-        ),
-        if (review.productTitle != null) ...[
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceWarm,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.shopping_bag_outlined, size: 12, color: AppColors.textMuted),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    review.productTitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -537,15 +640,20 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
-      color: AppColors.surfaceCard,
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+      ),
       child: _tabBar,
     );
   }
 
   @override
-  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
-    return false;
-  }
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => false;
 }

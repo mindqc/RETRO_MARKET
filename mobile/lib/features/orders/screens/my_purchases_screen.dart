@@ -82,15 +82,15 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
     final vm = ref.watch(buyerOrderViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         surfaceTintColor: Colors.transparent,
         title: const Text('Đơn mua của tôi'),
         elevation: 0,
         centerTitle: false,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(54),
+          preferredSize: const Size.fromHeight(52),
           child: Container(
             alignment: Alignment.centerLeft,
             decoration: const BoxDecoration(
@@ -101,13 +101,13 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              labelColor: AppColors.primaryTerracotta,
+              labelColor: AppColors.priceCrimson,
               unselectedLabelColor: AppColors.textMuted,
-              indicatorColor: AppColors.primaryTerracotta,
+              indicatorColor: AppColors.priceCrimson,
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.label,
               labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 fontSize: 13,
               ),
               unselectedLabelStyle: const TextStyle(
@@ -121,7 +121,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primaryTerracotta,
+          color: AppColors.ctaTerracotta,
           onRefresh: () => ref
               .read(buyerOrderViewModelProvider)
               .loadPurchases(refresh: true),
@@ -178,12 +178,12 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         onTap: () => context.push(AppRoutes.orderDetailPath(order.id)),
         child: Padding(
           padding: const EdgeInsets.all(DesignTokens.spaceMd),
@@ -195,7 +195,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
                 const SizedBox(height: 10),
                 _buildCancellationNotice(),
               ],
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: const BoxDecoration(
@@ -217,51 +217,55 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
   }
 
   Widget _buildOrderHeader(OrderModel order) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceWarm,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.storefront_rounded,
-                size: 18,
-                color: AppColors.secondaryPineGreen,
-              ),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            gradient: const RadialGradient(
+              colors: [
+                AppColors.categoryCircleStart,
+                AppColors.categoryCircleEnd,
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    order.shopName,
-                    style: AppTypography.headingSmall.copyWith(fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (order.orderCode.isNotEmpty)
-                    Text(
-                      order.orderCode,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            StatusPillBadge(status: order.orderStatus, isCompact: true),
-          ],
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.creamBadgeBorder),
+          ),
+          child: const Icon(
+            Icons.storefront_rounded,
+            size: 17,
+            color: AppColors.pineDeep,
+          ),
         ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                order.shopName,
+                style: AppTypography.headingSmall.copyWith(
+                  fontSize: 14.5,
+                  color: AppColors.pineDeep,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (order.orderCode.isNotEmpty)
+                Text(
+                  order.orderCode,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        StatusPillBadge(status: order.orderStatus, isCompact: true),
       ],
     );
   }
@@ -271,26 +275,26 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-        border: Border.all(color: const Color(0xFFFFEEBA)),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
-      child: Row(
+      child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Icon(
             Icons.hourglass_empty_rounded,
             size: 15,
-            color: Color(0xFF856404),
+            color: AppColors.creamBadgeText,
           ),
           SizedBox(width: 7),
           Expanded(
             child: Text(
               'Đang chờ Tiệm duyệt hủy đơn (DEC-06)',
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF856404),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.creamBadgeText,
               ),
             ),
           ),
@@ -306,17 +310,16 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: DesignTokens.borderRadiusMd,
             child: Container(
               width: 68,
               height: 68,
               decoration: BoxDecoration(
                 color: AppColors.surfaceWarm,
                 border: Border.all(color: AppColors.borderSubtle),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: DesignTokens.borderRadiusMd,
               ),
-              child:
-                  item.primaryImageUrl != null &&
+              child: item.primaryImageUrl != null &&
                       item.primaryImageUrl!.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: item.primaryImageUrl!,
@@ -327,20 +330,20 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.primaryTerracotta,
+                            color: AppColors.ctaTerracotta,
                           ),
                         ),
                       ),
                       errorWidget: (_, _, _) => const Icon(
                         Icons.checkroom_rounded,
-                        color: AppColors.secondaryPineGreen,
-                        size: 25,
+                        color: AppColors.pineDeep,
+                        size: 24,
                       ),
                     )
                   : const Icon(
                       Icons.checkroom_rounded,
-                      color: AppColors.secondaryPineGreen,
-                      size: 25,
+                      color: AppColors.pineDeep,
+                      size: 24,
                     ),
             ),
           ),
@@ -353,12 +356,12 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
                   item.productTitle,
                   style: AppTypography.bodySmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    color: AppColors.textCharcoal,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 6),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 6,
@@ -377,7 +380,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
                 Text(
                   VndFormatter.format(item.unitPrice),
                   style: AppTypography.bodySmall.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textMuted,
                   ),
                 ),
@@ -398,7 +401,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
           children: [
             const Icon(
               Icons.receipt_long_rounded,
-              size: 17,
+              size: 16,
               color: AppColors.textMuted,
             ),
             const SizedBox(width: 6),
@@ -412,10 +415,9 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
             ),
             Text(
               VndFormatter.format(order.totalAmount),
-              style: AppTypography.headingSmall.copyWith(
-                color: AppColors.primaryTerracotta,
+              style: AppTypography.priceSmall.copyWith(
+                color: AppColors.priceCrimson,
                 fontSize: 17,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -501,39 +503,39 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
 
   ButtonStyle _outlinedActionStyle() {
     return OutlinedButton.styleFrom(
-      foregroundColor: AppColors.secondaryPineGreen,
-      side: const BorderSide(color: AppColors.secondaryPineGreen),
+      foregroundColor: AppColors.pineDeep,
+      side: const BorderSide(color: AppColors.pineDeep),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       minimumSize: const Size(0, 38),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      shape: const StadiumBorder(),
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     );
   }
 
   ButtonStyle _primaryActionStyle() {
     return ElevatedButton.styleFrom(
-      backgroundColor: AppColors.primaryTerracotta,
+      backgroundColor: AppColors.ctaTerracotta,
       foregroundColor: AppColors.textLight,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       minimumSize: const Size(0, 38),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-      textStyle: const TextStyle(fontSize: 12),
+      shape: const StadiumBorder(),
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     );
   }
 
   ButtonStyle _pineActionStyle() {
     return ElevatedButton.styleFrom(
-      backgroundColor: AppColors.secondaryPineGreen,
+      backgroundColor: AppColors.pineDeep,
       foregroundColor: AppColors.textLight,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       minimumSize: const Size(0, 38),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-      textStyle: const TextStyle(fontSize: 12),
+      shape: const StadiumBorder(),
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     );
   }
 
@@ -541,10 +543,14 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          borderRadius: DesignTokens.borderRadiusBanner,
         ),
-        title: const Text('Xác nhận đã nhận hàng?'),
+        title: Text(
+          'Xác nhận đã nhận hàng?',
+          style: AppTypography.headingSmall.copyWith(color: AppColors.pineDeep),
+        ),
         content: Text(
           'Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng? '
           'Toàn bộ 100% tiền hàng (${VndFormatter.format(order.sellerNetPayout)}) '
@@ -558,7 +564,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondaryPineGreen,
+              backgroundColor: AppColors.pineDeep,
               foregroundColor: AppColors.textLight,
             ),
             onPressed: () async {
@@ -579,7 +585,7 @@ class _PurchasesLoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+      child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
     );
   }
 }

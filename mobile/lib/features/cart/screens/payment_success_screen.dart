@@ -6,11 +6,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/status_pill_badge.dart';
 import '../models/payment_session_model.dart';
 
 /// M-PM-02: Payment Success Screen
-/// Confirms payment and escrow holding state for the RETRO MARKET demo.
 class PaymentSuccessScreen extends StatelessWidget {
   final int paymentId;
   final PaymentSessionModel? session;
@@ -31,12 +31,12 @@ class PaymentSuccessScreen extends StatelessWidget {
     final escrowHeld = escrowStatus == 'HELD' || escrowStatus == 'ESCROW_HELD';
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
         title: const Text('Thanh toán thành công'),
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         foregroundColor: AppColors.textCharcoal,
       ),
       body: SafeArea(
@@ -64,45 +64,43 @@ class PaymentSuccessScreen extends StatelessWidget {
   }
 
   Widget _buildSuccessHero(bool escrowHeld, num amount) {
-    return Container(
-      width: double.infinity,
+    return RetroPineSpotlightContainer(
       padding: const EdgeInsets.symmetric(
         horizontal: DesignTokens.spaceLg,
         vertical: DesignTokens.spaceXl,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.primaryForestGreen,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        boxShadow: DesignTokens.cardElevation,
-      ),
       child: Column(
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: 96,
+            height: 96,
             decoration: const BoxDecoration(
-              color: Color(0xFFE6F2E7),
+              gradient: RadialGradient(
+                colors: [
+                  AppColors.categoryCircleStart,
+                  AppColors.categoryCircleEnd,
+                ],
+              ),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check_circle_rounded,
-              color: AppColors.primaryForestGreen,
-              size: 72,
+              color: AppColors.pineDeep,
+              size: 64,
             ),
           ),
           const SizedBox(height: DesignTokens.spaceLg),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+              color: AppColors.creamBadgeBg,
+              borderRadius: DesignTokens.borderRadiusFull,
             ),
             child: const Text(
               'PAYMENT SUCCESSFUL',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
+                color: AppColors.creamBadgeText,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
               ),
@@ -125,7 +123,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                 : 'Kết quả thanh toán đã được ghi nhận.',
             textAlign: TextAlign.center,
             style: AppTypography.bodySmall.copyWith(
-              color: const Color(0xFFDCE9D9),
+              color: AppColors.creamBadgeBg,
             ),
           ),
           const SizedBox(height: DesignTokens.spaceLg),
@@ -138,10 +136,10 @@ class PaymentSuccessScreen extends StatelessWidget {
               letterSpacing: 1.1,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             VndFormatter.format(amount),
-            style: AppTypography.headingLarge.copyWith(
+            style: AppTypography.priceLarge.copyWith(
               color: Colors.white,
               fontSize: 30,
               fontWeight: FontWeight.w800,
@@ -159,7 +157,7 @@ class PaymentSuccessScreen extends StatelessWidget {
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -170,25 +168,30 @@ class PaymentSuccessScreen extends StatelessWidget {
             children: [
               const Icon(
                 Icons.receipt_long_rounded,
-                color: AppColors.primaryTerracotta,
+                color: AppColors.ctaTerracotta,
                 size: 21,
               ),
               const SizedBox(width: 8),
-              Text('Chi tiết giao dịch', style: AppTypography.headingSmall),
+              Text(
+                'Chi tiết giao dịch',
+                style: AppTypography.headingSmall.copyWith(
+                  color: AppColors.pineDeep,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: DesignTokens.spaceLg),
           _buildInfoRow('Mã đơn hàng', orderCode, bold: true),
           const Divider(height: 24, color: AppColors.borderSubtle),
-          Row(
+          const Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Trạng thái thanh toán',
                   style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                 ),
               ),
-              const StatusPillBadge(status: 'PAID', isCompact: true),
+              StatusPillBadge(status: 'PAID', isCompact: true),
             ],
           ),
           const SizedBox(height: DesignTokens.spaceMd),
@@ -212,7 +215,6 @@ class PaymentSuccessScreen extends StatelessWidget {
     String label,
     String value, {
     bool bold = false,
-    bool highlighted = false,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,13 +231,9 @@ class PaymentSuccessScreen extends StatelessWidget {
             value,
             textAlign: TextAlign.end,
             style: TextStyle(
-              color: highlighted
-                  ? AppColors.primaryTerracotta
-                  : AppColors.textCharcoal,
-              fontSize: highlighted ? 17 : 13,
-              fontWeight: bold || highlighted
-                  ? FontWeight.w800
-                  : FontWeight.w500,
+              color: AppColors.textCharcoal,
+              fontSize: 13,
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
             ),
           ),
         ),
@@ -248,16 +246,18 @@ class PaymentSuccessScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F2E8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        border: Border.all(color: const Color(0xFFB9D9BD)),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(
+          color: AppColors.verifiedLeaf.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.shield_rounded,
-            color: AppColors.primaryForestGreen,
+            color: AppColors.verifiedLeaf,
             size: 23,
           ),
           const SizedBox(width: 10),
@@ -270,9 +270,9 @@ class PaymentSuccessScreen extends StatelessWidget {
                       ? 'Tiền của bạn đang được bảo vệ'
                       : 'Thông tin bảo vệ giao dịch',
                   style: const TextStyle(
-                    color: AppColors.primaryForestGreen,
+                    color: AppColors.pineDeep,
                     fontWeight: FontWeight.w800,
-                    fontSize: 13,
+                    fontSize: 13.5,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -281,7 +281,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                       ? 'izithrift đang giữ khoản thanh toán trung gian. Tiền chỉ được giải ngân cho Người bán sau khi bạn xác nhận đã nhận hàng đúng mô tả.'
                       : 'Trạng thái giữ tiền trung gian hiện chưa được xác nhận. Bạn có thể kiểm tra chi tiết đơn hàng.',
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.primaryForestGreen,
+                    color: AppColors.pineBanner,
                   ),
                 ),
               ],
@@ -306,11 +306,9 @@ class PaymentSuccessScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
+              backgroundColor: AppColors.ctaTerracotta,
               foregroundColor: AppColors.textLight,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              ),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => context.push(AppRoutes.orderDetailPath(orderId)),
           ),
@@ -324,11 +322,9 @@ class PaymentSuccessScreen extends StatelessWidget {
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Tiếp tục mua sắm'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryForestGreen,
-              side: const BorderSide(color: AppColors.primaryForestGreen),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-              ),
+              foregroundColor: AppColors.pineDeep,
+              side: const BorderSide(color: AppColors.pineDeep),
+              shape: const StadiumBorder(),
             ),
             onPressed: () => context.go(AppRoutes.home),
           ),

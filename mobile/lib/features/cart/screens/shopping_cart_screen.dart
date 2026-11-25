@@ -9,6 +9,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/cart_item_model.dart';
 import '../models/cart_model.dart';
@@ -16,16 +17,6 @@ import '../models/cart_seller_group_model.dart';
 import '../viewmodels/cart_view_model.dart';
 
 /// M-CR-01: Grouped Shopping Cart Screen.
-///
-/// UI redesign only.
-/// Preserves:
-/// - CartViewModel selection synchronization
-/// - Optimistic selection updates and rollback
-/// - Seller-level / item-level selection
-/// - Quantity updates and removal
-/// - Stock availability restrictions
-/// - Selection synchronization before checkout
-/// - Existing widget keys used by tests
 class ShoppingCartScreen extends ConsumerStatefulWidget {
   const ShoppingCartScreen({super.key});
 
@@ -48,9 +39,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     final vm = ref.watch(cartViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         titleSpacing: DesignTokens.spaceMd,
@@ -82,7 +73,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primaryTerracotta,
+          color: AppColors.ctaTerracotta,
           onRefresh: () =>
               ref.read(cartViewModelProvider).loadCart(silent: true),
           child: vm.state.when(
@@ -111,15 +102,16 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
   Widget _buildCartCountBadge(CartModel cart) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.primaryTerracotta.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.creamBadgeBg,
+        borderRadius: DesignTokens.borderRadiusFull,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Text(
         '${cart.sellerGroups.fold<int>(0, (total, group) => total + group.items.length)}',
-        style: const TextStyle(
-          color: AppColors.primaryTerracotta,
+        style: AppTypography.caption.copyWith(
+          color: AppColors.creamBadgeText,
           fontSize: 12,
           fontWeight: FontWeight.w800,
         ),
@@ -129,7 +121,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
   Widget _buildLoading() {
     return const Center(
-      child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+      child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
     );
   }
 
@@ -140,7 +132,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
         DesignTokens.spaceMd,
         DesignTokens.spaceSm,
         DesignTokens.spaceMd,
-        24,
+        28,
       ),
       children: [
         _buildCartHero(cart, vm),
@@ -148,7 +140,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
           const SizedBox(height: DesignTokens.spaceSm),
           _buildSelectionErrorBanner(vm),
         ],
-        const SizedBox(height: DesignTokens.spaceMd),
+        const SizedBox(height: DesignTokens.spaceLg),
         _buildSectionHeading(cart),
         const SizedBox(height: DesignTokens.spaceSm),
         ...cart.sellerGroups.map(
@@ -165,19 +157,35 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
   Widget _buildSectionHeading(CartModel cart) {
     return Row(
       children: [
-        const Expanded(
+        const Icon(
+          Icons.shopping_bag_outlined,
+          size: 18,
+          color: AppColors.pineDeep,
+        ),
+        const SizedBox(width: 7),
+        Expanded(
           child: Text(
             'Món đồ đã chọn',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textCharcoal,
+            style: AppTypography.headingSmall.copyWith(
+              color: AppColors.pineDeep,
+              fontSize: 16,
             ),
           ),
         ),
-        Text(
-          '${cart.sellerGroups.length} cửa hàng',
-          style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.creamBadgeSoft,
+            borderRadius: DesignTokens.borderRadiusFull,
+            border: Border.all(color: AppColors.creamBadgeBorder),
+          ),
+          child: Text(
+            '${cart.sellerGroups.length} cửa hàng',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.creamBadgeText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ],
     );
@@ -191,36 +199,17 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     );
     final syncing = vm.isSyncingSelection;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppColors.primaryTerracotta,
-            Color(0xFFB94729),
-            Color(0xFFD98151),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryTerracotta.withValues(alpha: 0.18),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return RetroPineSpotlightContainer(
+      padding: const EdgeInsets.all(18),
       child: Stack(
         children: [
           Positioned(
-            right: -12,
-            top: -18,
+            right: -10,
+            top: -14,
             child: Icon(
               Icons.shopping_bag_rounded,
-              size: 105,
-              color: Colors.white.withValues(alpha: 0.07),
+              size: 98,
+              color: Colors.white.withValues(alpha: 0.06),
             ),
           ),
           Column(
@@ -232,13 +221,16 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(13),
+                      color: AppColors.creamBadgeBg.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.creamBadgeBg.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: const Icon(
                       Icons.shopping_bag_outlined,
-                      color: Colors.white,
-                      size: 23,
+                      color: AppColors.creamBadgeBg,
+                      size: 21,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -246,20 +238,19 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                     child: Text(
                       'Túi đồ vintage của bạn',
                       style: AppTypography.headingSmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                        color: AppColors.textLight,
                         fontSize: 17,
                       ),
                     ),
                   ),
                   const Icon(
                     Icons.auto_awesome_rounded,
-                    color: Color(0xFFFFE3A5),
-                    size: 20,
+                    color: AppColors.starGold,
+                    size: 19,
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -269,10 +260,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                       children: [
                         Text(
                           '$selectedCount/$totalItems sản phẩm',
-                          style: const TextStyle(
+                          style: AppTypography.headingLarge.copyWith(
                             color: Colors.white,
-                            fontSize: 23,
-                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -280,11 +270,11 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                           syncing
                               ? 'Đang cập nhật lựa chọn...'
                               : selectedCount > 0
-                              ? 'Sẵn sàng cho chuyến săn đồ tiếp theo'
-                              : 'Chọn món đồ bạn muốn sở hữu',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.88),
-                            fontSize: 11,
+                                  ? 'Sẵn sàng cho chuyến săn đồ tiếp theo'
+                                  : 'Chọn món đồ bạn muốn sở hữu',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.creamBadgeBg,
+                            fontSize: 11.5,
                           ),
                         ),
                       ],
@@ -298,7 +288,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.creamBadgeBg,
                         ),
                       ),
                     )
@@ -306,22 +296,19 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 6,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
-                        ),
+                        color: AppColors.creamBadgeBg,
+                        borderRadius: DesignTokens.borderRadiusFull,
                       ),
                       child: const Text(
                         'PRE-LOVED',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
+                          color: AppColors.creamBadgeText,
+                          fontSize: 9.5,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 1.1,
+                          letterSpacing: 1.0,
                         ),
                       ),
                     ),
@@ -339,18 +326,16 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
       key: const Key('cart_selection_error_banner'),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.statusDanger.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.statusDanger.withValues(alpha: 0.5),
-        ),
+        color: AppColors.priceCrimsonSoft,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.priceCrimsonBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.sync_problem_rounded,
-            color: AppColors.statusDanger,
+            color: AppColors.priceCrimson,
             size: 19,
           ),
           const SizedBox(width: 9),
@@ -358,7 +343,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             child: Text(
               vm.selectionErrorMessage!,
               style: const TextStyle(
-                color: AppColors.statusDanger,
+                color: AppColors.priceCrimson,
                 fontSize: 12,
                 height: 1.4,
                 fontWeight: FontWeight.w600,
@@ -370,7 +355,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             icon: const Icon(
               Icons.close_rounded,
-              color: AppColors.statusDanger,
+              color: AppColors.priceCrimson,
               size: 17,
             ),
             onPressed: () => vm.clearSelectionError(),
@@ -384,19 +369,13 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(
           color: group.isAllSelected
-              ? AppColors.primaryTerracotta.withValues(alpha: 0.30)
+              ? AppColors.pineDeep.withValues(alpha: 0.45)
               : AppColors.borderWarm,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF49321F).withValues(alpha: 0.045),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: DesignTokens.cardElevation,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -409,11 +388,11 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             return Column(
               children: [
                 if (index > 0)
-                  Divider(
+                  const Divider(
                     height: 1,
-                    indent: 12,
-                    endIndent: 12,
-                    color: AppColors.borderSubtle.withValues(alpha: 0.8),
+                    indent: 14,
+                    endIndent: 14,
+                    color: AppColors.borderSubtle,
                   ),
                 _buildCartItemTile(item, vm),
               ],
@@ -426,16 +405,19 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
   Widget _buildSellerHeader(CartSellerGroupModel group, CartViewModel vm) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-      decoration: const BoxDecoration(color: AppColors.surfaceWarm),
+      padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceSection,
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+      ),
       child: Row(
         children: [
           Checkbox(
             key: Key('checkbox_seller_${group.sellerId}'),
             value: group.isAllSelected,
-            activeColor: AppColors.primaryTerracotta,
+            activeColor: AppColors.pineDeep,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(5),
             ),
             onChanged: (_) => vm.toggleSellerGroupSelection(group.sellerId),
           ),
@@ -443,13 +425,19 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFE4EBDD),
-              borderRadius: BorderRadius.circular(11),
+              gradient: const RadialGradient(
+                colors: [
+                  AppColors.categoryCircleStart,
+                  AppColors.categoryCircleEnd,
+                ],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.creamBadgeBorder),
             ),
             child: const Icon(
               Icons.storefront_rounded,
-              size: 18,
-              color: AppColors.secondaryPineGreen,
+              size: 17,
+              color: AppColors.pineDeep,
             ),
           ),
           const SizedBox(width: 9),
@@ -461,7 +449,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                   group.shopName,
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textCharcoal,
+                    color: AppColors.pineDeep,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -470,7 +458,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                   '${group.items.length} món đồ',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textMuted,
-                    fontSize: 10,
+                    fontSize: 10.5,
                   ),
                 ),
               ],
@@ -495,9 +483,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
           Checkbox(
             key: Key('checkbox_item_${item.id}'),
             value: item.isSelected,
-            activeColor: AppColors.primaryTerracotta,
+            activeColor: AppColors.pineDeep,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(5),
             ),
             onChanged: item.isAvailable
                 ? (_) => vm.toggleItemSelection(item.id)
@@ -515,13 +503,13 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: DesignTokens.borderRadiusMd,
           child: Container(
-            width: 92,
-            height: 112,
+            width: 90,
+            height: 108,
             color: AppColors.surfaceWarm,
-            child:
-                item.primaryImageUrl != null && item.primaryImageUrl!.isNotEmpty
+            child: item.primaryImageUrl != null &&
+                    item.primaryImageUrl!.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: item.primaryImageUrl!,
                     fit: BoxFit.cover,
@@ -538,8 +526,8 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                   )
                 : const Icon(
                     Icons.checkroom_outlined,
-                    color: Color(0xFF84664C),
-                    size: 34,
+                    color: AppColors.primaryVintageBrown,
+                    size: 32,
                   ),
           ),
         ),
@@ -547,8 +535,8 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.darkFrostOverlay,
+                borderRadius: DesignTokens.borderRadiusMd,
               ),
               alignment: Alignment.center,
               child: const Text(
@@ -608,10 +596,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
         const SizedBox(height: 7),
         Text(
           VndFormatter.format(item.unitPrice),
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.primaryTerracotta,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
+          style: AppTypography.priceSmall.copyWith(
+            color: AppColors.priceCrimson,
+            fontSize: 15.5,
           ),
         ),
         const SizedBox(height: 8),
@@ -628,13 +615,12 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption.copyWith(
-                  fontSize: 10,
+                  fontSize: 10.5,
                   color: item.isAvailable
                       ? AppColors.textMuted
-                      : AppColors.statusDanger,
-                  fontWeight: item.isAvailable
-                      ? FontWeight.w400
-                      : FontWeight.w600,
+                      : AppColors.priceCrimson,
+                  fontWeight:
+                      item.isAvailable ? FontWeight.w500 : FontWeight.w700,
                 ),
               ),
             ),
@@ -650,16 +636,16 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceWarm,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: AppColors.borderWarm),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusFull,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
             key: Key('btn_qty_minus_${item.id}'),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: DesignTokens.borderRadiusFull,
             onTap: () {
               if (item.quantity == 1) {
                 _confirmRemoveItem(item, vm);
@@ -668,35 +654,43 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
               }
             },
             child: const SizedBox(
-              width: 34,
-              height: 34,
-              child: Icon(Icons.remove_rounded, size: 15),
+              width: 32,
+              height: 32,
+              child: Icon(
+                Icons.remove_rounded,
+                size: 15,
+                color: AppColors.pineDeep,
+              ),
             ),
           ),
           Container(
-            constraints: const BoxConstraints(minWidth: 32),
+            constraints: const BoxConstraints(minWidth: 30),
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            color: AppColors.surfaceCard,
             child: Text(
               '${item.quantity}',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textCharcoal,
+              ),
             ),
           ),
           InkWell(
             key: Key('btn_qty_plus_${item.id}'),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: DesignTokens.borderRadiusFull,
             onTap: canIncrement
                 ? () => vm.updateQuantity(item.id, item.quantity + 1)
                 : null,
             child: SizedBox(
-              width: 34,
-              height: 34,
+              width: 32,
+              height: 32,
               child: Icon(
                 Icons.add_rounded,
                 size: 15,
                 color: canIncrement
-                    ? AppColors.textCharcoal
+                    ? AppColors.pineDeep
                     : AppColors.textMuted.withValues(alpha: 0.35),
               ),
             ),
@@ -708,29 +702,32 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
   Widget _buildShoppingTip() {
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8EDDF),
-        borderRadius: BorderRadius.circular(13),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(
+          color: AppColors.verifiedLeaf.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.eco_outlined,
-            color: AppColors.secondaryPineGreen,
+            color: AppColors.verifiedLeaf,
             size: 20,
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Mỗi món đồ secondhand là một câu chuyện '
               'được tiếp tục. Cảm ơn bạn đã lựa chọn '
               'mua sắm bền vững.',
               style: AppTypography.caption.copyWith(
-                color: AppColors.secondaryPineGreen,
+                color: AppColors.pineDeep,
                 height: 1.45,
-                fontSize: 11,
+                fontSize: 11.5,
               ),
             ),
           ),
@@ -743,8 +740,14 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Xóa sản phẩm?'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+        ),
+        title: Text(
+          'Xóa sản phẩm?',
+          style: AppTypography.headingSmall.copyWith(color: AppColors.pineDeep),
+        ),
         content: Text('Bạn muốn bỏ "${item.title}" khỏi giỏ hàng?'),
         actions: [
           TextButton(
@@ -753,7 +756,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.statusDanger,
+              backgroundColor: AppColors.priceCrimson,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -774,17 +777,12 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
     final canCheckout = selectedCount > 0 && !syncing;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 10, 12, 8),
+      padding: const EdgeInsets.fromLTRB(8, 12, 14, 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: const Border(top: BorderSide(color: AppColors.borderWarm)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.055),
-            blurRadius: 14,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        boxShadow: DesignTokens.bottomNavElevation,
       ),
       child: SafeArea(
         top: false,
@@ -793,17 +791,17 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             Checkbox(
               key: const Key('checkbox_select_all'),
               value: cart.isAllSelected,
-              activeColor: AppColors.primaryTerracotta,
+              activeColor: AppColors.pineDeep,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(5),
               ),
               onChanged: (_) => vm.toggleSelectAll(),
             ),
             const Text(
               'Tất cả',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -812,7 +810,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                   Text(
                     syncing ? 'Đang đồng bộ' : 'Tạm tính',
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 10.5,
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -822,10 +820,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       VndFormatter.format(subtotal),
-                      style: AppTypography.headingSmall.copyWith(
-                        color: AppColors.primaryTerracotta,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 17,
+                      style: AppTypography.priceLarge.copyWith(
+                        color: AppColors.priceCrimson,
+                        fontSize: 17.5,
                       ),
                     ),
                   ),
@@ -838,15 +835,13 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
               child: ElevatedButton(
                 key: const Key('btn_proceed_checkout'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTerracotta,
+                  backgroundColor: AppColors.ctaTerracotta,
                   foregroundColor: AppColors.textLight,
-                  disabledBackgroundColor: AppColors.primaryTerracotta
-                      .withValues(alpha: 0.35),
+                  disabledBackgroundColor:
+                      AppColors.ctaTerracotta.withValues(alpha: 0.35),
                   disabledForegroundColor: Colors.white70,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  shape: const StadiumBorder(),
                   elevation: canCheckout ? 1 : 0,
                 ),
                 onPressed: canCheckout
@@ -857,7 +852,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                backgroundColor: AppColors.statusDanger,
+                                backgroundColor: AppColors.priceCrimson,
                                 content: Text(
                                   vm.selectionErrorMessage ??
                                       'Không thể đồng bộ giỏ hàng. '
@@ -885,7 +880,7 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                 child: Text(
                   syncing ? 'Đang xử lý' : 'Mua ($selectedCount)',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
                 ),

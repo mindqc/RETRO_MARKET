@@ -1,17 +1,17 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../viewmodels/seller_product_form_view_model.dart';
 import '../../catalog/models/category_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
+import '../viewmodels/seller_product_form_view_model.dart';
 
 /// M-SL-03: Create Product Listing Screen
 /// Enforces BR-PR-01 (Auction locked quantity = 1), BR-PR-03 (Mandatory defect info >= 5 chars, 5 condition levels).
@@ -43,22 +43,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   ];
 
   String _auctionDurationLabel(Duration duration) {
-    if (duration == const Duration(minutes: 15)) {
-      return '15 phút (Demo)';
-    }
-
-    if (duration == const Duration(hours: 1)) {
-      return '1 giờ';
-    }
-
-    if (duration == const Duration(hours: 24)) {
-      return '24 giờ';
-    }
-
-    if (duration == const Duration(days: 3)) {
-      return '3 ngày';
-    }
-
+    if (duration == const Duration(minutes: 15)) return '15 phút (Demo)';
+    if (duration == const Duration(hours: 1)) return '1 giờ';
+    if (duration == const Duration(hours: 24)) return '24 giờ';
+    if (duration == const Duration(days: 3)) return '3 ngày';
     return '${duration.inMinutes} phút';
   }
 
@@ -68,20 +56,15 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
     if (startsAt != null && endsAt != null) {
       final currentDuration = endsAt.difference(startsAt);
-
       for (final preset in _auctionDurationPresets) {
-        if (currentDuration == preset) {
-          return preset;
-        }
+        if (currentDuration == preset) return preset;
       }
     }
-
     return const Duration(minutes: 15);
   }
 
   void _setAuctionDuration(SellerProductFormViewModel vm, Duration duration) {
     final now = DateTime.now();
-
     setState(() {
       vm.auctionStartsAt = now;
       vm.auctionEndsAt = now.add(duration);
@@ -179,18 +162,60 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     super.dispose();
   }
 
+  InputDecoration _editorialInputDecoration({
+    required String labelText,
+    String? hintText,
+    String? helperText,
+    String? errorText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    bool alignLabelWithHint = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      errorText: errorText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: AppColors.surfaceWarm,
+      border: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.borderWarm),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.borderWarm),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.pineDeep, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(sellerProductFormViewModelProvider);
     final isAuction = vm.listingType == 'AUCTION';
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
-      appBar: AppBar(title: const Text('Đăng bán sản phẩm mới'), elevation: 0),
+      backgroundColor: AppColors.canvasParchment,
+      appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Đăng bán sản phẩm mới',
+          style: AppTypography.headingMedium.copyWith(fontSize: 19),
+        ),
+      ),
       bottomNavigationBar: _buildBottomActionBar(vm),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(DesignTokens.spaceLg),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           child: Form(
             key: _formKey,
             child: Column(
@@ -198,23 +223,18 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               children: [
                 // 1. Listing Type Toggle (Fixed Price vs Auction)
                 _buildListingTypeSelector(vm),
-
-                const SizedBox(height: DesignTokens.spaceLg),
+                const SizedBox(height: 16),
 
                 // 2. Photo Upload Section (Up to 10 photos)
                 _buildPhotosSection(vm),
-
-                const SizedBox(height: DesignTokens.spaceLg),
+                const SizedBox(height: 16),
 
                 // 3. Basic Information Card
                 _buildBasicInfoSection(vm, isAuction),
-
-                const SizedBox(height: DesignTokens.spaceLg),
+                const SizedBox(height: 16),
 
                 // 4. Condition & Defect Info (BR-PR-03)
                 _buildConditionAndDefectSection(vm),
-
-                const SizedBox(height: DesignTokens.space2xl),
               ],
             ),
           ),
@@ -224,11 +244,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   }
 
   Widget _buildListingTypeSelector(SellerProductFormViewModel vm) {
+    final isFixed = vm.listingType == 'FIXED_PRICE';
+    final isAuction = vm.listingType == 'AUCTION';
+
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceSm),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusFull,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -237,21 +260,20 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           Expanded(
             child: InkWell(
               onTap: () => vm.setListingType('FIXED_PRICE'),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              borderRadius: DesignTokens.borderRadiusFull,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: vm.listingType == 'FIXED_PRICE'
-                      ? AppColors.primaryTerracotta
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  color:
+                      isFixed ? AppColors.ctaTerracotta : Colors.transparent,
+                  borderRadius: DesignTokens.borderRadiusFull,
                 ),
                 child: Center(
                   child: Text(
                     '🏷️ Bán giá cố định',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: vm.listingType == 'FIXED_PRICE'
+                    style: AppTypography.labelStrong.copyWith(
+                      fontSize: 13.5,
+                      color: isFixed
                           ? AppColors.textLight
                           : AppColors.textCharcoal,
                     ),
@@ -260,32 +282,29 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: InkWell(
               onTap: () {
                 vm.setListingType('AUCTION');
                 _quantityController.text = '1';
-
-                // Demo default: a short auction that can be tested immediately.
+                // Demo default: short auction for immediate testing.
                 _setAuctionDuration(vm, const Duration(minutes: 15));
               },
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              borderRadius: DesignTokens.borderRadiusFull,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: vm.listingType == 'AUCTION'
-                      ? AppColors.christmasBerryRed
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  color: isAuction ? AppColors.pineDeep : Colors.transparent,
+                  borderRadius: DesignTokens.borderRadiusFull,
                 ),
                 child: Center(
                   child: Text(
                     '🔨 Đấu giá trực tiếp',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: vm.listingType == 'AUCTION'
-                          ? AppColors.textLight
+                    style: AppTypography.labelStrong.copyWith(
+                      fontSize: 13.5,
+                      color: isAuction
+                          ? AppColors.creamBadgeBg
                           : AppColors.textCharcoal,
                     ),
                   ),
@@ -300,10 +319,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Widget _buildPhotosSection(SellerProductFormViewModel vm) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -315,23 +334,31 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             children: [
               Text(
                 'Hình ảnh sản phẩm (Tối đa 10 ảnh)',
-                style: AppTypography.headingSmall.copyWith(fontSize: 15),
+                style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
               ),
-              Text(
-                '${vm.imageUrls.length + vm.imageFiles.length}/10',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textMuted,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.creamBadgeSoft,
+                  borderRadius: DesignTokens.borderRadiusFull,
+                ),
+                child: Text(
+                  '${vm.imageUrls.length + vm.imageFiles.length}/10',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.creamBadgeText,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 90,
+            height: 92,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: vm.imageUrls.length + vm.imageFiles.length + 1,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 if (index == vm.imageUrls.length + vm.imageFiles.length) {
                   return _buildAddPhotoButton(vm);
@@ -346,12 +373,20 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               },
             ),
           ),
+          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: () => _promptAddImageUrl(vm),
-              icon: const Icon(Icons.link, size: 16),
-              label: const Text('Thêm ảnh bằng đường dẫn URL'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pineDeep,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+              icon: const Icon(Icons.link_rounded, size: 17),
+              label: const Text(
+                'Thêm ảnh bằng đường dẫn URL',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -363,35 +398,38 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: DesignTokens.borderRadiusMd,
           child: FutureBuilder<Uint8List>(
             future: vm.imageFiles[index].readAsBytes(),
             builder: (context, snapshot) => snapshot.hasData
                 ? Image.memory(
                     snapshot.data!,
-                    width: 88,
-                    height: 90,
+                    width: 90,
+                    height: 92,
                     fit: BoxFit.cover,
                   )
                 : Container(
-                    width: 88,
-                    height: 90,
+                    width: 90,
+                    height: 92,
                     color: AppColors.surfaceWarm,
                     child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.pineDeep,
+                      ),
                     ),
                   ),
           ),
         ),
         Positioned(
-          top: 2,
-          right: 2,
+          top: 4,
+          right: 4,
           child: InkWell(
             onTap: () => vm.removeImageFile(index),
             child: const CircleAvatar(
               radius: 10,
               backgroundColor: Colors.black54,
-              child: Icon(Icons.close, size: 13, color: Colors.white),
+              child: Icon(Icons.close, size: 12, color: Colors.white),
             ),
           ),
         ),
@@ -400,12 +438,17 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           left: 0,
           right: 0,
           child: Container(
-            color: Colors.black54,
+            decoration: const BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(DesignTokens.radiusMd),
+              ),
+            ),
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: const Text(
               'Ảnh mới',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 9),
+              style: TextStyle(color: Colors.white, fontSize: 9.5),
             ),
           ),
         ),
@@ -416,26 +459,32 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   Widget _buildAddPhotoButton(SellerProductFormViewModel vm) {
     return InkWell(
       onTap: () => _pickImages(vm),
-      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      borderRadius: DesignTokens.borderRadiusMd,
       child: Container(
-        width: 88,
+        width: 90,
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-          border: Border.all(color: AppColors.borderWarm),
+          borderRadius: DesignTokens.borderRadiusMd,
+          border: Border.all(
+            color: AppColors.ctaTerracotta.withValues(alpha: 0.45),
+          ),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(
               Icons.add_a_photo_outlined,
-              color: AppColors.primaryTerracotta,
-              size: 28,
+              color: AppColors.ctaTerracotta,
+              size: 26,
             ),
-            SizedBox(height: 4),
+            SizedBox(height: 5),
             Text(
               'Thêm ảnh',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ctaTerracotta,
+              ),
             ),
           ],
         ),
@@ -450,13 +499,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     return Stack(
       children: [
         Container(
-          width: 88,
+          width: 90,
           decoration: BoxDecoration(
             color: AppColors.surfaceWarm,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            borderRadius: DesignTokens.borderRadiusMd,
             border: Border.all(
               color: isPrimary
-                  ? AppColors.primaryTerracotta
+                  ? AppColors.ctaTerracotta
                   : AppColors.borderWarm,
               width: isPrimary ? 2 : 1,
             ),
@@ -470,21 +519,26 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             right: 0,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 2),
-              color: AppColors.primaryTerracotta.withValues(alpha: 0.9),
+              decoration: BoxDecoration(
+                color: AppColors.ctaTerracotta.withValues(alpha: 0.92),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(DesignTokens.radiusMd - 1),
+                ),
+              ),
               child: const Text(
                 'Ảnh đại diện',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
         Positioned(
-          top: 2,
-          right: 2,
+          top: 4,
+          right: 4,
           child: InkWell(
             onTap: () => vm.removeImageUrl(index),
             child: Container(
@@ -493,7 +547,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                 color: Colors.black54,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
+              child: const Icon(Icons.close, size: 13, color: Colors.white),
             ),
           ),
         ),
@@ -508,12 +562,19 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Thêm liên kết ảnh'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+          side: const BorderSide(color: AppColors.borderWarm),
+        ),
+        title: Text(
+          'Thêm liên kết ảnh',
+          style: AppTypography.headingSmall.copyWith(fontSize: 17),
+        ),
         content: TextField(
           controller: urlController,
-          decoration: const InputDecoration(
+          decoration: _editorialInputDecoration(
             labelText: 'URL hình ảnh (jpg, png, webp)',
-            border: OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -523,7 +584,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
+              backgroundColor: AppColors.ctaTerracotta,
+              foregroundColor: AppColors.textLight,
+              shape: const StadiumBorder(),
+              elevation: 0,
             ),
             onPressed: () {
               if (urlController.text.trim().isNotEmpty) {
@@ -531,19 +595,22 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Thêm', style: TextStyle(color: Colors.white)),
+            child: const Text('Thêm'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBasicInfoSection(SellerProductFormViewModel vm, bool isAuction) {
+  Widget _buildBasicInfoSection(
+    SellerProductFormViewModel vm,
+    bool isAuction,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -552,17 +619,16 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         children: [
           Text(
             'Thông tin chi tiết sản phẩm',
-            style: AppTypography.headingSmall.copyWith(fontSize: 15),
+            style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Title
           TextFormField(
             controller: _titleController,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Tên sản phẩm vintage / retro *',
               hintText: 'VD: Áo khoác da Bomber Vintage thập niên 90s',
-              border: OutlineInputBorder(),
             ),
             validator: (v) {
               if (v == null || v.trim().length < 5) {
@@ -572,22 +638,19 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             },
             onChanged: (v) => vm.title = v.trim(),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           TextFormField(
             controller: _descriptionController,
             maxLines: 4,
             maxLength: 5000,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Mô tả sản phẩm',
               hintText: 'Chất liệu, kiểu dáng, nguồn gốc, cách phối...',
-              border: OutlineInputBorder(),
               alignLabelWithHint: true,
             ),
             onChanged: (value) => vm.description = value,
           ),
-
           const SizedBox(height: 12),
 
           // Category Dropdown — active categories from taxonomy API.
@@ -605,10 +668,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               return DropdownButtonFormField<int>(
                 value: hasSelectedCategory ? selectedCategoryId : null,
                 isExpanded: true,
-                decoration: InputDecoration(
+                decoration: _editorialInputDecoration(
                   labelText: 'Danh mục *',
                   prefixIcon: const Icon(Icons.category_outlined),
-                  border: const OutlineInputBorder(),
                   helperText: taxonomyVm.isLoadingTaxonomy
                       ? 'Đang tải danh mục...'
                       : taxonomyVm.taxonomyError,
@@ -632,8 +694,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   final parent = category.parentId == null
                       ? null
                       : taxonomy?.categories
-                            .where((root) => root.id == category.parentId)
-                            .firstOrNull;
+                          .where((root) => root.id == category.parentId)
+                          .firstOrNull;
                   return DropdownMenuItem<int>(
                     value: category.id,
                     child: Text(
@@ -644,8 +706,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     ),
                   );
                 }).toList(),
-                onChanged:
-                    taxonomyVm.isLoadingTaxonomy ||
+                onChanged: taxonomyVm.isLoadingTaxonomy ||
                         taxonomyVm.taxonomyError != null ||
                         categories.isEmpty
                     ? null
@@ -665,21 +726,18 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               );
             },
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Brand (Optional)
           TextFormField(
             controller: _brandController,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Thương hiệu / Nhãn hiệu (Tùy chọn)',
               hintText: 'VD: Levi\'s, Burberry, Harley Davidson...',
-              border: OutlineInputBorder(),
             ),
             onChanged: (v) => vm.brandName = v.trim(),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Pricing and Quantity based on Listing Type
           if (!isAuction) ...[
@@ -690,10 +748,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   child: TextFormField(
                     controller: _priceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Giá bán (VNĐ) *',
                       hintText: 'VD: 350000',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final p = double.tryParse(v ?? '');
@@ -703,15 +760,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     onChanged: (v) => vm.price = double.tryParse(v) ?? 0.0,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 1,
                   child: TextFormField(
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Số lượng *',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final q = int.tryParse(v ?? '');
@@ -726,26 +782,26 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           ] else ...[
             // BR-PR-01: Auction Form with strictly locked quantity = 1
             Container(
-              padding: const EdgeInsets.all(DesignTokens.spaceSm),
-              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF9E6),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                border: Border.all(color: const Color(0xFFFFE799)),
+                color: AppColors.creamBadgeSoft,
+                borderRadius: DesignTokens.borderRadiusMd,
+                border: Border.all(color: AppColors.creamBadgeBorder),
               ),
               child: Row(
                 children: [
                   const Icon(
-                    Icons.info_outline,
+                    Icons.info_outline_rounded,
                     size: 18,
-                    color: Color(0xFFB47800),
+                    color: AppColors.creamBadgeText,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'BR-PR-01: Sản phẩm đấu giá là độc bản secondhand, số lượng khả dụng cố định là 1.',
                       style: AppTypography.caption.copyWith(
-                        color: const Color(0xFF7A5100),
+                        color: AppColors.creamBadgeText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -759,10 +815,9 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   child: TextFormField(
                     controller: _startPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Giá khởi điểm (VNĐ) *',
                       hintText: 'VD: 100000',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final p = double.tryParse(v ?? '');
@@ -776,15 +831,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: TextFormField(
                     controller: _bidIncrementController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Bước giá tối thiểu *',
                       hintText: '10000',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final inc = double.tryParse(v ?? '');
@@ -797,15 +851,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Thời lượng phiên đấu giá',
-                  style: AppTypography.labelMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: AppTypography.labelStrong.copyWith(fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -813,10 +865,25 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   runSpacing: 8,
                   children: _auctionDurationPresets.map((duration) {
                     final selected = _selectedAuctionDuration(vm) == duration;
-
                     return ChoiceChip(
                       label: Text(_auctionDurationLabel(duration)),
                       selected: selected,
+                      selectedColor: AppColors.pineDeep,
+                      backgroundColor: AppColors.surfaceWarm,
+                      side: BorderSide(
+                        color: selected
+                            ? AppColors.pineDeep
+                            : AppColors.borderWarm,
+                      ),
+                      shape: const StadiumBorder(),
+                      labelStyle: TextStyle(
+                        color: selected
+                            ? AppColors.creamBadgeBg
+                            : AppColors.textCharcoal,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
                       onSelected: (value) {
                         if (!value) return;
                         _setAuctionDuration(vm, duration);
@@ -824,13 +891,16 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 8),
-                if (vm.auctionStartsAt != null && vm.auctionEndsAt != null)
+                if (vm.auctionStartsAt != null && vm.auctionEndsAt != null) ...[
+                  const SizedBox(height: 8),
                   Text(
                     'Bắt đầu: ${vm.auctionStartsAt!.toLocal()}\n'
                     'Kết thúc: ${vm.auctionEndsAt!.toLocal()}',
-                    style: AppTypography.caption,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
+                ],
               ],
             ),
           ],
@@ -841,10 +911,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Widget _buildConditionAndDefectSection(SellerProductFormViewModel vm) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -853,20 +923,22 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
         children: [
           Row(
             children: [
-              Text(
-                'Tình trạng đồ si & Minh bạch khuyết điểm',
-                style: AppTypography.headingSmall.copyWith(fontSize: 15),
+              Expanded(
+                child: Text(
+                  'Tình trạng đồ si & Minh bạch khuyết điểm',
+                  style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
+                ),
               ),
               const SizedBox(width: 4),
               const Text('🔍'),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Chọn 1 trong 5 mức chuẩn mực tình trạng sản phẩm:',
             style: AppTypography.caption.copyWith(color: AppColors.textMuted),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
           // 5-Tier Condition Choice Chips
           Wrap(
@@ -877,20 +949,27 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               return ChoiceChip(
                 label: Text(cond.label),
                 selected: isSelected,
-                selectedColor: AppColors.primaryTerracotta,
+                selectedColor: AppColors.creamBadgeBg,
+                backgroundColor: AppColors.surfaceWarm,
+                side: BorderSide(
+                  color: isSelected
+                      ? AppColors.creamBadgeBorder
+                      : AppColors.borderWarm,
+                ),
+                shape: const StadiumBorder(),
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textCharcoal,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? AppColors.creamBadgeText
+                      : AppColors.textCharcoal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 12,
                 ),
-                backgroundColor: AppColors.surfaceWarm,
                 onSelected: (selected) {
                   if (selected) vm.setCondition(cond.key);
                 },
               );
             }).toList(),
           ),
-
           const SizedBox(height: 16),
 
           // BR-PR-03: Mandatory Defect Info (>= 5 chars)
@@ -898,11 +977,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
             key: const Key('input_defect_info'),
             controller: _defectController,
             maxLines: 3,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Mô tả khuyết điểm & độ sờn rách (Bắt buộc) *',
-              hintText: 'VD: Có vết xước nhẹ 2cm ở ve áo trái, khóa kéo đồng trơn tru không lỗi.',
-              helperText: 'Bắt buộc tối thiểu 5 ký tự để bảo vệ quyền lợi người mua & người bán.',
-              border: OutlineInputBorder(),
+              hintText:
+                  'VD: Có vết xước nhẹ 2cm ở ve áo trái, khóa kéo đồng trơn tru không lỗi.',
+              helperText:
+                  'Bắt buộc tối thiểu 5 ký tự để bảo vệ quyền lợi người mua & người bán.',
+              alignLabelWithHint: true,
             ),
             validator: (v) {
               if (v == null || v.trim().length < 5) {
@@ -919,71 +1000,70 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   Widget _buildBottomActionBar(SellerProductFormViewModel vm) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: DesignTokens.spaceLg,
-        vertical: DesignTokens.spaceMd,
-      ),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
-        border: const Border(top: BorderSide(color: AppColors.borderWarm)),
-        boxShadow: DesignTokens.cardElevation,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: DesignTokens.bottomNavElevation,
       ),
-      child: Row(
-        children: [
-          // Lưu bản nháp
-          Expanded(
-            child: OutlinedButton(
-              key: const Key('btn_save_draft'),
-              onPressed: vm.isSubmitting
-                  ? null
-                  : () => _submitForm(vm, submitForReview: false),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF84664C),
-                side: const BorderSide(color: AppColors.borderWarm),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  key: const Key('btn_save_draft'),
+                  onPressed: vm.isSubmitting
+                      ? null
+                      : () => _submitForm(vm, submitForReview: false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryVintageBrown,
+                    side: const BorderSide(color: AppColors.borderWarm),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text(
+                    'Lưu bản nháp',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              child: const Text(
-                'Lưu bản nháp',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Gửi phê duyệt ngay
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              key: const Key('btn_submit_for_review'),
-              onPressed: vm.isSubmitting
-                  ? null
-                  : () => _submitForm(vm, submitForReview: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryTerracotta,
-                foregroundColor: AppColors.textLight,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  key: const Key('btn_submit_for_review'),
+                  onPressed: vm.isSubmitting
+                      ? null
+                      : () => _submitForm(vm, submitForReview: true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.ctaTerracotta,
+                    foregroundColor: AppColors.textLight,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: vm.isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Gửi phê duyệt ngay',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ),
-              child: vm.isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Gửi phê duyệt ngay',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1026,7 +1106,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppColors.statusDanger,
+            backgroundColor: AppColors.priceCrimson,
             content: Text(
               vm.state.maybeWhen(
                 error: (err, _) => err,

@@ -5,16 +5,9 @@ import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
 import '../utils/vnd_formatter.dart';
 
-/// Price breakdown.
-///
-/// DEC-04:
+/// Price breakdown card (DEC-04).
 /// Buyer Protection Fee = round(itemSubtotal * 6% + 7.000đ)
-///
-/// When customBuyerProtectionFee is supplied, it is authoritative
-/// and must be used instead of the local fallback calculation.
-///
-/// When customGrandTotalAmount is supplied, it is authoritative
-/// for the displayed grand total.
+/// Styled in the approved warm editorial card + crimson total + pine escrow trust banner.
 class PriceBreakdownCard extends StatelessWidget {
   final num itemSubtotal;
   final num shippingFee;
@@ -46,10 +39,10 @@ class PriceBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -60,44 +53,37 @@ class PriceBreakdownCard extends StatelessWidget {
           const SizedBox(height: DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderSubtle),
           const SizedBox(height: DesignTokens.spaceMd),
-
           _buildRow(
             label: 'Tiền hàng',
             value: VndFormatter.format(itemSubtotal),
             icon: Icons.shopping_bag_outlined,
           ),
-          const SizedBox(height: 14),
-
+          const SizedBox(height: 12),
           _buildRow(
             label: 'Phí vận chuyển',
             value: shippingFee == 0
                 ? 'Miễn phí'
                 : VndFormatter.format(shippingFee),
             valueColor: shippingFee == 0
-                ? AppColors.secondaryPineGreen
+                ? AppColors.verifiedLeaf
                 : AppColors.textCharcoal,
             icon: Icons.local_shipping_outlined,
           ),
-          const SizedBox(height: 14),
-
+          const SizedBox(height: 12),
           _buildProtectionFeeRow(),
-
           if (showSellerNetAmount) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             _buildRow(
               label: 'Thực nhận của người bán',
               value: VndFormatter.format(itemSubtotal),
-              valueColor: AppColors.secondaryPineGreen,
+              valueColor: AppColors.verifiedLeaf,
               icon: Icons.account_balance_wallet_outlined,
             ),
           ],
-
           const SizedBox(height: DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderWarm),
           const SizedBox(height: DesignTokens.spaceMd),
-
           _buildTotal(),
-
           const SizedBox(height: DesignTokens.spaceMd),
           _buildEscrowNotice(),
         ],
@@ -109,16 +95,17 @@ class PriceBreakdownCard extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFF6E5D9),
-            borderRadius: BorderRadius.circular(13),
+            color: AppColors.creamBadgeSoft,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.creamBadgeBorder),
           ),
           child: const Icon(
             Icons.receipt_long_rounded,
-            size: 21,
-            color: AppColors.primaryTerracotta,
+            size: 20,
+            color: AppColors.ctaTerracotta,
           ),
         ),
         const SizedBox(width: 11),
@@ -128,10 +115,7 @@ class PriceBreakdownCard extends StatelessWidget {
             children: [
               Text(
                 'Chi tiết thanh toán',
-                style: AppTypography.headingSmall.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: AppTypography.headingSmall.copyWith(fontSize: 16),
               ),
               const SizedBox(height: 2),
               Text(
@@ -144,10 +128,10 @@ class PriceBreakdownCard extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8F2E8),
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.verifiedLeafBg,
+            borderRadius: DesignTokens.borderRadiusFull,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -155,13 +139,13 @@ class PriceBreakdownCard extends StatelessWidget {
               const Icon(
                 Icons.verified_user_outlined,
                 size: 13,
-                color: AppColors.secondaryPineGreen,
+                color: AppColors.verifiedLeaf,
               ),
               const SizedBox(width: 4),
               Text(
                 'An toàn',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.secondaryPineGreen,
+                  color: AppColors.verifiedLeaf,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -177,7 +161,8 @@ class PriceBreakdownCard extends StatelessWidget {
       label: 'Phí bảo vệ người mua',
       value: VndFormatter.format(buyerProtectionFee),
       icon: Icons.shield_outlined,
-      tooltip: 'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.',
+      tooltip:
+          'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.',
     );
   }
 
@@ -238,11 +223,11 @@ class PriceBreakdownCard extends StatelessWidget {
 
   Widget _buildTotal() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4EC),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-        border: Border.all(color: const Color(0xFFF0D4C1)),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -257,7 +242,7 @@ class PriceBreakdownCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   'Đã bao gồm các khoản phí',
                   style: AppTypography.caption.copyWith(
@@ -273,7 +258,7 @@ class PriceBreakdownCard extends StatelessWidget {
               VndFormatter.format(totalAmount),
               textAlign: TextAlign.end,
               style: AppTypography.priceLarge.copyWith(
-                color: AppColors.primaryTerracotta,
+                color: AppColors.priceCrimson,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -287,17 +272,17 @@ class PriceBreakdownCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F2E8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-        border: Border.all(color: const Color(0xFFB9D9BE)),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(color: const Color(0xFFBBD9C4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.shield_rounded,
-            size: 19,
-            color: AppColors.secondaryPineGreen,
+            size: 18,
+            color: AppColors.pineDeep,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -306,7 +291,7 @@ class PriceBreakdownCard extends StatelessWidget {
               'Escrow. Người bán chỉ nhận tiền sau khi '
               'đơn hàng hoàn tất theo quy trình của ứng dụng.',
               style: AppTypography.caption.copyWith(
-                color: AppColors.secondaryPineGreen,
+                color: AppColors.pineDeep,
                 fontWeight: FontWeight.w500,
                 height: 1.45,
               ),

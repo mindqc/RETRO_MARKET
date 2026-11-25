@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../models/taxonomy_model.dart';
 import '../viewmodels/catalog_search_view_model.dart';
 
-/// M-DS-01: Category & Brand Directory Screen
-/// Visual direction: Vintage Editorial × Modern Discovery.
+/// M-DS-01: Category & Brand Directory Screen (Tab 2 Root)
 class CategoryTaxonomyScreen extends ConsumerStatefulWidget {
   const CategoryTaxonomyScreen({super.key});
 
@@ -23,17 +24,16 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
   late TabController _tabController;
 
   static const _palette = [
-    AppColors.primaryTerracotta,
-    AppColors.secondaryPineGreen,
-    AppColors.accentVintageGold,
-    AppColors.christmasBerryRed,
+    AppColors.pineDeep,
+    AppColors.ctaTerracotta,
+    AppColors.vintageBrown,
+    AppColors.priceCrimson,
   ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(catalogSearchViewModelProvider).loadTaxonomy();
     });
@@ -49,7 +49,6 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
 
   IconData _categoryIcon(String name, {bool hasChildren = false}) {
     final value = name.toLowerCase();
-
     if (value.contains('áo') ||
         value.contains('quần') ||
         value.contains('váy') ||
@@ -61,24 +60,20 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
       }
       return Icons.dry_cleaning_rounded;
     }
-
     if (value.contains('giày') || value.contains('dép')) {
-      return Icons.directions_walk_rounded;
+      return Icons.hiking_rounded;
     }
-
     if (value.contains('túi') || value.contains('ví')) {
-      return Icons.shopping_bag_rounded;
+      return Icons.shopping_bag_outlined;
     }
-
-    if (value.contains('đồng hồ')) return Icons.watch_rounded;
-    if (value.contains('trang sức')) return Icons.diamond_rounded;
-    if (value.contains('kính')) return Icons.visibility_rounded;
-    if (value.contains('đồ gia dụng')) return Icons.chair_rounded;
+    if (value.contains('đồng hồ')) return Icons.watch_outlined;
+    if (value.contains('trang sức')) return Icons.diamond_outlined;
+    if (value.contains('kính')) return Icons.visibility_outlined;
+    if (value.contains('đồ gia dụng')) return Icons.chair_outlined;
     if (value.contains('sưu tầm') || value.contains('cổ')) {
-      return Icons.auto_awesome_rounded;
+      return Icons.album_outlined;
     }
-    if (value.contains('phụ kiện')) return Icons.style_rounded;
-
+    if (value.contains('phụ kiện')) return Icons.style_outlined;
     return hasChildren ? Icons.grid_view_rounded : Icons.inventory_2_outlined;
   }
 
@@ -88,46 +83,31 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     final taxonomy = searchVM.taxonomy;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        titleSpacing: 20,
-        title: const Text(
-          'izithrift • Khám phá',
-          style: TextStyle(
-            fontFamily: AppTypography.fontHeading,
-            fontWeight: FontWeight.w700,
-            fontSize: 19,
-            color: AppColors.textCharcoal,
-          ),
-        ),
+        titleSpacing: DesignTokens.spaceLg,
+        title: const RetroBrandWordmark(titleText: 'izithrift • Khám phá'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.secondaryPineGreen,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.eco_rounded,
-                size: 19,
-                color: AppColors.backgroundCream,
-              ),
-            ),
+          RetroHeaderIconButton(
+            icon: Icons.shopping_bag_outlined,
+            tooltip: 'Giỏ hàng',
+            onPressed: () => context.push(AppRoutes.cart),
           ),
+          const SizedBox(width: DesignTokens.spaceSm),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(116),
+          preferredSize: const Size.fromHeight(112),
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-                child: _buildSearchBanner(context),
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+                child: RetroSearchPill(
+                  placeholder: 'Tìm món đồ vintage bạn đang săn...',
+                  onTap: () => context.push(AppRoutes.search),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -135,95 +115,50 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceWarm,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: DesignTokens.borderRadiusFull,
+                    border: Border.all(color: AppColors.borderWarm),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
                       color: AppColors.surfaceCard,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.textCharcoal.withAlpha(12),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      boxShadow: DesignTokens.cardElevation,
                     ),
                     dividerColor: Colors.transparent,
                     indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: AppColors.primaryTerracotta,
+                    labelColor: AppColors.priceCrimson,
                     unselectedLabelColor: AppColors.textMuted,
                     labelStyle: const TextStyle(
+                      fontFamily: AppTypography.fontBody,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                     tabs: const [
-                      Tab(text: 'Danh mục sản phẩm'),
-                      Tab(text: 'Thương hiệu retro'),
+                      Tab(height: 36, text: 'Danh mục sản phẩm'),
+                      Tab(height: 36, text: 'Thương hiệu retro'),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
             ],
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCategoriesTab(
-            context,
-            (taxonomy ?? const TaxonomyModel()).categories,
-          ),
-          _buildBrandsTab(context, (taxonomy ?? const TaxonomyModel()).brands),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBanner(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: () => context.push(AppRoutes.search),
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderWarm),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryTerracotta.withAlpha(22),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.search_rounded,
-                  color: AppColors.primaryTerracotta,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Tìm món đồ bạn đang săn...',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 14),
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.textMuted,
-                size: 19,
-              ),
-            ],
-          ),
+      body: RetroAmbientSnowflakes(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildCategoriesTab(
+              context,
+              (taxonomy ?? const TaxonomyModel()).categories,
+            ),
+            _buildBrandsTab(
+              context,
+              (taxonomy ?? const TaxonomyModel()).brands,
+            ),
+          ],
         ),
       ),
     );
@@ -240,14 +175,15 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
-        _buildEditorialHeading(
-          eyebrow: 'THE DEPARTMENTS',
-          title: 'Tìm theo gu của bạn.',
-          description: 'Khám phá từng góc nhỏ của thế giới đồ si.',
+        const RetroSectionHeader(
+          title: 'Tìm theo gu của bạn',
+          subtitle: 'Khám phá từng góc nhỏ của thế giới đồ si tuyển chọn',
+          icon: Icons.auto_awesome_rounded,
+          iconColor: AppColors.starGold,
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
         ...categories.asMap().entries.map((entry) {
           final index = entry.key;
           final cat = entry.value;
@@ -266,59 +202,11 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
               color: color,
               icon: icon,
               hasChildren: hasChildren,
-              index: index,
             ),
           );
         }),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         _buildSeasonalFooter(),
-      ],
-    );
-  }
-
-  Widget _buildEditorialHeading({
-    required String eyebrow,
-    required String title,
-    required String description,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(width: 24, height: 2, color: AppColors.primaryTerracotta),
-            const SizedBox(width: 8),
-            Text(
-              eyebrow,
-              style: const TextStyle(
-                color: AppColors.primaryTerracotta,
-                fontWeight: FontWeight.w800,
-                fontSize: 10,
-                letterSpacing: 1.8,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            fontFamily: AppTypography.fontHeading,
-            fontWeight: FontWeight.w700,
-            fontSize: 27,
-            height: 1.12,
-            color: AppColors.textCharcoal,
-          ),
-        ),
-        const SizedBox(height: 7),
-        Text(
-          description,
-          style: const TextStyle(
-            color: AppColors.textMuted,
-            fontSize: 13,
-            height: 1.5,
-          ),
-        ),
       ],
     );
   }
@@ -329,7 +217,6 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     required Color color,
     required IconData icon,
     required bool hasChildren,
-    required int index,
   }) {
     final name = category.name as String;
     final count = category.approvedProductsCount;
@@ -337,77 +224,66 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color.withAlpha(12),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        boxShadow: DesignTokens.cardElevation,
       ),
       child: Material(
         color: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           side: const BorderSide(color: AppColors.borderWarm),
         ),
         clipBehavior: Clip.antiAlias,
         child: hasChildren
             ? Theme(
-                data: Theme.of(context).copyWith(
-                  dividerColor: Colors.transparent,
-                  splashColor: color.withAlpha(15),
-                  highlightColor: color.withAlpha(8),
-                ),
+                data: Theme.of(context)
+                    .copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 6,
                   ),
                   childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  leading: _buildCategoryIcon(icon, color),
+                  leading: _buildRadialCategoryIcon(icon, color),
                   title: Text(
                     name,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       fontSize: 15,
                       color: AppColors.textCharcoal,
                     ),
                   ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '$count sản phẩm',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
+                  subtitle: Text(
+                    '$count sản phẩm',
+                    style: AppTypography.caption.copyWith(fontSize: 12),
                   ),
                   trailing: Container(
                     width: 30,
                     height: 30,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceWarm,
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.creamBadgeSoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.creamBadgeBorder),
                     ),
                     child: const Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textMuted,
-                      size: 20,
+                      color: AppColors.creamBadgeText,
+                      size: 19,
                     ),
                   ),
                   children: [
                     _buildSeeAllRow(context, category, color),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     if (children.isNotEmpty)
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: children.map((child) {
-                          return _buildSubcategoryPill(context, child, color);
-                        }).toList(),
+                        children: children
+                            .map(
+                              (child) =>
+                                  _buildSubcategoryPill(context, child, color),
+                            )
+                            .toList(),
                       ),
                   ],
                 ),
@@ -423,8 +299,8 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                   padding: const EdgeInsets.all(14),
                   child: Row(
                     children: [
-                      _buildCategoryIcon(icon, color),
-                      const SizedBox(width: 13),
+                      _buildRadialCategoryIcon(icon, color),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,23 +308,26 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                             Text(
                               name,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 15,
                                 color: AppColors.textCharcoal,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             Text(
                               '$count sản phẩm',
-                              style: const TextStyle(
+                              style: AppTypography.caption.copyWith(
                                 fontSize: 12,
-                                color: AppColors.textMuted,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_rounded, color: color, size: 20),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textMuted,
+                        size: 22,
+                      ),
                     ],
                   ),
                 ),
@@ -457,29 +336,18 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     );
   }
 
-  Widget _buildCategoryIcon(IconData icon, Color color) {
+  Widget _buildRadialCategoryIcon(IconData icon, Color color) {
     return Container(
-      width: 52,
-      height: 52,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
-        color: color.withAlpha(22),
-        borderRadius: BorderRadius.circular(16),
+        shape: BoxShape.circle,
+        gradient: const RadialGradient(
+          colors: [AppColors.categoryCircleStart, AppColors.categoryCircleEnd],
+        ),
+        border: Border.all(color: AppColors.creamBadgeBorder, width: 1.1),
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(icon, size: 26, color: color),
-          Positioned(
-            right: 5,
-            top: 5,
-            child: Icon(
-              Icons.auto_awesome,
-              size: 9,
-              color: color.withAlpha(100),
-            ),
-          ),
-        ],
-      ),
+      child: Icon(icon, size: 24, color: color),
     );
   }
 
@@ -491,12 +359,13 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
             .setCategory(category.id as int);
         context.push(AppRoutes.search);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: DesignTokens.borderRadiusFull,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withAlpha(16),
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.creamBadgeSoft,
+          borderRadius: DesignTokens.borderRadiusFull,
+          border: Border.all(color: AppColors.creamBadgeBorder),
         ),
         child: Row(
           children: [
@@ -510,7 +379,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_rounded, color: color, size: 18),
+            Icon(Icons.arrow_forward_rounded, color: color, size: 17),
           ],
         ),
       ),
@@ -527,12 +396,12 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
         ref.read(catalogSearchViewModelProvider).setCategory(child.id as int);
         context.push(AppRoutes.search);
       },
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: DesignTokens.borderRadiusFull,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.surfaceWarm,
-          borderRadius: BorderRadius.circular(30),
+          color: AppColors.surfaceSection,
+          borderRadius: DesignTokens.borderRadiusFull,
           border: Border.all(color: AppColors.borderWarm),
         ),
         child: Row(
@@ -550,7 +419,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
             Text(
               '${child.approvedProductsCount}',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: color,
               ),
@@ -562,37 +431,26 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
   }
 
   Widget _buildSeasonalFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.secondaryPineGreen,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: const Row(
+    return const RetroPineSpotlightContainer(
+      padding: EdgeInsets.all(16),
+      child: Row(
         children: [
-          Icon(
-            Icons.ac_unit_rounded,
-            color: AppColors.accentVintageGold,
-            size: 24,
-          ),
+          Icon(Icons.ac_unit_rounded, color: AppColors.creamBadgeBg, size: 24),
           SizedBox(width: 12),
           Expanded(
             child: Text(
               'Một món đồ cũ. Một câu chuyện mới. '
-              'Chúc bạn tìm được kho báu của riêng mình.',
+              'Chúc bạn tìm được kho báu vintage của riêng mình.',
               style: TextStyle(
-                color: AppColors.backgroundCream,
-                fontSize: 12,
-                height: 1.5,
+                color: Colors.white,
+                fontSize: 12.5,
+                height: 1.45,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Icon(
-            Icons.star_rounded,
-            color: AppColors.accentVintageGold,
-            size: 17,
-          ),
+          SizedBox(width: 8),
+          Icon(Icons.auto_awesome_rounded, color: AppColors.starGold, size: 18),
         ],
       ),
     );
@@ -609,7 +467,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       itemCount: brands.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -620,98 +478,81 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
       itemBuilder: (context, index) {
         final brand = brands[index];
         final color = _categoryColor(index);
-
-        return _buildBrandCard(context, brand, color, index);
+        return _buildBrandCard(context, brand, color);
       },
     );
   }
 
-  Widget _buildBrandCard(
-    BuildContext context,
-    dynamic brand,
-    Color color,
-    int index,
-  ) {
+  Widget _buildBrandCard(BuildContext context, dynamic brand, Color color) {
     return Material(
       color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       child: InkWell(
         onTap: () {
           ref.read(catalogSearchViewModelProvider).setBrand(brand.id as int);
           context.push(AppRoutes.search);
         },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        child: Ink(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             border: Border.all(color: AppColors.borderWarm),
+            boxShadow: DesignTokens.cardElevation,
           ),
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned(
-                right: -8,
-                bottom: -10,
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 60,
-                  color: color.withAlpha(12),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: color.withAlpha(22),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Icon(Icons.sell_outlined, color: color, size: 18),
-                  ),
-                  const Spacer(),
-                  Text(
-                    brand.name as String,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppTypography.fontHeading,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      height: 1.15,
-                      color: AppColors.textCharcoal,
-                    ),
-                  ),
-                  if (brand.originCountry != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      brand.originCountry as String,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 7),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${brand.approvedProductsCount} sản phẩm',
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_rounded, size: 15, color: color),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    colors: [
+                      AppColors.categoryCircleStart,
+                      AppColors.categoryCircleEnd,
                     ],
                   ),
+                  border: Border.all(color: AppColors.creamBadgeBorder),
+                ),
+                child: Icon(Icons.sell_outlined, color: color, size: 18),
+              ),
+              const Spacer(),
+              Text(
+                brand.name as String,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.headingSmall.copyWith(
+                  fontSize: 15.5,
+                  height: 1.15,
+                ),
+              ),
+              if (brand.originCountry != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  brand.originCountry as String,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(fontSize: 11),
+                ),
+              ],
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${brand.approvedProductsCount} sản phẩm',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_rounded, size: 15, color: color),
                 ],
               ),
             ],

@@ -1,19 +1,19 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/state_feedback_views.dart';
-import '../models/seller_product_item_model.dart';
-import '../viewmodels/seller_product_form_view_model.dart';
 import '../../catalog/models/category_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
+import '../models/seller_product_item_model.dart';
+import '../viewmodels/seller_product_form_view_model.dart';
 
 /// M-SL-04: Edit & Resubmit Product Listing Screen
 /// Enforces DEC-05 (Rejection reason inspection banner & clearance on resubmission),
@@ -167,29 +167,64 @@ class _EditResubmitListingScreenState
     super.dispose();
   }
 
+  InputDecoration _editorialInputDecoration({
+    required String labelText,
+    String? hintText,
+    String? helperText,
+    String? errorText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    bool alignLabelWithHint = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      errorText: errorText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: AppColors.surfaceWarm,
+      border: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.borderWarm),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.borderWarm),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: DesignTokens.borderRadiusMd,
+        borderSide: const BorderSide(color: AppColors.pineDeep, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(sellerProductFormViewModelProvider);
     final isAuction = vm.listingType == 'AUCTION';
-    final hasRejection =
-        vm.currentRejectionReason != null &&
+    final hasRejection = vm.currentRejectionReason != null &&
         vm.currentRejectionReason!.isNotEmpty;
     final isInvalidId = widget.initialProduct == null && widget.productId <= 0;
     final isLoaded =
         (widget.initialProduct != null || vm.editingProductId != null) &&
-        !isInvalidId;
+            !isInvalidId;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           hasRejection ? 'Sửa & Gửi duyệt lại' : 'Chỉnh sửa bài đăng',
+          style: AppTypography.headingMedium.copyWith(fontSize: 19),
         ),
-        elevation: 0,
       ),
-      bottomNavigationBar: isLoaded
-          ? _buildBottomActionBar(vm, hasRejection)
-          : null,
+      bottomNavigationBar:
+          isLoaded ? _buildBottomActionBar(vm, hasRejection) : null,
       body: SafeArea(
         child: isInvalidId
             ? RetroEmptyStateView(
@@ -206,49 +241,44 @@ class _EditResubmitListingScreenState
                 },
               )
             : !isLoaded
-            ? (vm.state.isError
-                  ? RetroErrorRetryView(
-                      errorMessage:
-                          vm.errorMessage ??
-                          'Không thể tải thông tin bài đăng.',
-                      onRetry: () => _loadProductData(vm),
-                    )
-                  : const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryTerracotta,
+                ? (vm.state.isError
+                    ? RetroErrorRetryView(
+                        errorMessage: vm.errorMessage ??
+                            'Không thể tải thông tin bài đăng.',
+                        onRetry: () => _loadProductData(vm),
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.pineDeep,
+                        ),
+                      ))
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // DEC-05: Pinned Rejection Banner in Crimson
+                          if (hasRejection) ...[
+                            _buildRejectionBanner(vm.currentRejectionReason!),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Photos Section
+                          _buildPhotosSection(vm),
+                          const SizedBox(height: 16),
+
+                          // Basic Info Card
+                          _buildBasicInfoSection(vm, isAuction),
+                          const SizedBox(height: 16),
+
+                          // Condition & Defect Info (BR-PR-03)
+                          _buildConditionAndDefectSection(vm),
+                        ],
                       ),
-                    ))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(DesignTokens.spaceLg),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // DEC-05: Pinned Rejection Banner in Burgundy/Red
-                      if (hasRejection) ...[
-                        _buildRejectionBanner(vm.currentRejectionReason!),
-                        const SizedBox(height: DesignTokens.spaceLg),
-                      ],
-
-                      // Photos Section
-                      _buildPhotosSection(vm),
-
-                      const SizedBox(height: DesignTokens.spaceLg),
-
-                      // Basic Info Card
-                      _buildBasicInfoSection(vm, isAuction),
-
-                      const SizedBox(height: DesignTokens.spaceLg),
-
-                      // Condition & Defect Info (BR-PR-03)
-                      _buildConditionAndDefectSection(vm),
-
-                      const SizedBox(height: DesignTokens.space2xl),
-                    ],
+                    ),
                   ),
-                ),
-              ),
       ),
     );
   }
@@ -256,11 +286,11 @@ class _EditResubmitListingScreenState
   Widget _buildRejectionBanner(String reason) {
     return Container(
       key: const Key('banner_rejection_reason'),
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFDE8E8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: AppColors.statusDanger, width: 1.5),
+        color: AppColors.priceCrimsonSoft,
+        borderRadius: DesignTokens.borderRadiusBanner,
+        border: Border.all(color: AppColors.priceCrimsonBorder, width: 1.4),
         boxShadow: DesignTokens.cardElevation,
       ),
       child: Column(
@@ -268,44 +298,56 @@ class _EditResubmitListingScreenState
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: AppColors.statusDanger,
-                size: 22,
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceCard,
+                  border: Border.all(color: AppColors.priceCrimsonBorder),
+                ),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.priceCrimson,
+                  size: 19,
+                ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Lý do từ chối kiểm duyệt (DEC-05)',
-                style: AppTypography.headingSmall.copyWith(
-                  color: AppColors.statusDanger,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Lý do từ chối kiểm duyệt (DEC-05)',
+                  style: AppTypography.headingSmall.copyWith(
+                    color: AppColors.priceCrimson,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(DesignTokens.spaceSm),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-              border: Border.all(color: const Color(0xFFF8B4B4)),
+              color: AppColors.surfaceCard,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(color: AppColors.priceCrimsonBorder),
             ),
             child: Text(
               reason,
               style: AppTypography.bodySmall.copyWith(
-                color: const Color(0xFF9B1C1C),
+                color: AppColors.priceCrimson,
                 fontWeight: FontWeight.w600,
+                height: 1.45,
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             'Vui lòng cập nhật hình ảnh, thông tin khuyết điểm hoặc giá bán và nhấn "Gửi duyệt lại (Resubmit)". Khi gửi lại, lý do từ chối sẽ được xóa và chuyển về trạng thái Chờ duyệt.',
             style: AppTypography.caption.copyWith(
-              color: AppColors.statusDanger,
+              color: AppColors.priceCrimson,
+              height: 1.4,
             ),
           ),
         ],
@@ -315,10 +357,10 @@ class _EditResubmitListingScreenState
 
   Widget _buildPhotosSection(SellerProductFormViewModel vm) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -330,23 +372,31 @@ class _EditResubmitListingScreenState
             children: [
               Text(
                 'Hình ảnh sản phẩm',
-                style: AppTypography.headingSmall.copyWith(fontSize: 15),
+                style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
               ),
-              Text(
-                '${vm.imageUrls.length + vm.imageFiles.length}/10',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textMuted,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.creamBadgeSoft,
+                  borderRadius: DesignTokens.borderRadiusFull,
+                ),
+                child: Text(
+                  '${vm.imageUrls.length + vm.imageFiles.length}/10',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.creamBadgeText,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 90,
+            height: 92,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: vm.imageUrls.length + vm.imageFiles.length + 1,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 if (index == vm.imageUrls.length + vm.imageFiles.length) {
                   return _buildAddPhotoButton(vm);
@@ -361,12 +411,20 @@ class _EditResubmitListingScreenState
               },
             ),
           ),
+          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: () => _promptAddImageUrl(vm),
-              icon: const Icon(Icons.link, size: 16),
-              label: const Text('Thêm ảnh bằng đường dẫn URL'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pineDeep,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+              icon: const Icon(Icons.link_rounded, size: 17),
+              label: const Text(
+                'Thêm ảnh bằng đường dẫn URL',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -378,35 +436,38 @@ class _EditResubmitListingScreenState
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: DesignTokens.borderRadiusMd,
           child: FutureBuilder<Uint8List>(
             future: vm.imageFiles[index].readAsBytes(),
             builder: (context, snapshot) => snapshot.hasData
                 ? Image.memory(
                     snapshot.data!,
-                    width: 88,
-                    height: 90,
+                    width: 90,
+                    height: 92,
                     fit: BoxFit.cover,
                   )
                 : Container(
-                    width: 88,
-                    height: 90,
+                    width: 90,
+                    height: 92,
                     color: AppColors.surfaceWarm,
                     child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.pineDeep,
+                      ),
                     ),
                   ),
           ),
         ),
         Positioned(
-          top: 2,
-          right: 2,
+          top: 4,
+          right: 4,
           child: InkWell(
             onTap: () => vm.removeImageFile(index),
             child: const CircleAvatar(
               radius: 10,
               backgroundColor: Colors.black54,
-              child: Icon(Icons.close, size: 13, color: Colors.white),
+              child: Icon(Icons.close, size: 12, color: Colors.white),
             ),
           ),
         ),
@@ -415,12 +476,17 @@ class _EditResubmitListingScreenState
           left: 0,
           right: 0,
           child: Container(
-            color: Colors.black54,
+            decoration: const BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(DesignTokens.radiusMd),
+              ),
+            ),
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: const Text(
               'Ảnh mới',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 9),
+              style: TextStyle(color: Colors.white, fontSize: 9.5),
             ),
           ),
         ),
@@ -431,26 +497,32 @@ class _EditResubmitListingScreenState
   Widget _buildAddPhotoButton(SellerProductFormViewModel vm) {
     return InkWell(
       onTap: () => _pickImages(vm),
-      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      borderRadius: DesignTokens.borderRadiusMd,
       child: Container(
-        width: 88,
+        width: 90,
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-          border: Border.all(color: AppColors.borderWarm),
+          borderRadius: DesignTokens.borderRadiusMd,
+          border: Border.all(
+            color: AppColors.ctaTerracotta.withValues(alpha: 0.45),
+          ),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(
               Icons.add_a_photo_outlined,
-              color: AppColors.primaryTerracotta,
-              size: 28,
+              color: AppColors.ctaTerracotta,
+              size: 26,
             ),
-            SizedBox(height: 4),
+            SizedBox(height: 5),
             Text(
               'Thêm ảnh',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ctaTerracotta,
+              ),
             ),
           ],
         ),
@@ -465,13 +537,13 @@ class _EditResubmitListingScreenState
     return Stack(
       children: [
         Container(
-          width: 88,
+          width: 90,
           decoration: BoxDecoration(
             color: AppColors.surfaceWarm,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            borderRadius: DesignTokens.borderRadiusMd,
             border: Border.all(
               color: isPrimary
-                  ? AppColors.primaryTerracotta
+                  ? AppColors.ctaTerracotta
                   : AppColors.borderWarm,
               width: isPrimary ? 2 : 1,
             ),
@@ -485,21 +557,26 @@ class _EditResubmitListingScreenState
             right: 0,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 2),
-              color: AppColors.primaryTerracotta.withValues(alpha: 0.9),
+              decoration: BoxDecoration(
+                color: AppColors.ctaTerracotta.withValues(alpha: 0.92),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(DesignTokens.radiusMd - 1),
+                ),
+              ),
               child: const Text(
                 'Ảnh đại diện',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
         Positioned(
-          top: 2,
-          right: 2,
+          top: 4,
+          right: 4,
           child: InkWell(
             onTap: () => vm.removeImageUrl(index),
             child: Container(
@@ -508,7 +585,7 @@ class _EditResubmitListingScreenState
                 color: Colors.black54,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
+              child: const Icon(Icons.close, size: 13, color: Colors.white),
             ),
           ),
         ),
@@ -521,12 +598,19 @@ class _EditResubmitListingScreenState
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Thêm liên kết ảnh'),
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: DesignTokens.borderRadiusBanner,
+          side: const BorderSide(color: AppColors.borderWarm),
+        ),
+        title: Text(
+          'Thêm liên kết ảnh',
+          style: AppTypography.headingSmall.copyWith(fontSize: 17),
+        ),
         content: TextField(
           controller: urlController,
-          decoration: const InputDecoration(
+          decoration: _editorialInputDecoration(
             labelText: 'URL hình ảnh (jpg, png, webp)',
-            border: OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -536,7 +620,10 @@ class _EditResubmitListingScreenState
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
+              backgroundColor: AppColors.ctaTerracotta,
+              foregroundColor: AppColors.textLight,
+              shape: const StadiumBorder(),
+              elevation: 0,
             ),
             onPressed: () {
               if (urlController.text.trim().isNotEmpty) {
@@ -544,19 +631,22 @@ class _EditResubmitListingScreenState
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Thêm', style: TextStyle(color: Colors.white)),
+            child: const Text('Thêm'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBasicInfoSection(SellerProductFormViewModel vm, bool isAuction) {
+  Widget _buildBasicInfoSection(
+    SellerProductFormViewModel vm,
+    bool isAuction,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -565,17 +655,14 @@ class _EditResubmitListingScreenState
         children: [
           Text(
             'Thông tin chi tiết sản phẩm',
-            style: AppTypography.headingSmall.copyWith(fontSize: 15),
+            style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Title
           TextFormField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Tên sản phẩm *',
-              border: OutlineInputBorder(),
-            ),
+            decoration: _editorialInputDecoration(labelText: 'Tên sản phẩm *'),
             validator: (v) {
               if (v == null || v.trim().length < 5) {
                 return 'Tên phải >= 5 ký tự';
@@ -584,25 +671,22 @@ class _EditResubmitListingScreenState
             },
             onChanged: (v) => vm.title = v.trim(),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           TextFormField(
             controller: _descriptionController,
             maxLines: 4,
             maxLength: 5000,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Mô tả sản phẩm',
               hintText: 'Chất liệu, kiểu dáng, nguồn gốc, cách phối...',
-              border: OutlineInputBorder(),
               alignLabelWithHint: true,
             ),
             onChanged: (value) => vm.description = value,
           ),
-
           const SizedBox(height: 12),
 
-          // Category Dropdown — active categories from taxonomy API.
+          // Category Dropdown
           Builder(
             builder: (context) {
               final taxonomyVm = ref.watch(catalogSearchViewModelProvider);
@@ -617,10 +701,9 @@ class _EditResubmitListingScreenState
               return DropdownButtonFormField<int>(
                 value: hasSelectedCategory ? selectedCategoryId : null,
                 isExpanded: true,
-                decoration: InputDecoration(
+                decoration: _editorialInputDecoration(
                   labelText: 'Danh mục *',
                   prefixIcon: const Icon(Icons.category_outlined),
-                  border: const OutlineInputBorder(),
                   helperText: taxonomyVm.isLoadingTaxonomy
                       ? 'Đang tải danh mục...'
                       : null,
@@ -642,8 +725,8 @@ class _EditResubmitListingScreenState
                   final parent = category.parentId == null
                       ? null
                       : taxonomy?.categories
-                            .where((root) => root.id == category.parentId)
-                            .firstOrNull;
+                          .where((root) => root.id == category.parentId)
+                          .firstOrNull;
                   return DropdownMenuItem<int>(
                     value: category.id,
                     child: Text(
@@ -654,8 +737,7 @@ class _EditResubmitListingScreenState
                     ),
                   );
                 }).toList(),
-                onChanged:
-                    taxonomyVm.isLoadingTaxonomy ||
+                onChanged: taxonomyVm.isLoadingTaxonomy ||
                         (taxonomyVm.taxonomyError != null &&
                             categories.isEmpty) ||
                         categories.isEmpty
@@ -676,20 +758,15 @@ class _EditResubmitListingScreenState
               );
             },
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Brand
           TextFormField(
             controller: _brandController,
-            decoration: const InputDecoration(
-              labelText: 'Thương hiệu',
-              border: OutlineInputBorder(),
-            ),
+            decoration: _editorialInputDecoration(labelText: 'Thương hiệu'),
             onChanged: (v) => vm.brandName = v.trim(),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Price & Quantity
           if (!isAuction) ...[
@@ -700,9 +777,8 @@ class _EditResubmitListingScreenState
                   child: TextFormField(
                     controller: _priceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Giá bán (VNĐ) *',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final p = double.tryParse(v ?? '');
@@ -712,15 +788,14 @@ class _EditResubmitListingScreenState
                     onChanged: (v) => vm.price = double.tryParse(v) ?? 0.0,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 1,
                   child: TextFormField(
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: _editorialInputDecoration(
                       labelText: 'Số lượng *',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       final q = int.tryParse(v ?? '');
@@ -736,9 +811,8 @@ class _EditResubmitListingScreenState
             TextFormField(
               controller: _startPriceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: _editorialInputDecoration(
                 labelText: 'Giá khởi điểm (VNĐ) *',
-                border: OutlineInputBorder(),
               ),
               validator: (v) {
                 final p = double.tryParse(v ?? '');
@@ -759,10 +833,10 @@ class _EditResubmitListingScreenState
 
   Widget _buildConditionAndDefectSection(SellerProductFormViewModel vm) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -771,10 +845,9 @@ class _EditResubmitListingScreenState
         children: [
           Text(
             'Tình trạng đồ si & Minh bạch khuyết điểm',
-            style: AppTypography.headingSmall.copyWith(fontSize: 15),
+            style: AppTypography.headingSmall.copyWith(fontSize: 15.5),
           ),
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 6,
@@ -783,20 +856,27 @@ class _EditResubmitListingScreenState
               return ChoiceChip(
                 label: Text(cond.label),
                 selected: isSelected,
-                selectedColor: AppColors.primaryTerracotta,
+                selectedColor: AppColors.creamBadgeBg,
+                backgroundColor: AppColors.surfaceWarm,
+                side: BorderSide(
+                  color: isSelected
+                      ? AppColors.creamBadgeBorder
+                      : AppColors.borderWarm,
+                ),
+                shape: const StadiumBorder(),
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textCharcoal,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? AppColors.creamBadgeText
+                      : AppColors.textCharcoal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 12,
                 ),
-                backgroundColor: AppColors.surfaceWarm,
                 onSelected: (selected) {
                   if (selected) vm.setCondition(cond.key);
                 },
               );
             }).toList(),
           ),
-
           const SizedBox(height: 16),
 
           // BR-PR-03: Mandatory Defect Info
@@ -804,9 +884,9 @@ class _EditResubmitListingScreenState
             key: const Key('input_defect_info_edit'),
             controller: _defectController,
             maxLines: 3,
-            decoration: const InputDecoration(
+            decoration: _editorialInputDecoration(
               labelText: 'Mô tả khuyết điểm & độ sờn rách (Bắt buộc) *',
-              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
             ),
             validator: (v) {
               if (v == null || v.trim().length < 5) {
@@ -826,74 +906,73 @@ class _EditResubmitListingScreenState
     bool hasRejection,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: DesignTokens.spaceLg,
-        vertical: DesignTokens.spaceMd,
-      ),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
-        border: const Border(top: BorderSide(color: AppColors.borderWarm)),
-        boxShadow: DesignTokens.cardElevation,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: DesignTokens.bottomNavElevation,
       ),
-      child: Row(
-        children: [
-          // Lưu thay đổi nháp
-          Expanded(
-            child: OutlinedButton(
-              onPressed: vm.isSubmitting
-                  ? null
-                  : () => _submitEditForm(vm, submitForReview: false),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF84664C),
-                side: const BorderSide(color: AppColors.borderWarm),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: vm.isSubmitting
+                      ? null
+                      : () => _submitEditForm(vm, submitForReview: false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryVintageBrown,
+                    side: const BorderSide(color: AppColors.borderWarm),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text(
+                    'Lưu thay đổi',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-              child: const Text(
-                'Lưu thay đổi',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Gửi duyệt lại / Cập nhật
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              key: const Key('btn_resubmit_action'),
-              onPressed: vm.isSubmitting
-                  ? null
-                  : () => _submitEditForm(vm, submitForReview: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: hasRejection
-                    ? AppColors.statusDanger
-                    : AppColors.primaryTerracotta,
-                foregroundColor: AppColors.textLight,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  key: const Key('btn_resubmit_action'),
+                  onPressed: vm.isSubmitting
+                      ? null
+                      : () => _submitEditForm(vm, submitForReview: true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasRejection
+                        ? AppColors.priceCrimson
+                        : AppColors.ctaTerracotta,
+                    foregroundColor: AppColors.textLight,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: vm.isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          hasRejection
+                              ? 'Gửi duyệt lại (Resubmit)'
+                              : 'Lưu & Gửi phê duyệt',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ),
-              child: vm.isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      hasRejection
-                          ? 'Gửi duyệt lại (Resubmit)'
-                          : 'Lưu & Gửi phê duyệt',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -934,7 +1013,7 @@ class _EditResubmitListingScreenState
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppColors.statusDanger,
+            backgroundColor: AppColors.priceCrimson,
             content: Text(
               vm.state.maybeWhen(
                 error: (err, _) => err,

@@ -17,10 +17,6 @@ import '../models/checkout_preview_model.dart';
 import '../viewmodels/checkout_view_model.dart';
 
 /// M-OR-01: Order Confirmation & Checkout.
-///
-/// UI refresh only.
-/// Backend preview remains authoritative for pricing.
-/// Order creation and payment navigation are unchanged.
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String source;
   final List<int>? cartItemIds;
@@ -47,9 +43,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(checkoutViewModelProvider)
-          .loadCheckoutPreview(
+      ref.read(checkoutViewModelProvider).loadCheckoutPreview(
             source: widget.source,
             cartItemIds: widget.cartItemIds,
             productId: widget.productId,
@@ -69,9 +63,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final vm = ref.watch(checkoutViewModelProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundCream,
+        backgroundColor: AppColors.canvasParchment,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
@@ -79,9 +73,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Xác nhận đơn hàng',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              style: AppTypography.headingSmall.copyWith(
+                fontSize: 18,
+                color: AppColors.pineDeep,
+              ),
             ),
             Text(
               'Kiểm tra trước khi đặt mua',
@@ -123,13 +120,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   Widget _buildLoading() {
     return const Center(
-      child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+      child: CircularProgressIndicator(color: AppColors.ctaTerracotta),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Main checkout content
-  // ---------------------------------------------------------------------------
 
   Widget _buildCheckoutBody(
     CheckoutPreviewModel preview,
@@ -144,29 +137,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
       children: [
         _buildCheckoutProgress(),
-
         const SizedBox(height: DesignTokens.spaceLg),
-
         _buildAddressCard(vm.selectedAddress),
-
         const SizedBox(height: DesignTokens.spaceLg),
-
         _buildSectionHeading(
           icon: Icons.shopping_bag_outlined,
           title: 'Sản phẩm đặt mua',
           subtitle: '${preview.orderGroups.length} cửa hàng',
         ),
-
         const SizedBox(height: DesignTokens.spaceSm),
-
         ...preview.orderGroups.map(_buildOrderStoreGroup),
-
         const SizedBox(height: DesignTokens.spaceLg),
-
         _buildOrderNoteCard(vm),
-
         const SizedBox(height: DesignTokens.spaceLg),
-
         PriceBreakdownCard(
           itemSubtotal: preview.totalItemSubtotal,
           shippingFee: preview.totalShippingFee,
@@ -174,21 +157,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           customGrandTotalAmount: preview.grandTotalAmount,
           showSellerNetAmount: false,
         ),
-
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildEscrowTrustCard(),
-
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildDemoPaymentNotice(),
       ],
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Checkout progress
-  // ---------------------------------------------------------------------------
 
   Widget _buildCheckoutProgress() {
     return Container(
@@ -198,8 +173,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
+        boxShadow: DesignTokens.cardElevation,
       ),
       child: Row(
         children: [
@@ -219,9 +195,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     bool active = false,
     bool completed = false,
   }) {
-    final color = active || completed
-        ? AppColors.primaryTerracotta
-        : AppColors.textMuted;
+    final color = active
+        ? AppColors.ctaTerracotta
+        : completed
+            ? AppColors.pineDeep
+            : AppColors.textMuted;
 
     return Expanded(
       child: Column(
@@ -233,14 +211,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             height: 32,
             decoration: BoxDecoration(
               color: completed
-                  ? AppColors.secondaryPineGreen
+                  ? AppColors.pineDeep
                   : active
-                  ? AppColors.primaryTerracotta
-                  : AppColors.surfaceWarm,
+                      ? AppColors.ctaTerracotta
+                      : AppColors.surfaceWarm,
               shape: BoxShape.circle,
               border: active
                   ? Border.all(
-                      color: AppColors.primaryTerracotta.withValues(alpha: 0.2),
+                      color: AppColors.ctaTerracotta.withValues(alpha: 0.22),
                       width: 4,
                     )
                   : null,
@@ -263,7 +241,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             style: TextStyle(
               fontSize: 11,
               color: color,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
         ],
@@ -277,15 +255,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       height: 2,
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: completed ? AppColors.secondaryPineGreen : AppColors.borderWarm,
+        color: completed ? AppColors.pineDeep : AppColors.borderWarm,
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Section heading
-  // ---------------------------------------------------------------------------
 
   Widget _buildSectionHeading({
     required IconData icon,
@@ -298,32 +272,35 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFE9DE),
-            borderRadius: BorderRadius.circular(10),
+            color: AppColors.creamBadgeSoft,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.creamBadgeBorder),
           ),
-          child: Icon(icon, color: AppColors.primaryTerracotta, size: 19),
+          child: Icon(icon, color: AppColors.pineDeep, size: 18),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             title,
             style: AppTypography.headingSmall.copyWith(
-              fontWeight: FontWeight.w800,
+              color: AppColors.pineDeep,
+              fontSize: 16,
             ),
           ),
         ),
         if (subtitle != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.surfaceWarm,
-              borderRadius: BorderRadius.circular(20),
+              color: AppColors.creamBadgeSoft,
+              borderRadius: DesignTokens.borderRadiusFull,
+              border: Border.all(color: AppColors.creamBadgeBorder),
             ),
             child: Text(
               subtitle,
               style: AppTypography.caption.copyWith(
                 fontWeight: FontWeight.w700,
-                color: AppColors.textMuted,
+                color: AppColors.creamBadgeText,
               ),
             ),
           ),
@@ -331,15 +308,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Shipping address
-  // ---------------------------------------------------------------------------
-
   Widget _buildAddressCard(UserAddressModel? address) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -350,31 +323,35 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: DesignTokens.spaceMd,
-              vertical: 13,
+              vertical: 12,
             ),
             decoration: const BoxDecoration(
-              color: Color(0xFFFFF0E8),
-              border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+              color: AppColors.surfaceSection,
+              border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.location_on_rounded,
-                  color: AppColors.primaryTerracotta,
-                  size: 20,
+                  color: AppColors.ctaTerracotta,
+                  size: 19,
                 ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
                     'Địa chỉ nhận hàng',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: AppColors.pineDeep,
+                    ),
                   ),
                 ),
                 TextButton(
                   key: const Key('btn_change_shipping_address'),
                   onPressed: _openAddressSelection,
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryTerracotta,
+                    foregroundColor: AppColors.ctaTerracotta,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: const Size(0, 32),
                   ),
@@ -402,16 +379,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFECE5D9),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.creamBadgeSoft,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.creamBadgeBorder),
           ),
           child: const Icon(
             Icons.person_outline_rounded,
-            color: AppColors.textCharcoal,
-            size: 21,
+            color: AppColors.pineDeep,
+            size: 20,
           ),
         ),
         const SizedBox(width: 12),
@@ -428,7 +406,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     address.recipientName,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 14,
+                      fontSize: 14.5,
+                      color: AppColors.textCharcoal,
                     ),
                   ),
                   if (address.isDefault) _buildDefaultBadge(),
@@ -442,7 +421,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 address.fullAddress,
                 style: AppTypography.bodySmall.copyWith(
@@ -459,17 +438,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   Widget _buildDefaultBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5F1E6),
-        borderRadius: BorderRadius.circular(6),
+        color: AppColors.creamBadgeBg,
+        borderRadius: DesignTokens.borderRadiusFull,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: const Text(
         'Mặc định',
         style: TextStyle(
-          color: AppColors.secondaryPineGreen,
+          color: AppColors.creamBadgeText,
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -479,15 +459,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF1E8),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.priceCrimsonSoft,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.priceCrimsonBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Icon(
             Icons.warning_amber_rounded,
-            color: AppColors.statusDanger,
+            color: AppColors.priceCrimson,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -496,9 +477,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               'Chưa có địa chỉ nhận hàng. '
               'Vui lòng thêm địa chỉ để tiếp tục.',
               style: TextStyle(
-                color: AppColors.statusDanger,
+                color: AppColors.priceCrimson,
                 fontSize: 12,
                 height: 1.4,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -506,7 +488,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ElevatedButton(
             onPressed: () => context.push(AppRoutes.addresses),
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               minimumSize: const Size(0, 36),
             ),
             child: const Text('Thêm'),
@@ -518,9 +500,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   void _openAddressSelection() {
     context.push(AppRoutes.addresses).then((_) {
-      ref
-          .read(checkoutViewModelProvider)
-          .loadCheckoutPreview(
+      ref.read(checkoutViewModelProvider).loadCheckoutPreview(
             source: widget.source,
             cartItemIds: widget.cartItemIds,
             productId: widget.productId,
@@ -529,16 +509,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // Seller / store group
-  // ---------------------------------------------------------------------------
-
   Widget _buildOrderStoreGroup(CheckoutOrderGroupPreviewModel group) {
     return Container(
       margin: const EdgeInsets.only(bottom: DesignTokens.spaceMd),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -571,29 +547,39 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         vertical: 12,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.surfaceWarm,
-        border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+        color: AppColors.surfaceSection,
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
       ),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFFE4EBDD),
-              borderRadius: BorderRadius.circular(10),
+              gradient: const RadialGradient(
+                colors: [
+                  AppColors.categoryCircleStart,
+                  AppColors.categoryCircleEnd,
+                ],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.creamBadgeBorder),
             ),
             child: const Icon(
               Icons.storefront_rounded,
-              color: AppColors.secondaryPineGreen,
-              size: 19,
+              color: AppColors.pineDeep,
+              size: 17,
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               shopName,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13.5,
+                color: AppColors.pineDeep,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -608,10 +594,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Checkout product row
-  // ---------------------------------------------------------------------------
-
   Widget _buildCheckoutProduct(CartItemModel item) {
     return Padding(
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
@@ -619,13 +601,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: DesignTokens.borderRadiusMd,
             child: Container(
-              width: 86,
-              height: 96,
+              width: 84,
+              height: 94,
               color: AppColors.surfaceWarm,
-              child:
-                  item.primaryImageUrl != null &&
+              child: item.primaryImageUrl != null &&
                       item.primaryImageUrl!.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: item.primaryImageUrl!,
@@ -633,8 +614,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       placeholder: (_, _) => const Center(
                         child: Icon(
                           Icons.checkroom_outlined,
-                          color: Color(0xFF84664C),
-                          size: 32,
+                          color: AppColors.primaryVintageBrown,
+                          size: 30,
                         ),
                       ),
                       errorWidget: (_, _, _) => const Icon(
@@ -644,15 +625,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     )
                   : const Icon(
                       Icons.checkroom_outlined,
-                      color: Color(0xFF84664C),
-                      size: 32,
+                      color: AppColors.primaryVintageBrown,
+                      size: 30,
                     ),
             ),
           ),
           const SizedBox(width: DesignTokens.spaceMd),
           Expanded(
             child: SizedBox(
-              height: 96,
+              height: 94,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -677,12 +658,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
+                          horizontal: 8,
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceWarm,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: DesignTokens.borderRadiusFull,
                         ),
                         child: Text(
                           'x${item.quantity}',
@@ -697,9 +678,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const Spacer(),
                   Text(
                     VndFormatter.format(item.itemSubtotal),
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.primaryTerracotta,
-                      fontWeight: FontWeight.w800,
+                    style: AppTypography.priceSmall.copyWith(
+                      color: AppColors.priceCrimson,
+                      fontSize: 15,
                     ),
                   ),
                 ],
@@ -711,16 +692,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Order note
-  // ---------------------------------------------------------------------------
-
   Widget _buildOrderNoteCard(CheckoutViewModel vm) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -733,20 +710,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE9DE),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.creamBadgeSoft,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.creamBadgeBorder),
                 ),
                 child: const Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: AppColors.primaryTerracotta,
-                  size: 18,
+                  color: AppColors.pineDeep,
+                  size: 17,
                 ),
               ),
               const SizedBox(width: 9),
               const Expanded(
                 child: Text(
                   'Lời nhắn cho cửa hàng',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13.5,
+                    color: AppColors.pineDeep,
+                  ),
                 ),
               ),
               Text(
@@ -768,19 +750,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 color: AppColors.textMuted,
               ),
               filled: true,
-              fillColor: AppColors.backgroundCream,
+              fillColor: AppColors.canvasParchment,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                borderRadius: DesignTokens.borderRadiusMd,
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                borderRadius: DesignTokens.borderRadiusMd,
                 borderSide: const BorderSide(color: AppColors.borderWarm),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                borderRadius: DesignTokens.borderRadiusMd,
                 borderSide: const BorderSide(
-                  color: AppColors.primaryTerracotta,
+                  color: AppColors.pineDeep,
                   width: 1.4,
                 ),
               ),
@@ -795,32 +777,30 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Escrow & demo notices
-  // ---------------------------------------------------------------------------
-
   Widget _buildEscrowTrustCard() {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F2E8),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: const Color(0xFFB9D9BE)),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(
+          color: AppColors.verifiedLeaf.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD5E8D7),
-              borderRadius: BorderRadius.circular(11),
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceCard,
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.shield_rounded,
-              color: AppColors.secondaryPineGreen,
-              size: 22,
+              color: AppColors.verifiedLeaf,
+              size: 20,
             ),
           ),
           const SizedBox(width: DesignTokens.spaceSm),
@@ -832,16 +812,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   'Thanh toán an toàn với Escrow',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.secondaryPineGreen,
-                    fontSize: 13,
+                    color: AppColors.pineDeep,
+                    fontSize: 13.5,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 Text(
                   'Tiền được giữ trung gian và chỉ giải ngân '
                   'cho người bán khi bạn xác nhận đã nhận hàng.',
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.secondaryPineGreen,
+                    color: AppColors.pineBanner,
                     height: 1.45,
                   ),
                 ),
@@ -857,22 +837,26 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4DF),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFEBD6A9)),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFF986A25)),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppColors.creamBadgeText,
+          ),
           SizedBox(width: 8),
           Expanded(
             child: Text(
               'Thanh toán QR trong ứng dụng là mô phỏng '
               'phục vụ demo. Không thực hiện giao dịch ngân hàng thật.',
               style: TextStyle(
-                color: Color(0xFF805C25),
-                fontSize: 11,
+                color: AppColors.creamBadgeText,
+                fontSize: 11.5,
                 height: 1.45,
               ),
             ),
@@ -881,10 +865,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Sticky order action
-  // ---------------------------------------------------------------------------
 
   Widget _buildBottomActionBar(
     CheckoutPreviewModel preview,
@@ -905,8 +885,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: const Border(top: BorderSide(color: AppColors.borderWarm)),
-        boxShadow: DesignTokens.cardElevation,
+        boxShadow: DesignTokens.bottomNavElevation,
       ),
       child: SafeArea(
         top: false,
@@ -926,15 +907,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     VndFormatter.format(preview.grandTotalAmount),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.headingLarge.copyWith(
-                      color: AppColors.primaryTerracotta,
+                    style: AppTypography.priceLarge.copyWith(
+                      color: AppColors.priceCrimson,
                       fontSize: 19,
-                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
@@ -956,26 +936,23 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       } else if (vm.errorMessage != null && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            backgroundColor: AppColors.statusDanger,
+                            backgroundColor: AppColors.priceCrimson,
                             content: Text(vm.errorMessage!),
                           ),
                         );
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryTerracotta,
+                backgroundColor: AppColors.ctaTerracotta,
                 foregroundColor: AppColors.textLight,
-                disabledBackgroundColor: AppColors.primaryTerracotta.withValues(
-                  alpha: 0.55,
-                ),
+                disabledBackgroundColor:
+                    AppColors.ctaTerracotta.withValues(alpha: 0.5),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 17,
+                  horizontal: 20,
                   vertical: 14,
                 ),
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                ),
+                shape: const StadiumBorder(),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -990,13 +967,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       ),
                     )
                   else
-                    const Icon(Icons.qr_code_2_rounded, size: 20),
+                    const Icon(Icons.qr_code_2_rounded, size: 19),
                   const SizedBox(width: 8),
                   Text(
                     vm.isSubmittingOrder ? 'Đang xử lý' : 'Đặt hàng',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 13,
+                      fontSize: 13.5,
                     ),
                   ),
                 ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../models/product_image_model.dart';
 
 /// Full-screen image viewer with pinch-to-zoom up to 400% (M-DS-04).
@@ -138,7 +137,7 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withOpacity(0.85),
+                      Colors.black.withValues(alpha: 0.85),
                       Colors.transparent,
                     ],
                     begin: Alignment.topCenter,
@@ -212,7 +211,7 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.85),
+                      Colors.black.withValues(alpha: 0.85),
                       Colors.black,
                     ],
                     begin: Alignment.topCenter,
@@ -223,7 +222,6 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Defect note badge
                     if (currentImage.imageType == 'DEFECT_CLOSEUP' ||
                         currentImage.defectNote != null)
                       Container(
@@ -234,13 +232,11 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2C2214),
-                          borderRadius: BorderRadius.circular(
-                            DesignTokens.radiusSm,
-                          ),
-                          border: Border.all(color: const Color(0xFFB47800)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.starGold),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 4,
                             ),
                           ],
@@ -249,7 +245,7 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                           children: [
                             const Icon(
                               Icons.info_outline_rounded,
-                              color: Color(0xFFFFB800),
+                              color: AppColors.starGold,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -260,7 +256,7 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                                     ? currentImage.defectNote!
                                     : 'Ảnh chụp cận cảnh vết khuyết điểm hoặc sờn mòn tự nhiên.',
                                 style: const TextStyle(
-                                  color: Color(0xFFFFE6A8),
+                                  color: AppColors.creamBadgeBg,
                                   fontSize: 12,
                                   height: 1.35,
                                   fontWeight: FontWeight.w500,
@@ -270,8 +266,6 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                           ],
                         ),
                       ),
-
-                    // Horizontal Thumbnail Strip
                     SizedBox(
                       height: 56,
                       child: ListView.separated(
@@ -295,18 +289,18 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: isSelected
-                                      ? AppColors.primaryTerracotta
+                                      ? AppColors.creamBadgeBg
                                       : Colors.white24,
                                   width: isSelected ? 2.5 : 1,
                                 ),
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.primaryTerracotta
-                                              .withOpacity(0.4),
+                                          color: AppColors.starGold
+                                              .withValues(alpha: 0.35),
                                           blurRadius: 6,
                                         ),
                                       ]

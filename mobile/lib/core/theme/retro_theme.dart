@@ -4,22 +4,25 @@ import 'app_colors.dart';
 import 'app_typography.dart';
 import 'design_tokens.dart';
 
-/// Material 3 theme for RETRO MARKET.
+/// Material 3 theme for RETRO MARKET (izithrift).
 ///
-/// Forest Green is the primary interaction color. Warm Ivory and parchment
-/// surfaces establish the editorial vintage marketplace visual language.
+/// Built from the approved Cozy Vintage Editorial reference:
+/// - Warm parchment linen canvas (#F6F1E9)
+/// - Crisp white elevated cards with soft warm hairline borders (#E7DFD2)
+/// - Deep Pine Green primary actions & burnt terracotta editorial CTAs
+/// - Crimson price & active-navigation accents
 class RetroTheme {
   RetroTheme._();
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.light(
-      primary: AppColors.primaryForestGreen,
+      primary: AppColors.pineBanner,
       onPrimary: AppColors.textLight,
       primaryContainer: AppColors.primaryForestGreenLight,
-      onPrimaryContainer: AppColors.primaryForestGreenDark,
-      secondary: AppColors.primaryTerracotta,
+      onPrimaryContainer: AppColors.pineDeep,
+      secondary: AppColors.ctaTerracotta,
       onSecondary: AppColors.textLight,
-      tertiary: AppColors.accentVintageGold,
+      tertiary: AppColors.starGold,
       onTertiary: AppColors.textCharcoal,
       surface: AppColors.surfaceCard,
       onSurface: AppColors.textCharcoal,
@@ -29,27 +32,32 @@ class RetroTheme {
       outlineVariant: AppColors.borderSubtle,
     );
 
-    final shapeSmall = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+    final pillShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+    );
+
+    final roundedCardShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.warmIvory,
+      scaffoldBackgroundColor: AppColors.canvasParchment,
       fontFamily: AppTypography.fontBody,
       visualDensity: VisualDensity.standard,
       splashFactory: InkRipple.splashFactory,
 
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.warmIvory,
+        backgroundColor: AppColors.canvasParchment,
         foregroundColor: AppColors.textCharcoal,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: DesignTokens.spaceLg,
         titleTextStyle: AppTypography.headingMedium,
-        iconTheme: IconThemeData(color: AppColors.textCharcoal),
+        iconTheme: IconThemeData(color: AppColors.textCharcoal, size: 22),
       ),
 
       cardTheme: CardThemeData(
@@ -58,7 +66,7 @@ class RetroTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           side: const BorderSide(
             color: AppColors.borderWarm,
             width: DesignTokens.borderThin,
@@ -68,35 +76,49 @@ class RetroTheme {
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryForestGreen,
+          backgroundColor: AppColors.pineBanner,
           foregroundColor: AppColors.textLight,
-          disabledBackgroundColor: AppColors.borderSubtle,
+          disabledBackgroundColor: AppColors.borderWarm,
           disabledForegroundColor: AppColors.textMuted,
           elevation: 0,
           textStyle: AppTypography.buttonLarge,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: shapeSmall,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: pillShape,
+        ),
+      ),
+
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.ctaTerracotta,
+          foregroundColor: AppColors.textLight,
+          disabledBackgroundColor: AppColors.borderWarm,
+          disabledForegroundColor: AppColors.textMuted,
+          elevation: 0,
+          textStyle: AppTypography.buttonLarge,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: pillShape,
         ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryForestGreen,
+          foregroundColor: AppColors.pineDeep,
+          backgroundColor: AppColors.surfaceCard,
           side: const BorderSide(
-            color: AppColors.primaryForestGreen,
+            color: AppColors.borderWarm,
             width: DesignTokens.borderThin,
           ),
-          textStyle: AppTypography.buttonLarge,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: shapeSmall,
+          textStyle: AppTypography.buttonMedium,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          shape: pillShape,
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primaryForestGreen,
+          foregroundColor: AppColors.pineBanner,
           textStyle: AppTypography.buttonMedium,
-          shape: shapeSmall,
+          shape: pillShape,
         ),
       ),
 
@@ -106,40 +128,43 @@ class RetroTheme {
         hintStyle: AppTypography.bodyMedium.copyWith(
           color: AppColors.textMuted,
         ),
+        labelStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColors.textMuted,
+        ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
+          horizontal: 18,
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
             color: AppColors.borderWarm,
             width: DesignTokens.borderThin,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
             color: AppColors.borderWarm,
             width: DesignTokens.borderThin,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
-            color: AppColors.primaryForestGreen,
+            color: AppColors.pineBanner,
             width: DesignTokens.borderMedium,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
             color: AppColors.statusDanger,
             width: DesignTokens.borderThin,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
             color: AppColors.statusDanger,
             width: DesignTokens.borderMedium,
@@ -147,10 +172,26 @@ class RetroTheme {
         ),
       ),
 
+      tabBarTheme: TabBarThemeData(
+        labelColor: AppColors.priceCrimson,
+        unselectedLabelColor: AppColors.textMuted,
+        indicatorColor: AppColors.priceCrimson,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: AppColors.borderWarm,
+        labelStyle: AppTypography.labelMedium.copyWith(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: AppTypography.labelMedium.copyWith(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceWarm,
-        selectedColor: AppColors.primaryForestGreenLight,
-        secondarySelectedColor: AppColors.primaryForestGreenLight,
+        backgroundColor: AppColors.surfaceCard,
+        selectedColor: AppColors.creamBadgeBg,
+        secondarySelectedColor: AppColors.creamBadgeBg,
         labelStyle: AppTypography.caption.copyWith(
           color: AppColors.textCharcoal,
           fontWeight: FontWeight.w600,
@@ -162,48 +203,40 @@ class RetroTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       ),
 
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surfaceCard,
-        indicatorColor: AppColors.primaryForestGreenLight,
+        indicatorColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        elevation: 2,
+        elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return AppTypography.caption.copyWith(
-            color: selected
-                ? AppColors.primaryForestGreen
-                : AppColors.textMuted,
+            color: selected ? AppColors.priceCrimson : AppColors.textCharcoal,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected
-                ? AppColors.primaryForestGreen
-                : AppColors.textMuted,
+            color: selected ? AppColors.priceCrimson : AppColors.textCharcoal,
           );
         }),
       ),
 
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primaryForestGreen,
+        backgroundColor: AppColors.ctaTerracotta,
         foregroundColor: AppColors.textLight,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(DesignTokens.radiusLg),
-          ),
-        ),
+        elevation: 3,
+        shape: StadiumBorder(),
       ),
 
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryForestGreen;
+            return AppColors.pineBanner;
           }
           return null;
         }),
@@ -215,7 +248,7 @@ class RetroTheme {
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryForestGreen;
+            return AppColors.pineBanner;
           }
           return AppColors.textMuted;
         }),
@@ -224,9 +257,15 @@ class RetroTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryForestGreen;
+            return AppColors.surfaceCard;
           }
           return AppColors.textMuted;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.pineBanner;
+          }
+          return AppColors.borderWarm;
         }),
       ),
 
@@ -234,9 +273,7 @@ class RetroTheme {
         backgroundColor: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        ),
+        shape: roundedCardShape,
         titleTextStyle: AppTypography.headingMedium,
         contentTextStyle: AppTypography.bodyMedium,
       ),
@@ -247,19 +284,19 @@ class RetroTheme {
         showDragHandle: true,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(DesignTokens.radiusLg),
+            top: Radius.circular(DesignTokens.radiusXl),
           ),
         ),
       ),
 
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: AppColors.pineDeep,
         contentTextStyle: AppTypography.bodySmall.copyWith(
           color: AppColors.textLight,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),
       ),
 
@@ -270,15 +307,15 @@ class RetroTheme {
       ),
 
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primaryForestGreen,
+        color: AppColors.pineBanner,
         linearTrackColor: AppColors.surfaceWarm,
         circularTrackColor: AppColors.surfaceWarm,
       ),
 
       textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: AppColors.primaryForestGreen,
-        selectionColor: Color(0x332D5A3C),
-        selectionHandleColor: AppColors.primaryForestGreen,
+        cursorColor: AppColors.pineBanner,
+        selectionColor: Color(0x3324412E),
+        selectionHandleColor: AppColors.pineBanner,
       ),
     );
   }

@@ -11,6 +11,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
 import '../../../core/widgets/price_breakdown_card.dart';
+import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/server_countdown_timer.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/status_pill_badge.dart';
@@ -49,39 +50,38 @@ class _PurchaseOrderDetailScreenState
     final order = vm.selectedOrder ?? widget.initialOrder;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
         title: Text(
           order != null ? 'Đơn hàng ${order.orderCode}' : 'Chi tiết đơn mua',
         ),
         elevation: 0,
       ),
-      bottomNavigationBar: order != null
-          ? _buildBottomActionBar(order, vm)
-          : null,
+      bottomNavigationBar:
+          order != null ? _buildBottomActionBar(order, vm) : null,
       body: SafeArea(
         child: vm.isActionLoading && order == null
             ? const Center(
                 child: CircularProgressIndicator(
-                  color: AppColors.primaryTerracotta,
+                  color: AppColors.ctaTerracotta,
                 ),
               )
             : order != null
-            ? RefreshIndicator(
-                color: AppColors.primaryTerracotta,
-                onRefresh: () => ref
-                    .read(buyerOrderViewModelProvider)
-                    .loadOrderDetail(widget.orderId),
-                child: _buildOrderBody(order, vm),
-              )
-            : RetroErrorRetryView(
-                errorMessage:
-                    vm.actionErrorMessage ??
-                    'Không tìm thấy thông tin đơn hàng.',
-                onRetry: () => ref
-                    .read(buyerOrderViewModelProvider)
-                    .loadOrderDetail(widget.orderId),
-              ),
+                ? RefreshIndicator(
+                    color: AppColors.ctaTerracotta,
+                    onRefresh: () => ref
+                        .read(buyerOrderViewModelProvider)
+                        .loadOrderDetail(widget.orderId),
+                    child: _buildOrderBody(order, vm),
+                  )
+                : RetroErrorRetryView(
+                    errorMessage: vm.actionErrorMessage ??
+                        'Không tìm thấy thông tin đơn hàng.',
+                    onRetry: () => ref
+                        .read(buyerOrderViewModelProvider)
+                        .loadOrderDetail(widget.orderId),
+                  ),
       ),
     );
   }
@@ -97,24 +97,17 @@ class _PurchaseOrderDetailScreenState
       children: [
         _buildOrderHero(order),
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildShipmentTimeline(order),
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildFourStateMachinesCard(order),
         const SizedBox(height: DesignTokens.spaceMd),
-
         if (order.cancellationRequested) _buildCancellationAlertBox(order, vm),
-
         if (order.isDelivered && order.autoCompleteAt != null)
           _buildAutoCompleteTimerBox(order),
-
         _buildAddressSnapshotCard(order),
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildItemsSnapshotCard(order),
         const SizedBox(height: DesignTokens.spaceMd),
-
         PriceBreakdownCard(
           itemSubtotal: order.itemSubtotal,
           shippingFee: order.shippingFee,
@@ -122,44 +115,34 @@ class _PurchaseOrderDetailScreenState
           showSellerNetAmount: false,
         ),
         const SizedBox(height: DesignTokens.spaceMd),
-
         _buildEscrowSecurityCard(order),
         const SizedBox(height: 100),
       ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // ORDER HERO
-  // ---------------------------------------------------------------------------
-
   Widget _buildOrderHero(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.secondaryPineGreen, Color(0xFF21452F)],
-        ),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        boxShadow: DesignTokens.cardElevation,
-      ),
+    return RetroPineSpotlightContainer(
+      padding: const EdgeInsets.all(DesignTokens.spaceLg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  color: AppColors.creamBadgeBg.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.creamBadgeBg.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: const Icon(
                   Icons.receipt_long_rounded,
-                  color: Colors.white,
-                  size: 24,
+                  color: AppColors.creamBadgeBg,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 12),
@@ -170,12 +153,12 @@ class _PurchaseOrderDetailScreenState
                     Text(
                       'CHI TIẾT ĐƠN HÀNG',
                       style: AppTypography.caption.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 1.2,
+                        color: AppColors.creamBadgeBg,
+                        letterSpacing: 1.1,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       'Mã đơn: ${order.orderCode}',
                       style: AppTypography.headingSmall.copyWith(
@@ -190,35 +173,35 @@ class _PurchaseOrderDetailScreenState
           ),
           const SizedBox(height: 14),
           InkWell(
-            onTap: () => context.push(AppRoutes.shipmentTrackingPath(order.id)),
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            onTap: () =>
+                context.push(AppRoutes.shipmentTrackingPath(order.id)),
+            borderRadius: DesignTokens.borderRadiusFull,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                color: AppColors.creamBadgeBg,
+                borderRadius: DesignTokens.borderRadiusFull,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.local_shipping_outlined,
-                    color: AppColors.secondaryPineGreen,
+                    color: AppColors.pineDeep,
                     size: 18,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     'Xem hành trình vận đơn',
                     style: TextStyle(
-                      color: AppColors.secondaryPineGreen,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.pineDeep,
+                      fontWeight: FontWeight.w800,
                       fontSize: 13,
                     ),
                   ),
-                  const Spacer(),
-                  const Icon(
+                  Spacer(),
+                  Icon(
                     Icons.arrow_forward_rounded,
-                    color: AppColors.secondaryPineGreen,
+                    color: AppColors.pineDeep,
                     size: 18,
                   ),
                 ],
@@ -229,10 +212,6 @@ class _PurchaseOrderDetailScreenState
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // SHIPMENT TIMELINE — only use backend-provided timeline events
-  // ---------------------------------------------------------------------------
 
   Widget _buildShipmentTimeline(OrderModel order) {
     final shipment = order.shipment;
@@ -252,8 +231,9 @@ class _PurchaseOrderDetailScreenState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surfaceWarm,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                color: AppColors.surfaceSection,
+                borderRadius: DesignTokens.borderRadiusMd,
+                border: Border.all(color: AppColors.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,9 +298,7 @@ class _PurchaseOrderDetailScreenState
                 completed
                     ? Icons.check_circle_rounded
                     : Icons.radio_button_unchecked_rounded,
-                color: completed
-                    ? AppColors.secondaryPineGreen
-                    : AppColors.textMuted,
+                color: completed ? AppColors.verifiedLeaf : AppColors.textMuted,
                 size: 20,
               ),
               if (!isLast)
@@ -329,7 +307,7 @@ class _PurchaseOrderDetailScreenState
                   height: 42,
                   margin: const EdgeInsets.symmetric(vertical: 3),
                   color: completed
-                      ? AppColors.secondaryPineGreen.withValues(alpha: 0.35)
+                      ? AppColors.verifiedLeaf.withValues(alpha: 0.35)
                       : AppColors.borderWarm,
                 ),
             ],
@@ -346,7 +324,8 @@ class _PurchaseOrderDetailScreenState
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: completed ? FontWeight.w700 : FontWeight.w500,
-                    color: completed ? Colors.black87 : AppColors.textMuted,
+                    color:
+                        completed ? AppColors.textCharcoal : AppColors.textMuted,
                   ),
                 ),
                 if (description.isNotEmpty) ...[
@@ -366,10 +345,6 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // FOUR STATE MACHINES
-  // ---------------------------------------------------------------------------
-
   Widget _buildFourStateMachinesCard(OrderModel order) {
     return _sectionCard(
       child: Column(
@@ -382,11 +357,11 @@ class _PurchaseOrderDetailScreenState
           ),
           const SizedBox(height: 14),
           _buildStateRow('Trạng thái đơn hàng', order.orderStatus),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildStateRow('Trạng thái thanh toán', order.paymentStatus),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildStateRow('Quỹ ký quỹ Escrow', order.escrowStatus),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildStateRow('Trạng thái khiếu nại', order.disputeStatus),
         ],
       ),
@@ -395,10 +370,11 @@ class _PurchaseOrderDetailScreenState
 
   Widget _buildStateRow(String label, String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceWarm,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        color: AppColors.surfaceSection,
+        borderRadius: DesignTokens.borderRadiusMd,
+        border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Row(
         children: [
@@ -406,9 +382,9 @@ class _PurchaseOrderDetailScreenState
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 12.5,
                 color: AppColors.textMuted,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -418,27 +394,23 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // CANCELLATION REQUEST
-  // ---------------------------------------------------------------------------
-
   Widget _buildCancellationAlertBox(OrderModel order, BuyerOrderViewModel vm) {
     return Container(
       margin: const EdgeInsets.only(bottom: DesignTokens.spaceMd),
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: const Color(0xFFFFEEBA)),
+        color: AppColors.creamBadgeSoft,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(color: AppColors.creamBadgeBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(
                 Icons.hourglass_top_rounded,
-                color: Color(0xFF856404),
+                color: AppColors.creamBadgeText,
                 size: 20,
               ),
               SizedBox(width: 8),
@@ -446,9 +418,9 @@ class _PurchaseOrderDetailScreenState
                 child: Text(
                   'Yêu cầu xin hủy đơn đang chờ duyệt (DEC-06)',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     fontSize: 13,
-                    color: Color(0xFF856404),
+                    color: AppColors.creamBadgeText,
                   ),
                 ),
               ),
@@ -457,15 +429,16 @@ class _PurchaseOrderDetailScreenState
           const SizedBox(height: 8),
           Text(
             'Lý do: ${order.cancellationRequestReason ?? order.cancelReason ?? "Chờ tiệm phản hồi"}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF856404)),
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.creamBadgeText),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF856404),
-                side: const BorderSide(color: Color(0xFF856404)),
+                foregroundColor: AppColors.creamBadgeText,
+                side: const BorderSide(color: AppColors.creamBadgeText),
               ),
               onPressed: vm.isActionLoading
                   ? null
@@ -489,26 +462,24 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // AUTO-COMPLETE COUNTDOWN
-  // ---------------------------------------------------------------------------
-
   Widget _buildAutoCompleteTimerBox(OrderModel order) {
     return Container(
       margin: const EdgeInsets.only(bottom: DesignTokens.spaceMd),
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF5EE),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: const Color(0xFFBCE3C6)),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(
+          color: AppColors.verifiedLeaf.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.timer_outlined,
-            color: AppColors.secondaryPineGreen,
-            size: 24,
+            color: AppColors.pineDeep,
+            size: 22,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -518,9 +489,9 @@ class _PurchaseOrderDetailScreenState
                 const Text(
                   'Thời gian bảo vệ đơn hàng',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondaryPineGreen,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.pineDeep,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -528,7 +499,7 @@ class _PurchaseOrderDetailScreenState
                   'Đơn hàng sẽ tự động hoàn tất và giải ngân nếu không có khiếu nại.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.secondaryPineGreen,
+                    color: AppColors.pineBanner,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -547,10 +518,6 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // SHIPPING ADDRESS
-  // ---------------------------------------------------------------------------
-
   Widget _buildAddressSnapshotCard(OrderModel order) {
     return _sectionCard(
       child: Column(
@@ -561,12 +528,13 @@ class _PurchaseOrderDetailScreenState
             title: 'Địa chỉ nhận hàng',
             subtitle: 'Thông tin tại thời điểm đặt đơn',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceWarm,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              color: AppColors.surfaceSection,
+              borderRadius: DesignTokens.borderRadiusMd,
+              border: Border.all(color: AppColors.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,7 +543,8 @@ class _PurchaseOrderDetailScreenState
                   '${order.recipientName} • ${order.recipientPhone}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 13.5,
+                    color: AppColors.textCharcoal,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -585,7 +554,7 @@ class _PurchaseOrderDetailScreenState
                     const Icon(
                       Icons.place_outlined,
                       size: 17,
-                      color: AppColors.primaryTerracotta,
+                      color: AppColors.ctaTerracotta,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -606,10 +575,6 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // PRODUCT SNAPSHOT
-  // ---------------------------------------------------------------------------
-
   Widget _buildItemsSnapshotCard(OrderModel order) {
     return _sectionCard(
       child: Column(
@@ -622,7 +587,7 @@ class _PurchaseOrderDetailScreenState
           ),
           const SizedBox(height: 12),
           const Divider(height: 1, color: AppColors.borderSubtle),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ...order.items.map((item) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -630,12 +595,11 @@ class _PurchaseOrderDetailScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                    borderRadius: DesignTokens.borderRadiusMd,
                     child: SizedBox(
-                      width: 84,
-                      height: 100,
-                      child:
-                          item.primaryImageUrl != null &&
+                      width: 82,
+                      height: 98,
+                      child: item.primaryImageUrl != null &&
                               item.primaryImageUrl!.isNotEmpty
                           ? CachedNetworkImage(
                               imageUrl: item.primaryImageUrl!,
@@ -644,14 +608,14 @@ class _PurchaseOrderDetailScreenState
                                 color: AppColors.surfaceWarm,
                                 child: Icon(
                                   Icons.checkroom_outlined,
-                                  color: AppColors.secondaryPineGreen,
+                                  color: AppColors.pineDeep,
                                 ),
                               ),
                               errorWidget: (_, _, _) => const ColoredBox(
                                 color: AppColors.surfaceWarm,
                                 child: Icon(
                                   Icons.checkroom_outlined,
-                                  color: AppColors.secondaryPineGreen,
+                                  color: AppColors.pineDeep,
                                 ),
                               ),
                             )
@@ -659,7 +623,7 @@ class _PurchaseOrderDetailScreenState
                               color: AppColors.surfaceWarm,
                               child: Icon(
                                 Icons.checkroom_outlined,
-                                color: AppColors.secondaryPineGreen,
+                                color: AppColors.pineDeep,
                               ),
                             ),
                     ),
@@ -672,8 +636,9 @@ class _PurchaseOrderDetailScreenState
                         Text(
                           item.productTitle,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w700,
+                            color: AppColors.textCharcoal,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -685,7 +650,8 @@ class _PurchaseOrderDetailScreenState
                         Text(
                           '${VndFormatter.format(item.unitPrice)} × ${item.quantity}',
                           style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textMuted,
+                            color: AppColors.priceCrimson,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         if (item.defectInfo != null &&
@@ -694,16 +660,16 @@ class _PurchaseOrderDetailScreenState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3CD),
-                              borderRadius: BorderRadius.circular(
-                                DesignTokens.radiusSm,
-                              ),
+                              color: AppColors.creamBadgeSoft,
+                              borderRadius: DesignTokens.borderRadiusSm,
+                              border:
+                                  Border.all(color: AppColors.creamBadgeBorder),
                             ),
                             child: Text(
                               'Tình trạng sản phẩm: ${item.defectInfo}',
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF856404),
+                                color: AppColors.creamBadgeText,
                               ),
                             ),
                           ),
@@ -720,31 +686,29 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // ESCROW
-  // ---------------------------------------------------------------------------
-
   Widget _buildEscrowSecurityCard(OrderModel order) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF5EE),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: const Color(0xFFBCE3C6)),
+        color: AppColors.verifiedLeafBg,
+        borderRadius: DesignTokens.borderRadiusLg,
+        border: Border.all(
+          color: AppColors.verifiedLeaf.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceCard,
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.shield_outlined,
-              color: AppColors.secondaryPineGreen,
-              size: 22,
+              color: AppColors.verifiedLeaf,
+              size: 20,
             ),
           ),
           const SizedBox(width: 12),
@@ -755,16 +719,17 @@ class _PurchaseOrderDetailScreenState
                 const Text(
                   'Cam Kết Bảo Vệ Escrow izithrift',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondaryPineGreen,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.pineDeep,
+                    fontSize: 13.5,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
                 Text(
                   'Tiền hàng của bạn được bảo vệ trung gian và chỉ giải ngân cho Người bán khi bạn bấm xác nhận đã nhận hàng hoặc hết thời gian chờ tự động hoàn thành mà không có khiếu nại.',
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.secondaryPineGreen,
+                    color: AppColors.pineBanner,
+                    height: 1.45,
                   ),
                 ),
               ],
@@ -775,20 +740,17 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // STICKY ACTION BAR
-  // ---------------------------------------------------------------------------
-
   Widget _buildBottomActionBar(OrderModel order, BuyerOrderViewModel vm) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: DesignTokens.spaceMd,
-        vertical: 10,
+        vertical: 12,
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: const Border(top: BorderSide(color: AppColors.borderWarm)),
-        boxShadow: DesignTokens.cardElevation,
+        boxShadow: DesignTokens.bottomNavElevation,
       ),
       child: SafeArea(
         top: false,
@@ -802,8 +764,9 @@ class _PurchaseOrderDetailScreenState
               OutlinedButton(
                 key: const Key('btn_cancel_order_cta'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.statusDanger,
-                  side: const BorderSide(color: AppColors.statusDanger),
+                  foregroundColor: AppColors.priceCrimson,
+                  side: const BorderSide(color: AppColors.priceCrimson),
+                  shape: const StadiumBorder(),
                 ),
                 onPressed: () => OrderCancellationDialog.show(
                   context,
@@ -813,7 +776,6 @@ class _PurchaseOrderDetailScreenState
                 ),
                 child: Text(order.isPreparing ? 'Xin hủy đơn' : 'Hủy đơn hàng'),
               ),
-
             if (order.canBuyerOpenDispute)
               OutlinedButton.icon(
                 key: const Key('btn_open_dispute_cta'),
@@ -822,68 +784,69 @@ class _PurchaseOrderDetailScreenState
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.statusWarning,
                   side: const BorderSide(color: AppColors.statusWarning),
+                  shape: const StadiumBorder(),
                 ),
                 onPressed: () =>
                     context.push(AppRoutes.openDisputePath(order.id)),
               ),
-
             if (order.activeDisputeId != null)
               ElevatedButton.icon(
-                icon: const Icon(Icons.gavel, size: 16),
+                icon: const Icon(Icons.gavel_rounded, size: 16),
                 label: const Text('Xem hồ sơ khiếu nại'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.statusWarning,
                   foregroundColor: AppColors.textLight,
+                  shape: const StadiumBorder(),
                 ),
                 onPressed: () => context.push(
                   AppRoutes.disputeDetailPath(order.activeDisputeId!),
                 ),
               ),
-
             if (order.canReview)
               ElevatedButton.icon(
                 key: const Key('btn_review_order_cta'),
                 icon: const Icon(Icons.star_outline_rounded, size: 18),
                 label: const Text('Đánh giá sản phẩm & Tiệm'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  foregroundColor: const Color(0xFF3F3210),
+                  backgroundColor: AppColors.creamBadgeBg,
+                  foregroundColor: AppColors.creamBadgeText,
+                  shape: const StadiumBorder(),
                 ),
                 onPressed: () =>
                     context.push(AppRoutes.orderReviewPath(order.id)),
               ),
-
             if (order.canBuyerConfirmDelivery)
               ElevatedButton.icon(
                 key: const Key('btn_confirm_delivery_release_escrow'),
-                icon: const Icon(Icons.check_circle_outline, size: 18),
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
                 label: const Text(
                   'Đã nhận được hàng & Hài lòng',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondaryPineGreen,
+                  backgroundColor: AppColors.pineDeep,
                   foregroundColor: AppColors.textLight,
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+                    horizontal: 16,
+                    vertical: 11,
                   ),
                 ),
                 onPressed: vm.isActionLoading
                     ? null
                     : () => _confirmDeliveryDialog(order, vm),
               ),
-
             if (order.isPendingPayment)
               ElevatedButton.icon(
-                icon: const Icon(Icons.qr_code, size: 18),
+                icon: const Icon(Icons.qr_code_rounded, size: 18),
                 label: const Text(
                   'Thanh toán QR ngay',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTerracotta,
+                  backgroundColor: AppColors.ctaTerracotta,
                   foregroundColor: AppColors.textLight,
+                  shape: const StadiumBorder(),
                 ),
                 onPressed: () => context.push(
                   AppRoutes.paymentQrPath(order.paymentId ?? order.id),
@@ -895,18 +858,18 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // CONFIRM DELIVERY DIALOG — preserve original business logic
-  // ---------------------------------------------------------------------------
-
   void _confirmDeliveryDialog(OrderModel order, BuyerOrderViewModel vm) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          borderRadius: DesignTokens.borderRadiusBanner,
         ),
-        title: const Text('Xác nhận nhận hàng & Giải ngân Escrow?'),
+        title: Text(
+          'Xác nhận nhận hàng & Giải ngân Escrow?',
+          style: AppTypography.headingSmall.copyWith(color: AppColors.pineDeep),
+        ),
         content: Text(
           'Khi bấm Xác nhận, toàn bộ 100% tiền hàng (${VndFormatter.format(order.sellerNetPayout)}) sẽ được giải ngân ngay lập tức vào Ví Tiệm ${order.shopName} (DEC-04) và bạn không thể mở khiếu nại hoàn tiền được nữa.',
           style: AppTypography.bodySmall,
@@ -919,7 +882,7 @@ class _PurchaseOrderDetailScreenState
           ElevatedButton(
             key: const Key('btn_confirm_release_dialog'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondaryPineGreen,
+              backgroundColor: AppColors.pineDeep,
               foregroundColor: AppColors.textLight,
             ),
             onPressed: () async {
@@ -942,16 +905,12 @@ class _PurchaseOrderDetailScreenState
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // REUSABLE UI HELPERS
-  // ---------------------------------------------------------------------------
-
   Widget _sectionCard({required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusLg,
         border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
@@ -968,12 +927,14 @@ class _PurchaseOrderDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(7),
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: AppColors.surfaceWarm,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            color: AppColors.creamBadgeSoft,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.creamBadgeBorder),
           ),
-          child: Icon(icon, color: AppColors.secondaryPineGreen, size: 19),
+          child: Icon(icon, color: AppColors.pineDeep, size: 18),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -982,10 +943,13 @@ class _PurchaseOrderDetailScreenState
             children: [
               Text(
                 title,
-                style: AppTypography.headingSmall.copyWith(fontSize: 14),
+                style: AppTypography.headingSmall.copyWith(
+                  fontSize: 15,
+                  color: AppColors.pineDeep,
+                ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: AppTypography.caption.copyWith(
@@ -1004,7 +968,7 @@ class _PurchaseOrderDetailScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: AppColors.secondaryPineGreen),
+        Icon(icon, size: 16, color: AppColors.pineDeep),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -1020,7 +984,7 @@ class _PurchaseOrderDetailScreenState
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
               ),

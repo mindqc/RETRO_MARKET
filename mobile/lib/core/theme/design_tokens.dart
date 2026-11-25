@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// Shared spacing, shape, border and elevation tokens for RETRO MARKET.
+/// Shared spacing, shape, border and warm elevation tokens for RETRO MARKET (izithrift).
 class DesignTokens {
   DesignTokens._();
 
@@ -27,11 +27,12 @@ class DesignTokens {
   static const double spacing2xl = space2xl;
   static const double spacing3xl = space3xl;
 
-  // Corner radius scale
+  // Corner radius scale (matches reference soft editorial curves)
   static const double radiusXs = 4.0;
   static const double radiusSm = 8.0;
   static const double radiusMd = 12.0;
   static const double radiusLg = 16.0;
+  static const double radiusBanner = 20.0;
   static const double radiusXl = 24.0;
   static const double radius2xl = 32.0;
   static const double radiusFull = 999.0;
@@ -51,18 +52,47 @@ class DesignTokens {
       BorderRadius.all(Radius.circular(radiusMd));
   static const BorderRadius borderRadiusLg =
       BorderRadius.all(Radius.circular(radiusLg));
+  static const BorderRadius borderRadiusBanner =
+      BorderRadius.all(Radius.circular(radiusBanner));
   static const BorderRadius borderRadiusXl =
       BorderRadius.all(Radius.circular(radiusXl));
   static const BorderRadius borderRadiusFull =
       BorderRadius.all(Radius.circular(radiusFull));
   static const BorderRadius borderRadiusRound = borderRadiusFull;
 
-  // Elevation and shadows
+  // Warm ambient shadows (soft espresso tint, never harsh grey)
   static const List<BoxShadow> cardElevation = [
     BoxShadow(
-      color: Color(0x0F231F20),
-      offset: Offset(0, 2),
-      blurRadius: 8,
+      color: Color(0x112B2118),
+      offset: Offset(0, 3),
+      blurRadius: 12,
+      spreadRadius: 0,
+    ),
+  ];
+
+  static const List<BoxShadow> sectionContainerShadow = [
+    BoxShadow(
+      color: Color(0x0E2B2118),
+      offset: Offset(0, 4),
+      blurRadius: 16,
+      spreadRadius: 0,
+    ),
+  ];
+
+  static const List<BoxShadow> bannerElevation = [
+    BoxShadow(
+      color: Color(0x221E1610),
+      offset: Offset(0, 6),
+      blurRadius: 18,
+      spreadRadius: -2,
+    ),
+  ];
+
+  static const List<BoxShadow> bottomNavElevation = [
+    BoxShadow(
+      color: Color(0x14231F20),
+      offset: Offset(0, -4),
+      blurRadius: 18,
       spreadRadius: 0,
     ),
   ];
@@ -78,9 +108,9 @@ class DesignTokens {
 
   static const List<BoxShadow> floatingButtonElevation = [
     BoxShadow(
-      color: Color(0x242D5A3C),
+      color: Color(0x28203A29),
       offset: Offset(0, 4),
-      blurRadius: 12,
+      blurRadius: 14,
       spreadRadius: 0,
     ),
   ];
@@ -88,6 +118,11 @@ class DesignTokens {
   // Borders
   static Border defaultBorder = Border.all(
     color: AppColors.borderWarm,
+    width: borderThin,
+  );
+
+  static Border subtleBorder = Border.all(
+    color: AppColors.borderSubtle,
     width: borderThin,
   );
 

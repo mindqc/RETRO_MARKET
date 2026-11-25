@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -31,7 +32,8 @@ class OrderCancellationDialog extends StatefulWidget {
   }
 
   @override
-  State<OrderCancellationDialog> createState() => _OrderCancellationDialogState();
+  State<OrderCancellationDialog> createState() =>
+      _OrderCancellationDialogState();
 }
 
 class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
@@ -64,47 +66,72 @@ class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
     String title;
     String description;
     Color headerColor;
+    Color headerBg;
     IconData headerIcon;
 
     if (isLevel1) {
       title = 'Hủy đơn chưa thanh toán';
-      description = 'Đơn hàng sẽ được hủy ngay lập tức và giải phóng sản phẩm về kho.';
-      headerColor = AppColors.textMuted;
+      description =
+          'Đơn hàng sẽ được hủy ngay lập tức và giải phóng sản phẩm về kho.';
+      headerColor = AppColors.textCharcoal;
+      headerBg = AppColors.surfaceWarm;
       headerIcon = Icons.cancel_outlined;
     } else if (isLevel2) {
       title = 'Hủy đơn & Hoàn tiền 100%';
-      description = 'Đơn hàng đã thanh toán sẽ được hủy tự động và hoàn trả 100% tiền hàng theo chính sách bảo vệ người mua (DEC-07).';
-      headerColor = AppColors.primaryTerracotta;
+      description =
+          'Đơn hàng đã thanh toán sẽ được hủy tự động và hoàn trả 100% tiền hàng theo chính sách bảo vệ người mua (DEC-07).';
+      headerColor = AppColors.ctaTerracotta;
+      headerBg = AppColors.priceCrimsonSoft;
       headerIcon = Icons.replay_circle_filled_outlined;
     } else {
       title = 'Gửi yêu cầu xin hủy đơn';
-      description = 'Đơn hàng đang được tiệm đóng gói. Yêu cầu của bạn sẽ được gửi tới Chủ tiệm để duyệt (DEC-06).';
-      headerColor = AppColors.statusWarning;
+      description =
+          'Đơn hàng đang được tiệm đóng gói. Yêu cầu của bạn sẽ được gửi tới Chủ tiệm để duyệt (DEC-06).';
+      headerColor = AppColors.creamBadgeText;
+      headerBg = AppColors.creamBadgeSoft;
       headerIcon = Icons.hourglass_top_outlined;
     }
 
     return AlertDialog(
+      backgroundColor: AppColors.surfaceCard,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        borderRadius: DesignTokens.borderRadiusBanner,
+        side: const BorderSide(color: AppColors.borderWarm),
       ),
       titlePadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
       title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: headerColor.withAlpha(20),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(DesignTokens.radiusMd),
-            topRight: Radius.circular(DesignTokens.radiusMd),
+          color: headerBg,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(DesignTokens.radiusBanner),
+          ),
+          border: const Border(
+            bottom: BorderSide(color: AppColors.borderWarm),
           ),
         ),
         child: Row(
           children: [
-            Icon(headerIcon, color: headerColor, size: 22),
-            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surfaceCard,
+                border: Border.all(color: AppColors.borderWarm),
+              ),
+              child: Icon(headerIcon, color: headerColor, size: 19),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 title,
-                style: AppTypography.headingSmall.copyWith(fontSize: 16, color: AppColors.textCharcoal),
+                style: AppTypography.headingSmall.copyWith(
+                  fontSize: 16.5,
+                  color: AppColors.textCharcoal,
+                ),
               ),
             ),
           ],
@@ -117,48 +144,81 @@ class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
           children: [
             Text(
               description,
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+                height: 1.45,
+              ),
             ),
-            const SizedBox(height: DesignTokens.spaceMd),
-            const Text(
+            const SizedBox(height: 16),
+            Text(
               'Chọn lý do hủy:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: AppTypography.labelStrong.copyWith(fontSize: 13),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               value: _selectedReason,
+              isExpanded: true,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
+                filled: true,
+                fillColor: AppColors.surfaceWarm,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: DesignTokens.borderRadiusMd,
+                  borderSide: const BorderSide(color: AppColors.borderWarm),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: DesignTokens.borderRadiusMd,
+                  borderSide: const BorderSide(color: AppColors.borderWarm),
+                ),
               ),
               items: _commonReasons.map((r) {
-                return DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)));
+                return DropdownMenuItem(
+                  value: r,
+                  child: Text(
+                    r,
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
               }).toList(),
               onChanged: (val) {
                 if (val != null) setState(() => _selectedReason = val);
               },
             ),
             if (_selectedReason == 'Lý do khác' || isLevel3) ...[
-              const SizedBox(height: DesignTokens.spaceMd),
-              const Text(
+              const SizedBox(height: 14),
+              Text(
                 'Chi tiết lý do (bắt buộc):',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style: AppTypography.labelStrong.copyWith(fontSize: 13),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               TextField(
                 controller: _reasonController,
                 maxLines: 2,
                 decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.surfaceWarm,
                   hintText: 'Nhập lý do hủy chi tiết...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
+                  border: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
                 ),
               ),
             ],
             if (_errorMessage != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 _errorMessage!,
-                style: const TextStyle(color: AppColors.statusDanger, fontSize: 12),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.priceCrimson,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],
@@ -166,14 +226,23 @@ class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(false),
+          onPressed:
+              _isSubmitting ? null : () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.textMuted,
+            shape: const StadiumBorder(),
+          ),
           child: const Text('Đóng'),
         ),
         ElevatedButton(
           key: const Key('btn_confirm_cancel_order'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: isLevel3 ? AppColors.statusWarning : AppColors.statusDanger,
+            backgroundColor:
+                isLevel3 ? AppColors.ctaTerracotta : AppColors.priceCrimson,
             foregroundColor: AppColors.textLight,
+            shape: const StadiumBorder(),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           ),
           onPressed: _isSubmitting
               ? null
@@ -182,7 +251,8 @@ class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
                   if (_selectedReason == 'Lý do khác' || isLevel3) {
                     final text = _reasonController.text.trim();
                     if (text.isEmpty && isLevel3) {
-                      setState(() => _errorMessage = 'Vui lòng nhập lý do xin hủy chi tiết.');
+                      setState(() => _errorMessage =
+                          'Vui lòng nhập lý do xin hủy chi tiết.');
                       return;
                     }
                     if (text.isNotEmpty) {
@@ -212,7 +282,10 @@ class _OrderCancellationDialogState extends State<OrderCancellationDialog> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
               : Text(isLevel3 ? 'Gửi yêu cầu' : 'Xác nhận hủy'),
         ),

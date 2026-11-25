@@ -6,7 +6,7 @@ import '../theme/design_tokens.dart';
 
 /// ServerCountdownTimer displays a live tick-down timer synchronized with auction or order expiration
 /// Features Anti-Sniping warning alert styling when <= 120 seconds remain (BR-AU-04).
-/// Uses tabular numerals to eliminate visual jitter during tick transitions.
+/// Styled in the warm cream-gold pill language from the approved Home reference.
 class ServerCountdownTimer extends StatefulWidget {
   final DateTime endsAt;
   final VoidCallback? onExpired;
@@ -48,7 +48,8 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
   }
 
   void _updateRemaining() {
-    final now = widget.customClock != null ? widget.customClock!() : DateTime.now();
+    final now =
+        widget.customClock != null ? widget.customClock!() : DateTime.now();
     final difference = widget.endsAt.difference(now);
     _remaining = difference.isNegative ? Duration.zero : difference;
     if (_remaining == Duration.zero && !_hasExpiredTriggered) {
@@ -77,25 +78,27 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
 
     final timerColor = isExpired
         ? AppColors.textMuted
-        : (isEndingSoon ? AppColors.christmasBerryRed : AppColors.primaryTerracotta);
+        : (isEndingSoon ? AppColors.priceCrimson : AppColors.creamBadgeText);
 
     final backgroundColor = isEndingSoon
-        ? const Color(0xFFFDE8E8)
-        : (isExpired ? const Color(0xFFF0EAE1) : AppColors.surfaceWarm);
+        ? AppColors.priceCrimsonSoft
+        : (isExpired ? AppColors.surfaceWarm : AppColors.creamBadgeBg);
 
     final formattedText = _formatDuration(_remaining);
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: widget.isCompact ? 6 : 10,
-        vertical: widget.isCompact ? 3 : 5,
+        horizontal: widget.isCompact ? 8 : 11,
+        vertical: widget.isCompact ? 4 : 6,
       ),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXs),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         border: Border.all(
-          color: isEndingSoon ? const Color(0xFFF8B4B4) : AppColors.borderWarm,
-          width: isEndingSoon ? 1.5 : 1.0,
+          color: isEndingSoon
+              ? AppColors.priceCrimsonBorder
+              : AppColors.creamBadgeBorder,
+          width: isEndingSoon ? 1.4 : 1.0,
         ),
       ),
       child: Row(
@@ -103,7 +106,7 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
         children: [
           Icon(
             isEndingSoon ? Icons.timer_outlined : Icons.schedule_outlined,
-            size: widget.isCompact ? 12 : 15,
+            size: widget.isCompact ? 13 : 15,
             color: timerColor,
           ),
           const SizedBox(width: 4),
@@ -112,23 +115,23 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
             style: AppTypography.countdownTimer.copyWith(
               color: timerColor,
               fontSize: widget.isCompact ? 11 : 13,
-              fontWeight: isEndingSoon ? FontWeight.w800 : FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           if (widget.extendedCount > 0) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: 5),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
-                color: AppColors.accentVintageGold,
+                color: AppColors.starGold,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
               ),
               child: Text(
                 '+${widget.extendedCount}',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 9,
+                  color: AppColors.textCharcoal,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 9.5,
                 ),
               ),
             ),

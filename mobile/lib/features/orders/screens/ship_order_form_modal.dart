@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -35,7 +36,8 @@ class ShipOrderFormModal extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: ShipOrderFormModal(
           orderId: orderId,
           orderCode: orderCode,
@@ -76,128 +78,248 @@ class _ShipOrderFormModalState extends State<ShipOrderFormModal> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(DesignTokens.radiusLg),
-          topRight: Radius.circular(DesignTokens.radiusLg),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: DesignTokens.modalElevation,
       ),
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderSubtle,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: DesignTokens.spaceMd),
-
-          Text(
-            'Giao hàng cho vận chuyển',
-            style: AppTypography.headingSmall.copyWith(fontSize: 18),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Đơn hàng: ${widget.orderCode}',
-            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-          ),
-
-          const SizedBox(height: DesignTokens.spaceLg),
-
-          // 1. Select Carrier
-          const Text('Chọn đơn vị vận chuyển:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: _selectedCarrier,
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
-            ),
-            items: _carriers.map((c) {
-              return DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)));
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _selectedCarrier = val);
-            },
-          ),
-
-          const SizedBox(height: DesignTokens.spaceMd),
-
-          // 2. Tracking Code Input
-          const Text('Mã vận đơn (bắt buộc):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 6),
-          TextField(
-            key: const Key('input_tracking_code'),
-            controller: _trackingController,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              hintText: 'Ví dụ: GHN-12345678VN',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
-            ),
-          ),
-
-          const SizedBox(height: DesignTokens.spaceMd),
-
-          // 3. Shipping Note (optional)
-          const Text('Ghi chú vận chuyển (không bắt buộc):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _noteController,
-            decoration: InputDecoration(
-              hintText: 'Ví dụ: Hàng dễ vỡ, xin nhẹ tay',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
-            ),
-          ),
-
-          if (_errorMessage != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              style: const TextStyle(color: AppColors.statusDanger, fontSize: 12),
-            ),
-          ],
-
-          const SizedBox(height: DesignTokens.spaceLg),
-
-          // Action Buttons
-          Row(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(false),
-                  child: const Text('Hủy'),
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderWarm,
+                    borderRadius: DesignTokens.borderRadiusFull,
+                  ),
                 ),
               ),
-              const SizedBox(width: DesignTokens.spaceMd),
-              Expanded(
-                child: ElevatedButton(
-                  key: const Key('btn_submit_ship_order'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondaryPineGreen,
-                    foregroundColor: AppColors.textLight,
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        colors: [
+                          AppColors.categoryCircleStart,
+                          AppColors.categoryCircleEnd,
+                        ],
+                      ),
+                      border: Border.all(color: AppColors.creamBadgeBorder),
+                    ),
+                    child: const Icon(
+                      Icons.local_shipping_outlined,
+                      color: AppColors.pineDeep,
+                      size: 20,
+                    ),
                   ),
-                  onPressed: _isSubmitting ? null : _handleSubmit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : const Text('Xác nhận gửi hàng'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Giao hàng cho vận chuyển',
+                          style:
+                              AppTypography.headingSmall.copyWith(fontSize: 18),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Đơn hàng: ${widget.orderCode}',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // 1. Select Carrier
+              Text(
+                'Chọn đơn vị vận chuyển:',
+                style: AppTypography.labelStrong.copyWith(fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedCarrier,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.surfaceWarm,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
                 ),
+                items: _carriers.map((c) {
+                  return DropdownMenuItem(
+                    value: c,
+                    child: Text(
+                      c,
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedCarrier = val);
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // 2. Tracking Code Input
+              Text(
+                'Mã vận đơn (bắt buộc):',
+                style: AppTypography.labelStrong.copyWith(fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                key: const Key('input_tracking_code'),
+                controller: _trackingController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.surfaceWarm,
+                  hintText: 'Ví dụ: GHN-12345678VN',
+                  prefixIcon: const Icon(
+                    Icons.qr_code_2_rounded,
+                    size: 19,
+                    color: AppColors.textMuted,
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // 3. Shipping Note (optional)
+              Text(
+                'Ghi chú vận chuyển (không bắt buộc):',
+                style: AppTypography.labelStrong.copyWith(fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _noteController,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.surfaceWarm,
+                  hintText: 'Ví dụ: Hàng dễ vỡ, xin nhẹ tay',
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: DesignTokens.borderRadiusMd,
+                    borderSide: const BorderSide(color: AppColors.borderWarm),
+                  ),
+                ),
+              ),
+
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.priceCrimsonSoft,
+                    borderRadius: DesignTokens.borderRadiusSm,
+                    border: Border.all(color: AppColors.priceCrimsonBorder),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.priceCrimson,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 46,
+                      child: OutlinedButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.of(context).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textCharcoal,
+                          side: const BorderSide(color: AppColors.borderWarm),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: const Text('Hủy'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: 46,
+                      child: ElevatedButton(
+                        key: const Key('btn_submit_ship_order'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.pineDeep,
+                          foregroundColor: AppColors.textLight,
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        onPressed: _isSubmitting ? null : _handleSubmit,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Xác nhận gửi hàng',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -218,7 +340,9 @@ class _ShipOrderFormModalState extends State<ShipOrderFormModal> {
       await widget.onConfirmShip(
         carrierName: _selectedCarrier,
         trackingCode: tracking,
-        shippingNote: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+        shippingNote: _noteController.text.trim().isNotEmpty
+            ? _noteController.text.trim()
+            : null,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {

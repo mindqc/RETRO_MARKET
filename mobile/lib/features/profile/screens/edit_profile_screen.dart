@@ -78,9 +78,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final updatedUser = await profileVm.updateProfile(
         displayName: _nameController.text.trim(),
-        phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-        shopSlug: _shopSlugController.text.trim().isNotEmpty ? _shopSlugController.text.trim() : null,
+        phone: _phoneController.text.trim().isNotEmpty
+            ? _phoneController.text.trim()
+            : null,
+        bio: _bioController.text.trim().isNotEmpty
+            ? _bioController.text.trim()
+            : null,
+        shopSlug: _shopSlugController.text.trim().isNotEmpty
+            ? _shopSlugController.text.trim()
+            : null,
         avatarFilePath: _selectedAvatarPath,
       );
 
@@ -88,7 +94,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ref.read(authViewModelProvider).updateCurrentUser(updatedUser);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: AppColors.secondaryPineGreen,
+            backgroundColor: AppColors.pineDeep,
             content: Text('Cập nhật hồ sơ thành công!'),
           ),
         );
@@ -105,15 +111,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentAvatarUrl = ref.watch(authViewModelProvider).currentUser?.profile?.avatarUrl;
+    final currentAvatarUrl =
+        ref.watch(authViewModelProvider).currentUser?.profile?.avatarUrl;
 
     final nameError = _lastApiException?.firstErrorFor('display_name');
     final phoneError = _lastApiException?.firstErrorFor('phone');
     final slugError = _lastApiException?.firstErrorFor('shop_slug');
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
+        backgroundColor: AppColors.canvasParchment,
         title: const Text('Chỉnh sửa hồ sơ'),
       ),
       body: SafeArea(
@@ -129,11 +137,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Stack(
                     children: [
                       Container(
-                        width: 96,
-                        height: 96,
+                        width: 102,
+                        height: 102,
+                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
+                          gradient: const RadialGradient(
+                            colors: [
+                              AppColors.categoryCircleStart,
+                              AppColors.categoryCircleEnd,
+                            ],
+                          ),
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primaryTerracotta, width: 2),
+                          border: Border.all(
+                            color: AppColors.creamBadgeBorder,
+                            width: 2,
+                          ),
                           boxShadow: DesignTokens.cardElevation,
                         ),
                         child: ClipOval(
@@ -145,104 +163,144 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         right: 0,
                         child: InkWell(
                           onTap: _pickAvatar,
+                          customBorder: const CircleBorder(),
                           child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryTerracotta,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.ctaTerracotta,
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.surfaceCard,
+                                width: 2,
+                              ),
+                              boxShadow: DesignTokens.cardElevation,
                             ),
-                            child: const Icon(Icons.camera_alt, color: AppColors.textLight, size: 18),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: AppColors.textLight,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: DesignTokens.spaceLg),
+                const SizedBox(height: DesignTokens.spaceXl),
 
-                if (_lastApiException != null && _lastApiException!.fieldErrors.isEmpty) ...[
+                if (_lastApiException != null &&
+                    _lastApiException!.fieldErrors.isEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(DesignTokens.spaceMd),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFDE8E8),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                      border: Border.all(color: const Color(0xFFF8B4B4)),
+                      color: AppColors.priceCrimsonSoft,
+                      borderRadius: DesignTokens.borderRadiusMd,
+                      border: Border.all(color: AppColors.priceCrimsonBorder),
                     ),
                     child: Text(
                       _lastApiException!.message,
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.statusDanger),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.priceCrimson,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: DesignTokens.spaceLg),
                 ],
 
-                // Display Name
-                Text('Tên hiển thị', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.person_outline, size: 20),
-                    errorText: nameError,
+                Container(
+                  padding: const EdgeInsets.all(DesignTokens.spaceLg),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    borderRadius: DesignTokens.borderRadiusBanner,
+                    border: Border.all(color: AppColors.borderWarm),
+                    boxShadow: DesignTokens.cardElevation,
                   ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Vui lòng nhập tên hiển thị.';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Display Name
+                      Text('Tên hiển thị', style: AppTypography.labelMedium),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          prefixIcon:
+                              const Icon(Icons.person_outline, size: 20),
+                          errorText: nameError,
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Vui lòng nhập tên hiển thị.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
 
-                // Phone
-                Text('Số điện thoại', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    hintText: '0901234567',
-                    prefixIcon: const Icon(Icons.phone_outlined, size: 20),
-                    errorText: phoneError,
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
+                      // Phone
+                      Text('Số điện thoại', style: AppTypography.labelMedium),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: '0901234567',
+                          prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                          errorText: phoneError,
+                        ),
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
 
-                // Shop Slug
-                Text('Định danh tiệm (Shop Slug)', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _shopSlugController,
-                  decoration: InputDecoration(
-                    hintText: 'tiem-do-cu-vintage',
-                    prefixIcon: const Icon(Icons.storefront, size: 20),
-                    errorText: slugError,
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
+                      // Shop Slug
+                      Text(
+                        'Định danh tiệm (Shop Slug)',
+                        style: AppTypography.labelMedium,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _shopSlugController,
+                        decoration: InputDecoration(
+                          hintText: 'tiem-do-cu-vintage',
+                          prefixIcon: const Icon(Icons.storefront, size: 20),
+                          errorText: slugError,
+                        ),
+                      ),
+                      const SizedBox(height: DesignTokens.spaceLg),
 
-                // Bio
-                Text('Tiểu sử / Giới thiệu tiệm', style: AppTypography.labelMedium),
-                const SizedBox(height: DesignTokens.spaceXs),
-                TextFormField(
-                  controller: _bioController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'Đôi nét về gu đồ vintage của bạn...',
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.space2xl),
+                      // Bio
+                      Text(
+                        'Tiểu sử / Giới thiệu tiệm',
+                        style: AppTypography.labelMedium,
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      TextFormField(
+                        controller: _bioController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'Đôi nét về gu đồ vintage của bạn...',
+                        ),
+                      ),
+                      const SizedBox(height: DesignTokens.spaceXl),
 
-                // Save Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _saveProfile,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textLight),
-                          )
-                        : const Text('Lưu thay đổi'),
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _saveProfile,
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.textLight,
+                                  ),
+                                )
+                              : const Text('Lưu thay đổi'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -264,9 +322,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       return CachedNetworkImage(
         imageUrl: currentUrl,
         fit: BoxFit.cover,
-        errorWidget: (_, _, _) => const Icon(Icons.person, size: 48, color: AppColors.textMuted),
+        errorWidget: (_, _, _) =>
+            const Icon(Icons.person_rounded, size: 48, color: AppColors.pineDeep),
       );
     }
-    return const Icon(Icons.person, size: 48, color: AppColors.textMuted);
+    return const Icon(Icons.person_rounded, size: 48, color: AppColors.pineDeep);
   }
 }

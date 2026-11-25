@@ -29,7 +29,9 @@ class ProductFilterBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceCard,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusLg)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DesignTokens.radius2xl),
+        ),
       ),
       builder: (ctx) => ProductFilterBottomSheet(
         initialQuery: initialQuery,
@@ -40,7 +42,8 @@ class ProductFilterBottomSheet extends StatefulWidget {
   }
 
   @override
-  State<ProductFilterBottomSheet> createState() => _ProductFilterBottomSheetState();
+  State<ProductFilterBottomSheet> createState() =>
+      _ProductFilterBottomSheetState();
 }
 
 class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
@@ -163,7 +166,6 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -171,32 +173,26 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.borderWarm,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: DesignTokens.borderRadiusFull,
               ),
             ),
           ),
-          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Bộ lọc tìm kiếm',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontHeading,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textCharcoal,
-                  ),
+                  style: AppTypography.headingMedium.copyWith(fontSize: 19),
                 ),
                 TextButton(
                   onPressed: _resetAll,
                   child: const Text(
                     'Thiết lập lại',
                     style: TextStyle(
-                      color: AppColors.primaryTerracotta,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.ctaTerracotta,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -205,12 +201,10 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
           ),
           const Divider(height: 1, color: AppColors.borderWarm),
 
-          // Scrollable Filter Sections
           Flexible(
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                // 1. Khoảng giá (Price Range)
                 _buildSectionTitle('Khoảng giá (VNĐ)'),
                 const SizedBox(height: 10),
                 Row(
@@ -221,17 +215,27 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           hintText: 'Từ 0đ',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: AppColors.surfaceSection,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                            borderSide: const BorderSide(color: AppColors.borderWarm),
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.borderWarm,
+                            ),
                           ),
                         ),
                       ),
                     ),
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('—', style: TextStyle(color: AppColors.textMuted)),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        '—',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
                     ),
                     Expanded(
                       child: TextField(
@@ -239,10 +243,17 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           hintText: 'Đến ... đ',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: AppColors.surfaceSection,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                            borderSide: const BorderSide(color: AppColors.borderWarm),
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.borderWarm,
+                            ),
                           ),
                         ),
                       ),
@@ -254,19 +265,19 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                   Text(
                     _priceErrorMessage!,
                     style: const TextStyle(
-                      color: AppColors.statusDanger,
+                      color: AppColors.priceCrimson,
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
                 const SizedBox(height: 20),
 
-                // 2. Loại hình giao dịch (Listing Type)
                 _buildSectionTitle('Hình thức bán'),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
+                  runSpacing: 8,
                   children: [
                     _buildChoiceChip(
                       label: 'Tất cả',
@@ -276,18 +287,19 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                     _buildChoiceChip(
                       label: 'Mua ngay (Giá cố định)',
                       isSelected: _listingType == 'FIXED_PRICE',
-                      onSelected: () => setState(() => _listingType = 'FIXED_PRICE'),
+                      onSelected: () =>
+                          setState(() => _listingType = 'FIXED_PRICE'),
                     ),
                     _buildChoiceChip(
                       label: 'Đấu giá (Sàn Live)',
                       isSelected: _listingType == 'AUCTION',
-                      onSelected: () => setState(() => _listingType = 'AUCTION'),
+                      onSelected: () =>
+                          setState(() => _listingType = 'AUCTION'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // 3. Tình trạng sản phẩm (Condition)
                 _buildSectionTitle('Tình trạng sản phẩm'),
                 const SizedBox(height: 10),
                 Wrap(
@@ -302,7 +314,8 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                     _buildChoiceChip(
                       label: 'Mới nguyên tag (100%)',
                       isSelected: _condition == 'NEW_WITH_TAGS',
-                      onSelected: () => setState(() => _condition = 'NEW_WITH_TAGS'),
+                      onSelected: () =>
+                          setState(() => _condition = 'NEW_WITH_TAGS'),
                     ),
                     _buildChoiceChip(
                       label: 'Như mới (95%+)',
@@ -322,13 +335,13 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
                     _buildChoiceChip(
                       label: 'Vintage Worn (Cũ bạc đẹp)',
                       isSelected: _condition == 'VINTAGE_WORN',
-                      onSelected: () => setState(() => _condition = 'VINTAGE_WORN'),
+                      onSelected: () =>
+                          setState(() => _condition = 'VINTAGE_WORN'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // 4. Sắp xếp (Sort)
                 _buildSectionTitle('Sắp xếp theo'),
                 const SizedBox(height: 10),
                 Wrap(
@@ -361,25 +374,25 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
             ),
           ),
 
-          // Bottom Action
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTerracotta,
-                  foregroundColor: AppColors.surfaceCard,
-                  disabledBackgroundColor: AppColors.borderWarm,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.ctaTerracotta,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.borderWarm,
+                    shape: const StadiumBorder(),
                   ),
-                ),
-                onPressed: _isPriceValid ? _applyFilters : null,
-                child: const Text(
-                  'Áp dụng bộ lọc',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  onPressed: _isPriceValid ? _applyFilters : null,
+                  child: const Text(
+                    'Áp dụng bộ lọc',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
                 ),
               ),
             ),
@@ -392,12 +405,7 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontFamily: AppTypography.fontHeading,
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textCharcoal,
-      ),
+      style: AppTypography.headingSmall.copyWith(fontSize: 15),
     );
   }
 
@@ -410,14 +418,16 @@ class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(),
-      selectedColor: AppColors.primaryTerracotta.withAlpha(40),
+      backgroundColor: AppColors.surfaceSection,
+      selectedColor: AppColors.creamBadgeBg,
+      shape: const StadiumBorder(),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primaryTerracotta : AppColors.textCharcoal,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 13,
+        color: isSelected ? AppColors.creamBadgeText : AppColors.textCharcoal,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        fontSize: 12.5,
       ),
       side: BorderSide(
-        color: isSelected ? AppColors.primaryTerracotta : AppColors.borderWarm,
+        color: isSelected ? AppColors.creamBadgeBorder : AppColors.borderWarm,
       ),
     );
   }
