@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -13,7 +12,10 @@ import 'full_screen_zoom_viewer.dart';
 class DefectVerificationModal extends StatelessWidget {
   final ProductDetailModel product;
 
-  const DefectVerificationModal({super.key, required this.product});
+  const DefectVerificationModal({
+    super.key,
+    required this.product,
+  });
 
   static Future<void> show(BuildContext context, ProductDetailModel product) {
     return showModalBottomSheet(
@@ -26,9 +28,8 @@ class DefectVerificationModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defectImages = product.images
-        .where((img) => img.imageType == 'DEFECT_CLOSEUP')
-        .toList();
+    final defectImages =
+        product.images.where((img) => img.imageType == 'DEFECT_CLOSEUP').toList();
     final allImages = product.images.isNotEmpty
         ? product.images
         : [
@@ -97,270 +98,253 @@ class DefectVerificationModal extends StatelessWidget {
               ),
               const Divider(height: 1, color: AppColors.borderWarm),
               Expanded(
-                child: SingleChildScrollView(
+                child: ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              product.primaryImageUrl,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            product.primaryImageUrl,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
                               width: 64,
                               height: 64,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                    width: 64,
-                                    height: 64,
+                              color: AppColors.surfaceWarm,
+                              child: const Icon(
+                                Icons.broken_image_outlined,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  ConditionBadge(condition: product.condition),
+                                  const SizedBox(width: 8),
+                                  VerificationBadge(
+                                    status: product.verificationLevel,
+                                    isCompact: true,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.creamBadgeSoft,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.creamBadgeBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.report_problem_outlined,
+                                color: AppColors.ctaTerracotta,
+                                size: 19,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Mô tả khuyết điểm & hao mòn thực tế',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.creamBadgeText,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            product.defectInfo != null &&
+                                    product.defectInfo!.trim().isNotEmpty
+                                ? product.defectInfo!
+                                : 'Người bán xác nhận sản phẩm không có khuyết điểm đáng kể ngoài hao mòn tự nhiên theo thời gian.',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textCharcoal,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Thang Chuẩn Tình Trạng Đồ Si (5 Mức)',
+                      style: AppTypography.headingSmall.copyWith(fontSize: 15),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildConditionTierItem(
+                      code: 'NEW_WITH_TAGS',
+                      name: 'Mới còn tag (New With Tags)',
+                      description:
+                          'Mới 100%, còn nguyên tem mác hãng, chưa qua giặt hoặc mặc thử.',
+                      isSelected:
+                          product.condition.toUpperCase() == 'NEW_WITH_TAGS',
+                    ),
+                    _buildConditionTierItem(
+                      code: 'LIKE_NEW',
+                      name: 'Như mới (Like New 95% - 99%)',
+                      description:
+                          'Đã bỏ tag hoặc mặc 1-2 lần chụp ảnh, form dáng và vải nguyên bản hoàn hảo.',
+                      isSelected: product.condition.toUpperCase() == 'LIKE_NEW',
+                    ),
+                    _buildConditionTierItem(
+                      code: 'GOOD',
+                      name: 'Tốt (Good)',
+                      description:
+                          'Đã sử dụng nhẹ, không có vết rách lớn, không mất cúc, màu sắc còn đẹp.',
+                      isSelected: product.condition.toUpperCase() == 'GOOD',
+                    ),
+                    _buildConditionTierItem(
+                      code: 'FAIR',
+                      name: 'Trung bình (Fair)',
+                      description:
+                          'Có khuyết điểm rõ (sờn cổ áo, mất cúc phụ, hoặc vết ố vintage nhẹ đã mô tả).',
+                      isSelected: product.condition.toUpperCase() == 'FAIR',
+                    ),
+                    _buildConditionTierItem(
+                      code: 'VINTAGE_WORN',
+                      name: 'Vintage sờn rách tự nhiên (Vintage Worn)',
+                      description:
+                          'Hiệu ứng bạc màu, rách gấu hoặc sờn thời gian mang giá trị sưu tầm đặc thù.',
+                      isSelected:
+                          product.condition.toUpperCase() == 'VINTAGE_WORN',
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      defectImages.isNotEmpty
+                          ? 'Ảnh chụp cận cảnh vết lỗi (${defectImages.length})'
+                          : 'Tất cả ảnh chi tiết sản phẩm (${allImages.length})',
+                      style: AppTypography.headingSmall.copyWith(fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bấm vào ảnh để kích hoạt kính lúp soi cận cảnh (Pinch-to-zoom 400%).',
+                      style: AppTypography.caption,
+                    ),
+                    const SizedBox(height: 10),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: defectImages.isNotEmpty
+                          ? defectImages.length
+                          : allImages.length,
+                      itemBuilder: (context, idx) {
+                        final currentImages =
+                            defectImages.isNotEmpty ? defectImages : allImages;
+                        final img = currentImages[idx];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FullScreenZoomViewer(
+                                  images: currentImages,
+                                  initialIndex: idx,
+                                  title: product.title,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  img.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
                                     color: AppColors.surfaceWarm,
                                     child: const Icon(
                                       Icons.broken_image_outlined,
                                       color: AppColors.textMuted,
                                     ),
                                   ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
                                 ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    ConditionBadge(
-                                      condition: product.condition,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    VerificationBadge(
-                                      status: product.verificationLevel,
-                                      isCompact: true,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.creamBadgeSoft,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.creamBadgeBorder),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(
-                                  Icons.report_problem_outlined,
-                                  color: AppColors.ctaTerracotta,
-                                  size: 19,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Mô tả khuyết điểm & hao mòn thực tế',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.creamBadgeText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              product.defectInfo != null &&
-                                      product.defectInfo!.trim().isNotEmpty
-                                  ? product.defectInfo!
-                                  : 'Người bán xác nhận sản phẩm không có khuyết điểm đáng kể ngoài hao mòn tự nhiên theo thời gian.',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.textCharcoal,
-                                height: 1.45,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Thang Chuẩn Tình Trạng Đồ Si (5 Mức)',
-                        style: AppTypography.headingSmall.copyWith(
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _buildConditionTierItem(
-                        code: 'NEW_WITH_TAGS',
-                        name: 'Mới còn tag (New With Tags)',
-                        description: 'Mới 100%, còn nguyên tem mác hãng, chưa qua giặt hoặc mặc thử.',
-                        isSelected:
-                            product.condition.toUpperCase() == 'NEW_WITH_TAGS',
-                      ),
-                      _buildConditionTierItem(
-                        code: 'LIKE_NEW',
-                        name: 'Như mới (Like New 95% - 99%)',
-                        description: 'Đã bỏ tag hoặc mặc 1-2 lần chụp ảnh, form dáng và vải nguyên bản hoàn hảo.',
-                        isSelected:
-                            product.condition.toUpperCase() == 'LIKE_NEW',
-                      ),
-                      _buildConditionTierItem(
-                        code: 'GOOD',
-                        name: 'Tốt (Good)',
-                        description: 'Đã sử dụng nhẹ, không có vết rách lớn, không mất cúc, màu sắc còn đẹp.',
-                        isSelected: product.condition.toUpperCase() == 'GOOD',
-                      ),
-                      _buildConditionTierItem(
-                        code: 'FAIR',
-                        name: 'Trung bình (Fair)',
-                        description: 'Có khuyết điểm rõ (sờn cổ áo, mất cúc phụ, hoặc vết ố vintage nhẹ đã mô tả).',
-                        isSelected: product.condition.toUpperCase() == 'FAIR',
-                      ),
-                      _buildConditionTierItem(
-                        code: 'VINTAGE_WORN',
-                        name: 'Vintage sờn rách tự nhiên (Vintage Worn)',
-                        description: 'Hiệu ứng bạc màu, rách gấu hoặc sờn thời gian mang giá trị sưu tầm đặc thù.',
-                        isSelected:
-                            product.condition.toUpperCase() == 'VINTAGE_WORN',
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        defectImages.isNotEmpty
-                            ? 'Ảnh chụp cận cảnh vết lỗi (${defectImages.length})'
-                            : 'Tất cả ảnh chi tiết sản phẩm (${allImages.length})',
-                        style: AppTypography.headingSmall.copyWith(
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Bấm vào ảnh để kích hoạt kính lúp soi cận cảnh (Pinch-to-zoom 400%).',
-                        style: AppTypography.caption,
-                      ),
-                      const SizedBox(height: 10),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final currentImages = defectImages.isNotEmpty
-                              ? defectImages
-                              : allImages;
-                          const spacing = 8.0;
-                          final tileSize =
-                              ((constraints.maxWidth - spacing * 2) / 3)
-                                  .floorToDouble()
-                                  .clamp(0.0, double.infinity);
-                          return Wrap(
-                            spacing: spacing,
-                            runSpacing: spacing,
-                            children: List.generate(currentImages.length, (
-                              idx,
-                            ) {
-                              final img = currentImages[idx];
-                              return SizedBox(
-                                width: tileSize,
-                                height: tileSize,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => FullScreenZoomViewer(
-                                          images: currentImages,
-                                          initialIndex: idx,
-                                          title: product.title,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          img.imageUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) => Container(
-                                                color: AppColors.surfaceWarm,
-                                                child: const Icon(
-                                                  Icons.broken_image_outlined,
-                                                  color: AppColors.textMuted,
-                                                ),
-                                              ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: 4,
-                                        bottom: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.6,
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.zoom_in_rounded,
-                                            color: Colors.white,
-                                            size: 14,
-                                          ),
-                                        ),
-                                      ),
-                                      if (img.imageType == 'DEFECT_CLOSEUP')
-                                        Positioned(
-                                          top: 4,
-                                          left: 4,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.ctaTerracotta,
-                                              borderRadius:
-                                                  DesignTokens.borderRadiusFull,
-                                            ),
-                                            child: const Text(
-                                              'Vết lỗi',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
+                              Positioned(
+                                right: 4,
+                                bottom: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.zoom_in_rounded,
+                                    color: Colors.white,
+                                    size: 14,
                                   ),
                                 ),
-                              );
-                            }),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                              ),
+                              if (img.imageType == 'DEFECT_CLOSEUP')
+                                Positioned(
+                                  top: 4,
+                                  left: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.ctaTerracotta,
+                                      borderRadius:
+                                          DesignTokens.borderRadiusFull,
+                                    ),
+                                    child: const Text(
+                                      'Vết lỗi',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ],

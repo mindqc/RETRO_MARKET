@@ -68,7 +68,10 @@ class AppRoutes {
   // Seller Channel (NAV-DEC-02)
   static const String sellerHub = '/seller';
   static const String sellerListings = '/seller/listings';
+  static String sellerListingsPath([String? status]) =>
+      status != null ? '/seller/listings?status=$status' : '/seller/listings';
   static const String sellerCreateListing = '/seller/create';
+  static const String sellerCreateAuction = '/seller/auctions/create';
   static const String sellerEditListing = '/seller/listings/:id/edit';
   static String sellerEditListingPath(int id) => '/seller/listings/$id/edit';
   static const String sellerOrders = '/seller/orders';

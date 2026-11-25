@@ -209,9 +209,8 @@ class _ReportAndBlockModalState extends ConsumerState<ReportAndBlockModal> {
                           entry.value,
                           style: AppTypography.bodyMedium.copyWith(
                             fontSize: 13.5,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: AppColors.textCharcoal,
                           ),
                         ),
@@ -242,10 +241,10 @@ class _ReportAndBlockModalState extends ConsumerState<ReportAndBlockModal> {
                   maxLines: 3,
                   maxLength: 500,
                   decoration: InputDecoration(
-                    hintText: 'Cung cấp bằng chứng hoặc bối cảnh cuộc trò chuyện để admin thẩm tra...',
-                    hintStyle: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    hintText:
+                        'Cung cấp bằng chứng hoặc bối cảnh cuộc trò chuyện để admin thẩm tra...',
+                    hintStyle: AppTypography.bodySmall
+                        .copyWith(color: AppColors.textMuted),
                     filled: true,
                     fillColor: AppColors.surfaceWarm,
                     contentPadding: const EdgeInsets.all(14),

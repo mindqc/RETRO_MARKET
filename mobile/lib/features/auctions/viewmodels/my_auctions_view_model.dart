@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/network/api_envelope.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
@@ -10,6 +11,7 @@ import '../repositories/auction_repository.dart';
 class MyAuctionsViewModel extends BaseViewModel<List<AuctionCardModel>> {
   final AuctionRepository repository;
   final int? currentUserId;
+  final RetroDemoMarketplaceStore? demoStore;
 
   String _currentTab = 'participating';
   PaginationMeta? _paginationMeta;
@@ -19,6 +21,7 @@ class MyAuctionsViewModel extends BaseViewModel<List<AuctionCardModel>> {
   MyAuctionsViewModel({
     required this.repository,
     this.currentUserId,
+    this.demoStore,
   });
 
   String get currentTab => _currentTab;
@@ -48,10 +51,26 @@ class MyAuctionsViewModel extends BaseViewModel<List<AuctionCardModel>> {
 
       _items.clear();
       _items.addAll(res.items);
-      _paginationMeta = res.meta;
 
+      if (demoStore != null) {
+        final existingIds = _items.map((e) => e.id).toSet();
+        final demoExtras = demoStore!
+            .demoAuctionCardsForTab(_currentTab)
+            .where((item) => !existingIds.contains(item.id));
+        _items.insertAll(0, demoExtras);
+      }
+
+      _paginationMeta = res.meta;
       setSuccess(List.unmodifiable(_items));
     } catch (e) {
+      if (demoStore != null) {
+        _items
+          ..clear()
+          ..addAll(demoStore!.demoAuctionCardsForTab(_currentTab));
+        _paginationMeta = null;
+        setSuccess(List.unmodifiable(_items));
+        return;
+      }
       setError(e.toString());
     }
   }
@@ -89,16 +108,41 @@ class MyAuctionsViewModel extends BaseViewModel<List<AuctionCardModel>> {
     final oldItem = _items[idx];
     final newIsWatching = !oldItem.isWatching;
 
+    if (demoStore?.getDemoAuctionDetail(auctionId) != null) {
+      final nowWatching = demoStore!.toggleLocalAuctionRegistration(auctionId);
+      if (_currentTab == 'watchlist' && !nowWatching) {
+        _items.removeAt(idx);
+      } else {
+        _items[idx] = oldItem.copyWith(isWatching: nowWatching);
+      }
+      setSuccess(List.unmodifiable(_items));
+      return;
+    }
+
     _items[idx] = oldItem.copyWith(isWatching: newIsWatching);
     notifyListeners();
 
     try {
       final actualStatus = await repository.toggleWatch(auctionId);
-      if (_items[idx].isWatching != actualStatus) {
+      if (_currentTab == 'watchlist' && !actualStatus) {
+        _items.removeAt(idx);
+      } else if (_items[idx].isWatching != actualStatus) {
         _items[idx] = _items[idx].copyWith(isWatching: actualStatus);
-        notifyListeners();
       }
+      setSuccess(List.unmodifiable(_items));
     } catch (_) {
+      if (demoStore != null) {
+        final localStatus = demoStore!.toggleLocalAuctionRegistration(
+          auctionId,
+        );
+        if (_currentTab == 'watchlist' && !localStatus) {
+          _items.removeAt(idx);
+        } else {
+          _items[idx] = oldItem.copyWith(isWatching: localStatus);
+        }
+        setSuccess(List.unmodifiable(_items));
+        return;
+      }
       _items[idx] = oldItem;
       notifyListeners();
     }
@@ -106,13 +150,16 @@ class MyAuctionsViewModel extends BaseViewModel<List<AuctionCardModel>> {
 }
 
 /// Riverpod provider for MyAuctionsViewModel
-final myAuctionsViewModelProvider = ChangeNotifierProvider.autoDispose<MyAuctionsViewModel>((ref) {
-  final repo = ref.watch(auctionRepositoryProvider);
-  final authVm = ref.watch(authViewModelProvider);
-  final vm = MyAuctionsViewModel(
-    repository: repo,
-    currentUserId: authVm.currentUser?.id,
-  );
-  vm.fetchInitial();
-  return vm;
-});
+final myAuctionsViewModelProvider =
+    ChangeNotifierProvider.autoDispose<MyAuctionsViewModel>((ref) {
+      final repo = ref.watch(auctionRepositoryProvider);
+      final authVm = ref.watch(authViewModelProvider);
+      final demoStore = ref.read(retroDemoStoreProvider);
+      final vm = MyAuctionsViewModel(
+        repository: repo,
+        currentUserId: authVm.currentUser?.id,
+        demoStore: demoStore,
+      );
+      vm.fetchInitial();
+      return vm;
+    });

@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/auth_view_model.dart';
 
@@ -101,6 +102,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const IzithriftLogo(iconSize: 34, fontSize: 20),
+                  const SizedBox(height: DesignTokens.spaceMd),
                   Text(
                     'Tham gia cộng đồng izithrift',
                     style: AppTypography.headingLarge.copyWith(

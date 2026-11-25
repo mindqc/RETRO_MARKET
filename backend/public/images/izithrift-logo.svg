@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="izithrift logo">
+  <defs>
+    <linearGradient id="iziPineBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#174D38"/>
+      <stop offset="100%" stop-color="#103828"/>
+    </linearGradient>
+  </defs>
+  <!-- Deep Pine Green Rounded Emblem -->
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#iziPineBg)"/>
+  <rect x="4" y="4" width="56" height="56" rx="16" stroke="#D6AE55" stroke-opacity="0.38" stroke-width="2"/>
+  <!-- Stylized Vintage Price Tag -->
+  <g transform="translate(32 33) rotate(-14)">
+    <path d="M-15 -5 L-4 -16 H13 C16 -16 17 -15 17 -12 V12 C17 15 16 16 13 16 H-11 C-14 16 -15 15 -15 12 Z" fill="#FFFFFF"/>
+    <!-- Terracotta Tag Eyelet -->
+    <circle cx="-4.5" cy="-7.5" r="3.4" fill="#C65335"/>
+    <!-- Minimal Circular Reuse / Thrift Arc -->
+    <path d="M-2 1 A7 7 0 1 1 5.5 9.5" stroke="#174D38" stroke-width="3.8" stroke-linecap="round"/>
+  </g>
+  <!-- Subtle Vintage Gold Winter Sparkle -->
+  <path d="M50.5 7.5 Q50.5 14 57 14 Q50.5 14 50.5 20.5 Q50.5 14 44 14 Q50.5 14 50.5 7.5 Z" fill="#D6AE55"/>
+  <circle cx="50.5" cy="14" r="1.4" fill="#FFFFFF"/>
+</svg>

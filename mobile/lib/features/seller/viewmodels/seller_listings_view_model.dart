@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/state/base_view_model.dart';
 import '../models/seller_product_item_model.dart';
 import '../repositories/seller_channel_repository.dart';
@@ -6,13 +7,17 @@ import '../repositories/seller_channel_repository.dart';
 /// ViewModel managing 7-state product listings for seller (M-SL-02).
 class SellerListingsViewModel extends BaseViewModel<List<SellerProductItemModel>> {
   final SellerChannelRepository repository;
+  final RetroDemoMarketplaceStore? demoStore;
 
   String _selectedStatus = 'ALL';
   int _currentPage = 1;
   bool _hasMore = false;
   final bool _isLoadingMore = false;
 
-  SellerListingsViewModel({required this.repository});
+  SellerListingsViewModel({
+    required this.repository,
+    this.demoStore,
+  });
 
   String get selectedStatus => _selectedStatus;
   bool get hasMore => _hasMore;
@@ -25,6 +30,12 @@ class SellerListingsViewModel extends BaseViewModel<List<SellerProductItemModel>
     }
   }
 
+  List<SellerProductItemModel> _demoItemsForCurrentStatus() {
+    final localItems = demoStore?.demoSubmittedListings ?? const [];
+    if (_selectedStatus == 'ALL') return List<SellerProductItemModel>.from(localItems);
+    return localItems.where((item) => item.status == _selectedStatus).toList();
+  }
+
   /// Loads products with optional status filter and pagination
   Future<void> loadProducts({bool refresh = false}) async {
     if (refresh) {
@@ -33,12 +44,26 @@ class SellerListingsViewModel extends BaseViewModel<List<SellerProductItemModel>
 
     await runCatching(
       () async {
-        final res = await repository.fetchSellerProducts(
-          status: _selectedStatus,
-          page: _currentPage,
-        );
-        _hasMore = res.meta.hasMorePages;
-        return res.items;
+        final localMatches = _demoItemsForCurrentStatus();
+        try {
+          final res = await repository.fetchSellerProducts(
+            status: _selectedStatus,
+            page: _currentPage,
+          );
+          _hasMore = res.meta.hasMorePages;
+          if (localMatches.isEmpty) return res.items;
+          final existingIds = res.items.map((e) => e.id).toSet();
+          return [
+            ...localMatches.where((item) => !existingIds.contains(item.id)),
+            ...res.items,
+          ];
+        } catch (_) {
+          if (localMatches.isNotEmpty) {
+            _hasMore = false;
+            return localMatches;
+          }
+          rethrow;
+        }
       },
       isEmpty: (items) => items.isEmpty,
       emptyMessage: 'Không có sản phẩm nào trong mục này.',
@@ -99,5 +124,6 @@ class SellerListingsViewModel extends BaseViewModel<List<SellerProductItemModel>
 /// Riverpod provider for SellerListingsViewModel
 final sellerListingsViewModelProvider = ChangeNotifierProvider.autoDispose<SellerListingsViewModel>((ref) {
   final repo = ref.watch(sellerChannelRepositoryProvider);
-  return SellerListingsViewModel(repository: repo);
+  final demoStore = ref.watch(retroDemoStoreProvider);
+  return SellerListingsViewModel(repository: repo, demoStore: demoStore);
 });

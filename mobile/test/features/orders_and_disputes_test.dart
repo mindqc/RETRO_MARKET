@@ -1034,9 +1034,12 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        await tester.tap(
-          find.byKey(const Key('btn_confirm_submit_counter_evidence')),
+        final submitBtn = find.byKey(
+          const Key('btn_confirm_submit_counter_evidence'),
         );
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 

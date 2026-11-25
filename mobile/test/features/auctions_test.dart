@@ -518,7 +518,12 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        expect(find.text('izithrift • Đấu giá'), findsOneWidget);
+        expect(find.text('izithrift'), findsOneWidget);
+        expect(find.text('Đấu giá'), findsOneWidget);
+        expect(
+          find.text('Săn món đồ độc đáo với mức giá của bạn.'),
+          findsOneWidget,
+        );
         expect(find.text('🔴 Đang diễn ra'), findsOneWidget);
         expect(find.text('⚡ Sắp kết thúc'), findsOneWidget);
         expect(find.text('⏰ Sắp mở'), findsOneWidget);

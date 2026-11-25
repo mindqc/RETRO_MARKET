@@ -10,7 +10,10 @@ import '../viewmodels/dispute_view_model.dart';
 class SubmitCounterEvidenceScreen extends ConsumerStatefulWidget {
   final int disputeId;
 
-  const SubmitCounterEvidenceScreen({super.key, required this.disputeId});
+  const SubmitCounterEvidenceScreen({
+    super.key,
+    required this.disputeId,
+  });
 
   @override
   ConsumerState<SubmitCounterEvidenceScreen> createState() =>
@@ -125,15 +128,13 @@ class _SubmitCounterEvidenceScreenState
                         ),
                         border: OutlineInputBorder(
                           borderRadius: DesignTokens.borderRadiusMd,
-                          borderSide: const BorderSide(
-                            color: AppColors.borderWarm,
-                          ),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderWarm),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: DesignTokens.borderRadiusMd,
-                          borderSide: const BorderSide(
-                            color: AppColors.borderWarm,
-                          ),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderWarm),
                         ),
                       ),
                       items: const [
@@ -169,18 +170,17 @@ class _SubmitCounterEvidenceScreenState
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: AppColors.surfaceWarm,
-                        hintText: 'Nhập chi tiết quá trình đóng gói, mã vận đơn, video kiểm hàng hoặc phản hồi khiếu nại...',
+                        hintText:
+                            'Nhập chi tiết quá trình đóng gói, mã vận đơn, video kiểm hàng hoặc phản hồi khiếu nại...',
                         border: OutlineInputBorder(
                           borderRadius: DesignTokens.borderRadiusMd,
-                          borderSide: const BorderSide(
-                            color: AppColors.borderWarm,
-                          ),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderWarm),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: DesignTokens.borderRadiusMd,
-                          borderSide: const BorderSide(
-                            color: AppColors.borderWarm,
-                          ),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderWarm),
                         ),
                       ),
                     ),
@@ -192,9 +192,8 @@ class _SubmitCounterEvidenceScreenState
                       children: [
                         Text(
                           'Ảnh / Video đối chứng:',
-                          style: AppTypography.labelStrong.copyWith(
-                            fontSize: 13,
-                          ),
+                          style:
+                              AppTypography.labelStrong.copyWith(fontSize: 13),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -229,9 +228,8 @@ class _SubmitCounterEvidenceScreenState
                                 height: 72,
                                 decoration: BoxDecoration(
                                   borderRadius: DesignTokens.borderRadiusMd,
-                                  border: Border.all(
-                                    color: AppColors.borderWarm,
-                                  ),
+                                  border:
+                                      Border.all(color: AppColors.borderWarm),
                                   color: AppColors.surfaceWarm,
                                 ),
                                 child: const Center(
@@ -246,8 +244,7 @@ class _SubmitCounterEvidenceScreenState
                                 right: 4,
                                 child: InkWell(
                                   onTap: () => setState(
-                                    () => _attachmentUrls.remove(url),
-                                  ),
+                                      () => _attachmentUrls.remove(url)),
                                   child: Container(
                                     padding: const EdgeInsets.all(3),
                                     decoration: const BoxDecoration(
@@ -282,13 +279,11 @@ class _SubmitCounterEvidenceScreenState
                               decoration: BoxDecoration(
                                 borderRadius: DesignTokens.borderRadiusMd,
                                 border: Border.all(
-                                  color: AppColors.verifiedLeaf.withValues(
-                                    alpha: 0.45,
-                                  ),
+                                  color: AppColors.verifiedLeaf
+                                      .withValues(alpha: 0.45),
                                 ),
-                                color: AppColors.verifiedLeafBg.withValues(
-                                  alpha: 0.6,
-                                ),
+                                color: AppColors.verifiedLeafBg
+                                    .withValues(alpha: 0.6),
                               ),
                               child: const Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -323,9 +318,8 @@ class _SubmitCounterEvidenceScreenState
                         decoration: BoxDecoration(
                           color: AppColors.priceCrimsonSoft,
                           borderRadius: DesignTokens.borderRadiusMd,
-                          border: Border.all(
-                            color: AppColors.priceCrimsonBorder,
-                          ),
+                          border:
+                              Border.all(color: AppColors.priceCrimsonBorder),
                         ),
                         child: Text(
                           vm.submitErrorMessage!,
@@ -339,62 +333,58 @@ class _SubmitCounterEvidenceScreenState
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(color: AppColors.canvasParchment),
-          child: SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              key: const Key('btn_confirm_submit_counter_evidence'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.pineDeep,
-                foregroundColor: AppColors.textLight,
-                shape: const StadiumBorder(),
-                elevation: 0,
-              ),
-              onPressed: vm.isSubmitting
-                  ? null
-                  : () async {
-                      final ev = await vm.submitEvidence(
-                        disputeId: widget.disputeId,
-                        messageNote: _noteController.text,
-                        evidenceType: _selectedRole,
-                        attachmentUrls: _attachmentUrls,
-                      );
+              const SizedBox(height: 20),
 
-                      if (!context.mounted) return;
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  key: const Key('btn_confirm_submit_counter_evidence'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.pineDeep,
+                    foregroundColor: AppColors.textLight,
+                    shape: const StadiumBorder(),
+                    elevation: 0,
+                  ),
+                  onPressed: vm.isSubmitting
+                      ? null
+                      : () async {
+                          final ev = await vm.submitEvidence(
+                            disputeId: widget.disputeId,
+                            messageNote: _noteController.text,
+                            evidenceType: _selectedRole,
+                            attachmentUrls: _attachmentUrls,
+                          );
 
-                      if (ev != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Đã nộp chứng cứ đối chất thành công!',
-                            ),
+                          if (!context.mounted) return;
+
+                          if (ev != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Đã nộp chứng cứ đối chất thành công!',
+                                ),
+                              ),
+                            );
+                            Navigator.of(context).pop();
+                          }
+                        },
+                  child: vm.isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
                           ),
-                        );
-                        Navigator.of(context).pop();
-                      }
-                    },
-              child: vm.isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Gửi chứng cứ lên hệ thống',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-            ),
+                        )
+                      : const Text(
+                          'Gửi chứng cứ lên hệ thống',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,20 +1,21 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-[#FBF8F3]">
+<html lang="vi" class="h-full bg-[#F4F5F7]">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Admin Dashboard') | izithrift</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/izithrift-logo.svg') }}">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Be Vietnam Pro -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full font-sans text-[#1F2937] antialiased bg-[#FBF8F3] flex overflow-hidden">
+<body class="h-full font-sans text-[#231F20] antialiased bg-[#F4F5F7] flex overflow-hidden">
     <!-- Sidebar Navigation -->
     @include('admin.partials.sidebar')
 

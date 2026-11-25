@@ -7,6 +7,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/auth_view_model.dart';
 
@@ -175,25 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const RadialGradient(
-                            colors: [
-                              AppColors.categoryCircleStart,
-                              AppColors.categoryCircleEnd,
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.creamBadgeBorder),
-                        ),
-                        child: const Icon(
-                          Icons.checkroom_rounded,
-                          color: AppColors.pineDeep,
-                          size: 24,
-                        ),
-                      ),
+                      const IzithriftLogo.iconOnly(iconSize: 48),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(

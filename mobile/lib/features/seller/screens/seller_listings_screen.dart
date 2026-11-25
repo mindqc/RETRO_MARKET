@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/status_pill_badge.dart';
 import '../models/seller_product_item_model.dart';
@@ -91,6 +91,20 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
           'Quản lý bài đăng',
           style: AppTypography.headingMedium.copyWith(fontSize: 20),
         ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push(AppRoutes.sellerCreateAuction),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.pineDeep,
+            ),
+            icon: const Icon(Icons.gavel_rounded, size: 16),
+            label: const Text(
+              'Tạo đấu giá',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(46),
           child: Container(
@@ -240,28 +254,19 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Thumbnail
+                // Thumbnail (using unified RetroProductImage with asset & fallback support)
                 ClipRRect(
                   borderRadius: DesignTokens.borderRadiusMd,
-                  child: Container(
+                  child: SizedBox(
                     width: 86,
                     height: 86,
-                    color: AppColors.surfaceWarm,
-                    child: item.primaryImageUrl != null &&
-                            item.primaryImageUrl!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: item.primaryImageUrl!,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.image_not_supported_outlined,
-                              color: AppColors.textMuted,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.checkroom_outlined,
-                            size: 34,
-                            color: AppColors.primaryVintageBrown,
-                          ),
+                    child: RetroProductImage(
+                      imageUrl: item.primaryImageUrl,
+                      title: item.title,
+                      categoryName: item.categoryName,
+                      productId: item.id,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -526,7 +531,46 @@ class _SellerListingsScreenState extends ConsumerState<SellerListingsScreen>
       );
     }
 
-    // Default for other states (SOLD, ARCHIVED, PENDING_REVIEW)
+    // 5. PENDING_REVIEW / PENDING_APPROVAL: Explicit moderation queue status
+    if (item.status == 'PENDING_REVIEW' || item.status == 'PENDING_APPROVAL') {
+      return Row(
+        children: [
+          const Icon(
+            Icons.hourglass_top_rounded,
+            size: 15,
+            color: AppColors.creamBadgeText,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Đang chờ quản trị viên duyệt trước khi hiển thị công khai',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.creamBadgeText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              context.push(
+                AppRoutes.sellerEditListingPath(item.id),
+                extra: item,
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.pineDeep,
+              shape: const StadiumBorder(),
+            ),
+            child: const Text(
+              'Chi tiết',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Default for other states (SOLD, ARCHIVED)
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [

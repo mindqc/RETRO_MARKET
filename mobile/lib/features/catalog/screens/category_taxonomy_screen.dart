@@ -236,102 +236,97 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
         clipBehavior: Clip.antiAlias,
         child: hasChildren
             ? Theme(
-                data: Theme.of(context)
-                    .copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  tilePadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                leading: _buildRadialCategoryIcon(icon, color),
+                title: Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textCharcoal,
                   ),
-                  childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  leading: _buildRadialCategoryIcon(icon, color),
-                  title: Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: AppColors.textCharcoal,
+                ),
+                subtitle: Text(
+                  '$count sản phẩm',
+                  style: AppTypography.caption.copyWith(fontSize: 12),
+                ),
+                trailing: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.creamBadgeSoft,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.creamBadgeBorder),
+                  ),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.creamBadgeText,
+                    size: 19,
+                  ),
+                ),
+                children: [
+                  _buildSeeAllRow(context, category, color),
+                  const SizedBox(height: 10),
+                  if (children.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: children
+                          .map((child) =>
+                              _buildSubcategoryPill(context, child, color))
+                          .toList(),
                     ),
-                  ),
-                  subtitle: Text(
-                    '$count sản phẩm',
-                    style: AppTypography.caption.copyWith(fontSize: 12),
-                  ),
-                  trailing: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: AppColors.creamBadgeSoft,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.creamBadgeBorder),
-                    ),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.creamBadgeText,
-                      size: 19,
-                    ),
-                  ),
+                ],
+              ),
+            )
+          : InkWell(
+              onTap: () {
+                ref
+                    .read(catalogSearchViewModelProvider)
+                    .setCategory(category.id as int);
+                context.push(AppRoutes.search);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
                   children: [
-                    _buildSeeAllRow(context, category, color),
-                    const SizedBox(height: 10),
-                    if (children.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: children
-                            .map(
-                              (child) =>
-                                  _buildSubcategoryPill(context, child, color),
-                            )
-                            .toList(),
+                    _buildRadialCategoryIcon(icon, color),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: AppColors.textCharcoal,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '$count sản phẩm',
+                            style: AppTypography.caption.copyWith(fontSize: 12),
+                          ),
+                        ],
                       ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textMuted,
+                      size: 22,
+                    ),
                   ],
                 ),
-              )
-            : InkWell(
-                onTap: () {
-                  ref
-                      .read(catalogSearchViewModelProvider)
-                      .setCategory(category.id as int);
-                  context.push(AppRoutes.search);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      _buildRadialCategoryIcon(icon, color),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                color: AppColors.textCharcoal,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '$count sản phẩm',
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.textMuted,
-                        size: 22,
-                      ),
-                    ],
-                  ),
-                ),
               ),
+            ),
       ),
     );
   }
@@ -343,7 +338,10 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: const RadialGradient(
-          colors: [AppColors.categoryCircleStart, AppColors.categoryCircleEnd],
+          colors: [
+            AppColors.categoryCircleStart,
+            AppColors.categoryCircleEnd,
+          ],
         ),
         border: Border.all(color: AppColors.creamBadgeBorder, width: 1.1),
       ),
@@ -435,7 +433,11 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
       padding: EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(Icons.ac_unit_rounded, color: AppColors.creamBadgeBg, size: 24),
+          Icon(
+            Icons.ac_unit_rounded,
+            color: AppColors.creamBadgeBg,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -450,7 +452,11 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
             ),
           ),
           SizedBox(width: 8),
-          Icon(Icons.auto_awesome_rounded, color: AppColors.starGold, size: 18),
+          Icon(
+            Icons.auto_awesome_rounded,
+            color: AppColors.starGold,
+            size: 18,
+          ),
         ],
       ),
     );
@@ -483,7 +489,11 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     );
   }
 
-  Widget _buildBrandCard(BuildContext context, dynamic brand, Color color) {
+  Widget _buildBrandCard(
+    BuildContext context,
+    dynamic brand,
+    Color color,
+  ) {
     return Material(
       color: AppColors.surfaceCard,
       borderRadius: BorderRadius.circular(DesignTokens.radiusLg),

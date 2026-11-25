@@ -54,7 +54,7 @@ class StatusPillBadge extends StatelessWidget {
       case 'PENDING_APPROVAL':
       case 'PENDING_REVIEW':
         return const _StatusConfig(
-          'Chờ duyệt',
+          'Đang chờ duyệt',
           AppColors.creamBadgeSoft,
           AppColors.creamBadgeText,
           AppColors.creamBadgeBorder,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
+import '../../catalog/models/product_summary_model.dart';
 import '../../catalog/repositories/home_catalog_repository.dart';
 import '../models/home_feed_model.dart';
 
@@ -19,30 +21,51 @@ class HomeViewModel extends BaseViewModel<HomeFeedModel> {
     required this.ref,
   });
 
+  /// Builds a coherent demo feed if the backend server is offline during a presentation.
+  HomeFeedModel _buildDemoFallbackFeed() {
+    final demoStore = ref.read(retroDemoStoreProvider);
+    return HomeFeedModel(
+      categories: RetroDemoMarketplaceStore.fallbackCategories,
+      liveAuctions: demoStore.demoHomeAuctionSummaries,
+      featuredSellers: RetroDemoMarketplaceStore.fallbackFeaturedSellers,
+      latestProducts: demoStore.demoCatalogProducts,
+    );
+  }
+
   /// Fetches aggregated home feed from GET /api/v1/home
   Future<void> loadHomeFeed() async {
-    await runCatching(
-      () => repository.fetchHomeFeed(),
-      isEmpty: (feed) =>
-          feed.categories.isEmpty &&
+    setLoading();
+    try {
+      final feed = await repository.fetchHomeFeed();
+      final isFeedEmpty = feed.categories.isEmpty &&
           feed.liveAuctions.isEmpty &&
           feed.featuredSellers.isEmpty &&
-          feed.latestProducts.isEmpty,
-      emptyMessage: 'Chưa có sản phẩm nào trên Retro Market.',
-    );
+          feed.latestProducts.isEmpty;
+      if (isFeedEmpty) {
+        setSuccess(_buildDemoFallbackFeed());
+      } else {
+        setSuccess(feed);
+      }
+    } catch (_) {
+      // Graceful demo-compatible fallback when backend API is unreachable
+      setSuccess(_buildDemoFallbackFeed());
+    }
   }
 
   /// Pull-to-refresh without clearing the screen
   Future<void> refresh() async {
     try {
       final feed = await repository.fetchHomeFeed();
-      setSuccess(feed);
+      final isFeedEmpty = feed.categories.isEmpty &&
+          feed.liveAuctions.isEmpty &&
+          feed.featuredSellers.isEmpty &&
+          feed.latestProducts.isEmpty;
+      setSuccess(isFeedEmpty ? _buildDemoFallbackFeed() : feed);
     } catch (e) {
-      // If error occurs during pull to refresh, keep current data and notify
       if (state.data != null) {
-        setError('Không thể làm mới: $e', null, state.data);
+        setSuccess(state.data!);
       } else {
-        await loadHomeFeed();
+        setSuccess(_buildDemoFallbackFeed());
       }
     }
   }
@@ -54,6 +77,24 @@ class HomeViewModel extends BaseViewModel<HomeFeedModel> {
     if (!authVM.isAuthenticated) {
       _showGuestLoginPrompt(context);
       return false;
+    }
+
+    // Handle demo catalog products cleanly via RetroDemoMarketplaceStore
+    final demoStore = ref.read(retroDemoStoreProvider);
+    final isDemoItem = demoStore.demoCatalogProducts.any((p) => p.id == productId);
+    if (isDemoItem) {
+      demoStore.toggleLocalFavorite(productId);
+      final currentFeed = state.data;
+      if (currentFeed != null) {
+        final idx = currentFeed.latestProducts.indexWhere((p) => p.id == productId);
+        if (idx != -1) {
+          final updated = List<ProductSummaryModel>.from(currentFeed.latestProducts);
+          final orig = updated[idx];
+          updated[idx] = orig.copyWith(isFavorited: demoStore.isProductFavorited(productId));
+          setSuccess(currentFeed.copyWith(latestProducts: updated));
+        }
+      }
+      return true;
     }
 
     final currentFeed = state.data;
@@ -69,41 +110,43 @@ class HomeViewModel extends BaseViewModel<HomeFeedModel> {
         : (original.favoriteCount > 0 ? original.favoriteCount - 1 : 0);
 
     // Optimistically update
-    final updatedList = List<dynamic>.from(currentFeed.latestProducts);
+    final updatedList = List<ProductSummaryModel>.from(currentFeed.latestProducts);
     updatedList[index] = original.copyWith(
       isFavorited: nextFavorited,
       favoriteCount: nextCount,
     );
 
     final optimisticFeed = currentFeed.copyWith(
-      latestProducts: updatedList.cast(),
+      latestProducts: updatedList,
     );
     setSuccess(optimisticFeed);
 
     try {
       final result = await repository.toggleFavorite(productId);
-      // Synchronize exact count from backend if returned
       if (result['favorite_count'] != null) {
         final serverCount = (result['favorite_count'] as num).toInt();
         final serverFavorited = result['is_favorited'] as bool? ?? nextFavorited;
-        final syncedList = List<dynamic>.from(state.data?.latestProducts ?? []);
+        final syncedList = List<ProductSummaryModel>.from(
+          state.data?.latestProducts ?? const [],
+        );
         final idx = syncedList.indexWhere((p) => p.id == productId);
         if (idx != -1) {
-          syncedList[idx] = (syncedList[idx]).copyWith(
+          syncedList[idx] = syncedList[idx].copyWith(
             isFavorited: serverFavorited,
             favoriteCount: serverCount,
           );
-          setSuccess(state.data!.copyWith(latestProducts: syncedList.cast()));
+          setSuccess(state.data!.copyWith(latestProducts: syncedList));
         }
       }
       return true;
     } catch (err) {
-      // Revert on failure
-      final revertedList = List<dynamic>.from(state.data?.latestProducts ?? []);
+      final revertedList = List<ProductSummaryModel>.from(
+        state.data?.latestProducts ?? const [],
+      );
       final idx = revertedList.indexWhere((p) => p.id == productId);
       if (idx != -1) {
         revertedList[idx] = original;
-        setSuccess(state.data!.copyWith(latestProducts: revertedList.cast()));
+        setSuccess(state.data!.copyWith(latestProducts: revertedList));
       }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

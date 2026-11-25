@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../models/product_image_model.dart';
 
 /// Full-screen image viewer with pinch-to-zoom up to 400% (M-DS-04).
@@ -92,32 +93,11 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                   panEnabled: true,
                   scaleEnabled: true,
                   child: Center(
-                    child: Image.network(
-                      img.imageUrl,
+                    child: RetroProductImage(
+                      imageUrl: img.imageUrl,
+                      title: widget.title ?? '',
+                      productId: img.id + index,
                       fit: BoxFit.contain,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryTerracotta,
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
-                            Icons.broken_image_rounded,
-                            color: Colors.white54,
-                            size: 48,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Không tải được hình ảnh',
-                            style: TextStyle(color: Colors.white54),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 );
@@ -308,18 +288,11 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: Image.network(
-                                  thumb.imageUrl,
+                                child: RetroProductImage(
+                                  imageUrl: thumb.imageUrl,
+                                  title: widget.title ?? '',
+                                  productId: thumb.id + idx,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                        color: Colors.grey[850],
-                                        child: const Icon(
-                                          Icons.broken_image_rounded,
-                                          size: 18,
-                                          color: Colors.white30,
-                                        ),
-                                      ),
                                 ),
                               ),
                             ),

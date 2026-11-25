@@ -91,40 +91,46 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Check App starts at Tab 1: Trang chủ
+      // Check App starts at Tab 1: Trang chủ with unified izithrift Global AppBar
       expect(find.text('Trang chủ'), findsWidgets);
-      expect(find.text('izithrift • Trang chủ'), findsOneWidget);
+      expect(find.text('izithrift'), findsWidgets);
 
-      // Check all 5 Tab labels exist in NavigationBar
-      expect(find.text('Khám phá'), findsOneWidget);
-      expect(find.text('Đấu giá'), findsOneWidget);
+      // Check all 5 Bottom Navigation destinations exist
       expect(find.text('Tin nhắn'), findsOneWidget);
+      expect(find.text('Đăng bán'), findsOneWidget);
+      expect(find.text('Đấu giá'), findsOneWidget);
       expect(find.text('Cá nhân'), findsOneWidget);
 
-      // Switch to Tab 2: Khám phá
-      await tester.tap(find.text('Khám phá'));
+      // Switch to Tab 2: Tin nhắn
+      await tester.tap(find.text('Tin nhắn').last);
       await tester.pumpAndSettle();
-      expect(find.text('izithrift • Khám phá'), findsOneWidget);
+      expect(find.text('izithrift'), findsWidgets);
+      expect(find.text('Tin nhắn'), findsWidgets);
 
-      // Switch to Tab 3: Đấu giá
-      await tester.tap(find.text('Đấu giá'));
+      // Tap central Đăng bán CTA to verify Sell Bottom Sheet opens cleanly
+      await tester.tap(find.text('Đăng bán').last);
       await tester.pumpAndSettle();
-      expect(find.text('izithrift • Đấu giá'), findsOneWidget);
+      expect(find.text('Đăng bán sản phẩm'), findsOneWidget);
+      expect(find.text('Tạo phiên đấu giá'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
 
-      // Switch to Tab 4: Tin nhắn
-      await tester.tap(find.text('Tin nhắn'));
+      // Switch to Tab 4: Đấu giá
+      await tester.tap(find.text('Đấu giá').last);
       await tester.pumpAndSettle();
-      expect(find.text('izithrift • Tin nhắn'), findsOneWidget);
+      expect(find.text('izithrift'), findsWidgets);
+      expect(find.text('Săn món đồ độc đáo với mức giá của bạn.'), findsOneWidget);
 
       // Switch to Tab 5: Cá nhân
-      await tester.tap(find.text('Cá nhân'));
+      await tester.tap(find.text('Cá nhân').last);
       await tester.pumpAndSettle();
-      expect(find.text('izithrift • Cá nhân'), findsOneWidget);
+      expect(find.text('izithrift'), findsWidgets);
+      expect(find.text('Tham gia cộng đồng izithrift'), findsOneWidget);
 
       // Switch back to Tab 1: Trang chủ
-      await tester.tap(find.text('Trang chủ'));
+      await tester.tap(find.text('Trang chủ').last);
       await tester.pumpAndSettle();
-      expect(find.text('izithrift • Trang chủ'), findsOneWidget);
+      expect(find.text('izithrift'), findsWidgets);
     });
   });
 }
