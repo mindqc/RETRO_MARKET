@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:izithrift/core/network/api_envelope.dart';
 import 'package:izithrift/core/network/dio_client.dart';
@@ -22,12 +23,12 @@ import 'package:izithrift/features/seller/viewmodels/seller_product_form_view_mo
 /// Mock implementation of SellerChannelRepository for isolated unit and widget tests.
 class MockSellerChannelRepository extends SellerChannelRepository {
   MockSellerChannelRepository()
-      : super(
-          dioClient: DioClient(
-            tokenStorage: SecureTokenStorage(),
-            serverTimeService: ServerTimeService.instance,
-          ),
-        );
+    : super(
+        dioClient: DioClient(
+          tokenStorage: SecureTokenStorage(),
+          serverTimeService: ServerTimeService.instance,
+        ),
+      );
 
   SellerDashboardModel? stubDashboard;
   List<SellerProductItemModel> stubProducts = [];
@@ -84,7 +85,10 @@ class MockSellerChannelRepository extends SellerChannelRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> updateProductStatus(int productId, String newStatus) async {
+  Future<Map<String, dynamic>> updateProductStatus(
+    int productId,
+    String newStatus,
+  ) async {
     updateStatusCalled = true;
     lastUpdatedId = productId;
     lastUpdatedStatus = newStatus;
@@ -92,13 +96,18 @@ class MockSellerChannelRepository extends SellerChannelRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> relistAuctionProduct(int productId, Map<String, dynamic> scheduleData) async {
+  Future<Map<String, dynamic>> relistAuctionProduct(
+    int productId,
+    Map<String, dynamic> scheduleData,
+  ) async {
     relistCalled = true;
     return {'success': true};
   }
 
   @override
-  Future<SellerProductItemModel> createProduct(SellerProductFormPayload payload) async {
+  Future<SellerProductItemModel> createProduct(
+    SellerProductFormPayload payload,
+  ) async {
     createCalled = true;
     return SellerProductItemModel(
       id: 99,
@@ -136,7 +145,10 @@ class MockSellerChannelRepository extends SellerChannelRepository {
   }
 
   @override
-  Future<SellerWalletOverviewModel> fetchWalletLedger({int page = 1, int perPage = 15}) async {
+  Future<SellerWalletOverviewModel> fetchWalletLedger({
+    int page = 1,
+    int perPage = 15,
+  }) async {
     return stubWallet ??
         SellerWalletOverviewModel(
           walletBalance: 1250000.0,
@@ -220,7 +232,8 @@ void main() {
         'defect_info': 'Sờn nhẹ ở góc tay áo',
         'status': 'REJECTED',
         'available_quantity': 1,
-        'rejection_reason': 'Ảnh chụp chưa rõ nhãn mác thương hiệu và lỗi sờn ve áo.',
+        'rejection_reason':
+            'Ảnh chụp chưa rõ nhãn mác thương hiệu và lỗi sờn ve áo.',
         'can_relist': false,
       };
 
@@ -228,7 +241,10 @@ void main() {
       expect(rejectedItem.id, 12);
       expect(rejectedItem.status, 'REJECTED');
       expect(rejectedItem.condition, 'GOOD');
-      expect(rejectedItem.rejectionReason, contains('Ảnh chụp chưa rõ nhãn mác'));
+      expect(
+        rejectedItem.rejectionReason,
+        contains('Ảnh chụp chưa rõ nhãn mác'),
+      );
       expect(rejectedItem.canRelist, isFalse);
 
       final jsonAuctionEnded = {
@@ -314,6 +330,39 @@ void main() {
       );
       final error4 = validPayload.validate();
       expect(error4, isNull);
+    });
+
+    test('image validation enforces 8 multipart files and 10 total images', () {
+      const basePayload = SellerProductFormPayload(
+        title: 'Áo khoác da Bomber Vintage',
+        categoryId: 1,
+        price: 500000,
+        condition: 'GOOD',
+        defectInfo: 'Có vết xước nhỏ ở tay áo',
+      );
+      final tooManyFiles = SellerProductFormPayload(
+        title: basePayload.title,
+        categoryId: basePayload.categoryId,
+        price: basePayload.price,
+        condition: basePayload.condition,
+        defectInfo: basePayload.defectInfo,
+        imageFiles: List.generate(9, (index) => XFile('/tmp/image-$index.jpg')),
+      );
+      expect(tooManyFiles.validate(), contains('8 ảnh'));
+
+      final tooManyCombined = SellerProductFormPayload(
+        title: basePayload.title,
+        categoryId: basePayload.categoryId,
+        price: basePayload.price,
+        condition: basePayload.condition,
+        defectInfo: basePayload.defectInfo,
+        imageUrls: List.generate(
+          3,
+          (index) => 'https://example.com/$index.jpg',
+        ),
+        imageFiles: List.generate(8, (index) => XFile('/tmp/image-$index.jpg')),
+      );
+      expect(tooManyCombined.validate(), contains('10'));
     });
 
     test('WalletTransactionModel and SellerWalletOverviewModel parse immutable financial ledger records', () {
@@ -404,17 +453,20 @@ void main() {
       expect(vm.state.data!.first.status, 'HIDDEN');
     });
 
-    test('SellerListingsViewModel deleteDraft removes draft product from list', () async {
-      final vm = SellerListingsViewModel(repository: mockRepo);
-      await vm.loadProducts();
+    test(
+      'SellerListingsViewModel deleteDraft removes draft product from list',
+      () async {
+        final vm = SellerListingsViewModel(repository: mockRepo);
+        await vm.loadProducts();
 
-      expect(vm.state.data!.length, 2);
+        expect(vm.state.data!.length, 2);
 
-      final ok = await vm.deleteDraft(2);
-      expect(ok, isTrue);
-      expect(vm.state.data!.length, 1);
-      expect(vm.state.data!.any((p) => p.id == 2), isFalse);
-    });
+        final ok = await vm.deleteDraft(2);
+        expect(ok, isTrue);
+        expect(vm.state.data!.length, 1);
+        expect(vm.state.data!.any((p) => p.id == 2), isFalse);
+      },
+    );
 
     test('SellerProductFormViewModel clears rejection reason upon resubmitting (DEC-05)', () async {
       final rejectedProduct = const SellerProductItemModel(
@@ -460,169 +512,212 @@ void main() {
         overrides: [
           sellerChannelRepositoryProvider.overrideWithValue(mockRepo),
         ],
-        child: MaterialApp(
-          home: child,
-        ),
+        child: MaterialApp(home: child),
       );
     }
 
-    testWidgets('M-SL-01: SellerHubScreen displays wallet card, escrow held balance, action counters & CTA', (tester) async {
-      await tester.pumpWidget(createTestApp(const SellerHubScreen()));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'M-SL-01: SellerHubScreen displays wallet card, escrow held balance, action counters & CTA',
+      (tester) async {
+        await tester.pumpWidget(createTestApp(const SellerHubScreen()));
+        await tester.pumpAndSettle();
 
-      // Check Shop Title
-      expect(find.text('Kênh Người Bán'), findsOneWidget);
-      expect(find.text('Tiệm Đồ Si Vintage Hàng Tuyển'), findsOneWidget);
+        // Check Shop Title
+        expect(find.text('Kênh Người Bán'), findsOneWidget);
+        expect(find.text('Tiệm Đồ Si Vintage Hàng Tuyển'), findsOneWidget);
 
-      // Check Wallet Card & Escrow Held Balance
-      expect(find.text('Số dư ví Tiệm'), findsOneWidget);
-      expect(find.textContaining('1.250.000'), findsOneWidget);
-      expect(find.textContaining('450.000'), findsOneWidget);
-      expect(find.byKey(const Key('btn_open_wallet_ledger')), findsOneWidget);
+        // Check Wallet Card & Escrow Held Balance
+        expect(find.text('Số dư ví Tiệm'), findsOneWidget);
+        expect(find.textContaining('1.250.000'), findsOneWidget);
+        expect(find.textContaining('450.000'), findsOneWidget);
+        expect(find.byKey(const Key('btn_open_wallet_ledger')), findsOneWidget);
 
-      // Check CTA button
-      expect(find.byKey(const Key('btn_create_new_listing')), findsOneWidget);
+        // Check CTA button
+        expect(find.byKey(const Key('btn_create_new_listing')), findsOneWidget);
 
-      // Check Action Counters
-      expect(find.text('Chờ giao hàng'), findsOneWidget);
-      expect(find.text('Yêu cầu hủy'), findsOneWidget);
-      expect(find.text('Khiếu nại đang mở'), findsOneWidget);
-      expect(find.text('Bị từ chối kiểm duyệt'), findsOneWidget);
-    });
+        // Check Action Counters
+        expect(find.text('Chờ giao hàng'), findsOneWidget);
+        expect(find.text('Yêu cầu hủy'), findsOneWidget);
+        expect(find.text('Khiếu nại đang mở'), findsOneWidget);
+        expect(find.text('Bị từ chối kiểm duyệt'), findsOneWidget);
+      },
+    );
 
-    testWidgets('M-SL-02: SellerListingsScreen renders 7 tabs, condition badges, rejection actions, and relist buttons', (tester) async {
-      mockRepo.stubProducts = [
-        const SellerProductItemModel(
-          id: 10,
-          productCode: 'PRD-10',
-          title: 'Áo khoác da Moto Cafe Racer',
-          slug: 'ao-khoac-da-moto',
-          price: 1800000,
+    testWidgets(
+      'M-SL-02: SellerListingsScreen renders 7 tabs, condition badges, rejection actions, and relist buttons',
+      (tester) async {
+        mockRepo.stubProducts = [
+          const SellerProductItemModel(
+            id: 10,
+            productCode: 'PRD-10',
+            title: 'Áo khoác da Moto Cafe Racer',
+            slug: 'ao-khoac-da-moto',
+            price: 1800000,
+            listingType: 'FIXED_PRICE',
+            condition: 'LIKE_NEW',
+            defectInfo: 'Khóa kéo Talon cổ điển nguyên bản',
+            status: 'APPROVED',
+            availableQuantity: 1,
+          ),
+          const SellerProductItemModel(
+            id: 11,
+            productCode: 'PRD-11',
+            title: 'Mũ Beret dạ vintage Scotland',
+            slug: 'mu-beret-da-vintage',
+            price: 250000,
+            listingType: 'FIXED_PRICE',
+            condition: 'FAIR',
+            defectInfo: 'Vết ố nhẹ bên trong lót mũ',
+            status: 'REJECTED',
+            rejectionReason:
+                'Ảnh chụp mặt trong mũ bị mờ, vui lòng chụp lại rõ nét.',
+            availableQuantity: 1,
+          ),
+          const SellerProductItemModel(
+            id: 12,
+            productCode: 'PRD-12',
+            title: 'Bật lửa Zippo La Mã 1994',
+            slug: 'bat-lua-zippo-1994',
+            price: 500000,
+            listingType: 'AUCTION',
+            condition: 'VINTAGE_WORN',
+            defectInfo: 'Xước dăm theo thời gian',
+            status: 'AUCTION_ENDED',
+            canRelist: true,
+            availableQuantity: 1,
+          ),
+        ];
+
+        await tester.pumpWidget(createTestApp(const SellerListingsScreen()));
+        await tester.pumpAndSettle();
+
+        // Check 7 Tab Headers
+        expect(find.widgetWithText(Tab, 'Tất cả'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Chờ duyệt'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Đang bán'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Bị từ chối'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Đã bán'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Bản nháp'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Đã ẩn'), findsOneWidget);
+
+        // Check Context Buttons
+        // Product 10 (APPROVED): Has [Ẩn bài]
+        expect(
+          find.byKey(const Key('btn_toggle_visibility_10')),
+          findsOneWidget,
+        );
+
+        // Product 11 (REJECTED): Has [Xem lý do & Gửi duyệt lại]
+        expect(find.byKey(const Key('btn_resubmit_11')), findsOneWidget);
+        expect(
+          find.textContaining('Ảnh chụp mặt trong mũ bị mờ'),
+          findsOneWidget,
+        );
+
+        // Product 12 (canRelist): Has [Tái đăng đấu giá]
+        expect(find.byKey(const Key('btn_relist_12')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'M-SL-03: CreateListingScreen enforces BR-PR-01 (Auction notice) and BR-PR-03 (Mandatory defect info >= 5 chars)',
+      (tester) async {
+        await tester.pumpWidget(createTestApp(const CreateListingScreen()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Đăng bán sản phẩm mới'), findsOneWidget);
+        expect(find.text('🏷️ Bán giá cố định'), findsOneWidget);
+        expect(find.text('🔨 Đấu giá trực tiếp'), findsOneWidget);
+
+        // Switch to Auction Mode
+        await tester.tap(find.text('🔨 Đấu giá trực tiếp'));
+        await tester.pumpAndSettle();
+
+        // Enforces BR-PR-01 alert
+        expect(find.textContaining('BR-PR-01'), findsOneWidget);
+
+        // Try to submit with empty defect info
+        await tester.tap(find.byKey(const Key('btn_submit_for_review')));
+        await tester.pumpAndSettle();
+
+        // Form validation error appears
+        expect(find.textContaining('BR-PR-03'), findsOneWidget);
+        expect(find.text('Vui lòng chọn danh mục sản phẩm'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'M-SL-04: EditResubmitListingScreen displays DEC-05 rejection reason banner in Burgundy/Red',
+      (tester) async {
+        final rejectedProduct = const SellerProductItemModel(
+          id: 44,
+          productCode: 'PRD-REJ-44',
+          title: 'Áo sơ mi lụa họa tiết Baroque 80s',
+          slug: 'ao-so-mi-lua-baroque',
+          price: 320000,
           listingType: 'FIXED_PRICE',
-          condition: 'LIKE_NEW',
-          defectInfo: 'Khóa kéo Talon cổ điển nguyên bản',
-          status: 'APPROVED',
-          availableQuantity: 1,
-        ),
-        const SellerProductItemModel(
-          id: 11,
-          productCode: 'PRD-11',
-          title: 'Mũ Beret dạ vintage Scotland',
-          slug: 'mu-beret-da-vintage',
-          price: 250000,
-          listingType: 'FIXED_PRICE',
-          condition: 'FAIR',
-          defectInfo: 'Vết ố nhẹ bên trong lót mũ',
+          condition: 'GOOD',
+          defectInfo: 'Sứt chỉ gấu áo một đoạn 2cm',
           status: 'REJECTED',
-          rejectionReason: 'Ảnh chụp mặt trong mũ bị mờ, vui lòng chụp lại rõ nét.',
-          availableQuantity: 1,
-        ),
-        const SellerProductItemModel(
-          id: 12,
-          productCode: 'PRD-12',
-          title: 'Bật lửa Zippo La Mã 1994',
-          slug: 'bat-lua-zippo-1994',
-          price: 500000,
-          listingType: 'AUCTION',
-          condition: 'VINTAGE_WORN',
-          defectInfo: 'Xước dăm theo thời gian',
-          status: 'AUCTION_ENDED',
-          canRelist: true,
-          availableQuantity: 1,
-        ),
-      ];
+          rejectionReason: 'Thiếu ảnh cận cảnh nhãn chất liệu lụa tơ tằm theo quy định hàng hiệu si.',
+        );
 
-      await tester.pumpWidget(createTestApp(const SellerListingsScreen()));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestApp(
+            EditResubmitListingScreen(
+              productId: 44,
+              initialProduct: rejectedProduct,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Check 7 Tab Headers
-      expect(find.widgetWithText(Tab, 'Tất cả'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Chờ duyệt'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Đang bán'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Bị từ chối'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Đã bán'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Bản nháp'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Đã ẩn'), findsOneWidget);
+        // Check DEC-05 Rejection Reason Banner
+        expect(
+          find.byKey(const Key('banner_rejection_reason')),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Thiếu ảnh cận cảnh nhãn chất liệu lụa'),
+          findsOneWidget,
+        );
 
-      // Check Context Buttons
-      // Product 10 (APPROVED): Has [Ẩn bài]
-      expect(find.byKey(const Key('btn_toggle_visibility_10')), findsOneWidget);
+        // Check [Gửi duyệt lại (Resubmit)] button
+        expect(find.byKey(const Key('btn_resubmit_action')), findsOneWidget);
+        expect(find.text('Gửi duyệt lại (Resubmit)'), findsOneWidget);
+      },
+    );
 
-      // Product 11 (REJECTED): Has [Xem lý do & Gửi duyệt lại]
-      expect(find.byKey(const Key('btn_resubmit_11')), findsOneWidget);
-      expect(find.textContaining('Ảnh chụp mặt trong mũ bị mờ'), findsOneWidget);
+    testWidgets(
+      'M-SL-08: SellerWalletLedgerScreen displays immutable append-only ledger notice and transaction history',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestApp(const SellerWalletLedgerScreen()),
+        );
+        await tester.pumpAndSettle();
 
-      // Product 12 (canRelist): Has [Tái đăng đấu giá]
-      expect(find.byKey(const Key('btn_relist_12')), findsOneWidget);
-    });
+        expect(find.text('Sổ Cái Ví & Giao Dịch'), findsOneWidget);
+        expect(
+          find.textContaining('Sổ cái tài chính bất biến (Append-Only Ledger)'),
+          findsOneWidget,
+        );
 
-    testWidgets('M-SL-03: CreateListingScreen enforces BR-PR-01 (Auction notice) and BR-PR-03 (Mandatory defect info >= 5 chars)', (tester) async {
-      await tester.pumpWidget(createTestApp(const CreateListingScreen()));
-      await tester.pumpAndSettle();
+        // Balances
+        expect(find.textContaining('1.250.000'), findsAtLeast(1));
+        expect(find.textContaining('450.000'), findsOneWidget);
 
-      expect(find.text('Đăng bán sản phẩm mới'), findsOneWidget);
-      expect(find.text('🏷️ Bán giá cố định'), findsOneWidget);
-      expect(find.text('🔨 Đấu giá trực tiếp'), findsOneWidget);
-
-      // Switch to Auction Mode
-      await tester.tap(find.text('🔨 Đấu giá trực tiếp'));
-      await tester.pumpAndSettle();
-
-      // Enforces BR-PR-01 alert
-      expect(find.textContaining('BR-PR-01'), findsOneWidget);
-
-      // Try to submit with empty defect info
-      await tester.tap(find.byKey(const Key('btn_submit_for_review')));
-      await tester.pumpAndSettle();
-
-      // Form validation error appears
-      expect(find.textContaining('BR-PR-03'), findsOneWidget);
-    });
-
-    testWidgets('M-SL-04: EditResubmitListingScreen displays DEC-05 rejection reason banner in Burgundy/Red', (tester) async {
-      final rejectedProduct = const SellerProductItemModel(
-        id: 44,
-        productCode: 'PRD-REJ-44',
-        title: 'Áo sơ mi lụa họa tiết Baroque 80s',
-        slug: 'ao-so-mi-lua-baroque',
-        price: 320000,
-        listingType: 'FIXED_PRICE',
-        condition: 'GOOD',
-        defectInfo: 'Sứt chỉ gấu áo một đoạn 2cm',
-        status: 'REJECTED',
-        rejectionReason: 'Thiếu ảnh cận cảnh nhãn chất liệu lụa tơ tằm theo quy định hàng hiệu si.',
-      );
-
-      await tester.pumpWidget(createTestApp(
-        EditResubmitListingScreen(productId: 44, initialProduct: rejectedProduct),
-      ));
-      await tester.pumpAndSettle();
-
-      // Check DEC-05 Rejection Reason Banner
-      expect(find.byKey(const Key('banner_rejection_reason')), findsOneWidget);
-      expect(find.textContaining('Thiếu ảnh cận cảnh nhãn chất liệu lụa'), findsOneWidget);
-
-      // Check [Gửi duyệt lại (Resubmit)] button
-      expect(find.byKey(const Key('btn_resubmit_action')), findsOneWidget);
-      expect(find.text('Gửi duyệt lại (Resubmit)'), findsOneWidget);
-    });
-
-    testWidgets('M-SL-08: SellerWalletLedgerScreen displays immutable append-only ledger notice and transaction history', (tester) async {
-      await tester.pumpWidget(createTestApp(const SellerWalletLedgerScreen()));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Sổ Cái Ví & Giao Dịch'), findsOneWidget);
-      expect(find.textContaining('Sổ cái tài chính bất biến (Append-Only Ledger)'), findsOneWidget);
-
-      // Balances
-      expect(find.textContaining('1.250.000'), findsAtLeast(1));
-      expect(find.textContaining('450.000'), findsOneWidget);
-
-      // Transactions
-      expect(find.textContaining('WTX-20261115-001'), findsOneWidget);
-      expect(find.text('Giải ngân ký quỹ đơn hàng #ORD-8821'), findsOneWidget);
-      expect(find.textContaining('WTX-20261114-002'), findsOneWidget);
-      expect(find.text('Phí kiểm duyệt bảo chứng sản phẩm vintage'), findsOneWidget);
-    });
+        // Transactions
+        expect(find.textContaining('WTX-20261115-001'), findsOneWidget);
+        expect(
+          find.text('Giải ngân ký quỹ đơn hàng #ORD-8821'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('WTX-20261114-002'), findsOneWidget);
+        expect(
+          find.text('Phí kiểm duyệt bảo chứng sản phẩm vintage'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

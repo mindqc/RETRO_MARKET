@@ -550,3 +550,394 @@ Toàn bộ tài liệu Phase 01 (`PA-01`..`PA-10`), Phase 02 (`P2-01`..`P2-08`),
 - **Phase 10 Backlog:** Ghi nhận 8 API routes cần Direct HTTP test và Negative tests cho Product Condition (HTTP 422) vào Phase 10 (Testing & QA). Ưu tiên các endpoint đơn hàng, khiếu nại và seller.
 - **Handoff Status:** Phase 07 `DONE / APPROVED (OFFICIAL PO SIGN-OFF)`. Phase 08 `READY FOR DISCOVERY`.
 - **Admin Tech Guidelines:** Admin Web sử dụng Session-based `web` guard với `SESSION_DRIVER=redis` (Redis 7.4), bảo toàn 34 bảng nghiệp vụ PostgreSQL 18 theo `TECH-05`.
+
+
+---
+
+## TASK P8-01 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-01: Admin Foundation, Master Shell, Web Session Auth, Redis 7.4 Runtime Verification & 3-Tier RBAC`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P801-01 (Canonical 21-Screen Master Inventory):** Authored `docs/08_ADMIN_DEVELOPMENT/PHASE_08_IMPLEMENTATION_PLAN.md` mapping all 21 canonical Admin screens across 6 Work Packages (`P8-01`..`P8-06`), actors, route names, 61 granular permissions, and source references.
+- **AC-P801-02 (Web Session Auth & Shell):** Created `EnsureAdminAuthenticated` middleware, `AdminAuthController` (`showLoginForm`, `login`, `logout`), and login view `A-AU-01` (`/admin/login`). Enforces session regeneration on login, generic error messaging preventing user enumeration, and open redirect protection strictly bounding redirects within `/admin/*`.
+- **AC-P801-03 (Redis 7.4 Runtime Verification):** Validated live container `retromarket_redis7` (Redis 7.4-alpine on port 6379). Implemented `P801_RedisSessionRuntimeTest.php` verifying connection ping, session storage, key prefixing, TTL, and key deletion without executing `FLUSHDB` or `FLUSHALL`.
+- **AC-P801-04 (Brute-force Throttling):** Enforced 5 login attempts per minute per `email|ip` via Laravel RateLimiter. Verified 6th attempt triggers 429/validation throttle error with decay seconds, and successful login clears rate limit.
+- **AC-P801-05 (3-Tier RBAC & Default Deny):** Created `AdminPermission` helper and `EnsureAdminPermission` middleware. Enforced Default Deny:
+  - Admin: Full system access across all screens.
+  - Moderator: Catalog, Products, Categories, Reports, Reviews, Auctions. Blocked from Orders/Escrow & Settings (403).
+  - Support: Orders, Escrow, Disputes, Reports. Blocked from Product Moderation & Settings (403).
+  - Registered User: Strictly denied from all admin routes (403), terminating session immediately.
+  - Mid-Session Suspension Revocation: External status change (`ACTIVE` -> `SUSPENDED`) immediately invalidates active web session on next request.
+- **AC-P801-06 (Immutable Audit Logging):** `ADMIN_LOGIN` and `ADMIN_LOGOUT` events logged via `AuditLog::create()` with zero sensitive data (`password`, `password_hash`, `_token`, session IDs excluded). Verified immutability via `ImmutableLedgerRecord` trait (`update()` and `delete()` blocked with `LogicException`).
+- **AC-P801-07 (CSRF Protection):** Verified CSRF enforcement with HTTP 419 (Page Expired) on missing/invalid token.
+- **AC-P801-08 (Sanctum Token Isolation):** Verified Web Admin session login/logout does not create, touch, or delete Mobile API personal access tokens in `personal_access_tokens`.
+
+### 2. UI & Frontend Asset Compilation
+- **Tailwind CSS v4 Design Tokens:** Configured Warm Editorial Archive palette (`#FBF8F3`, `#C85A32`, `#2D5A3C`, `#D4AF37`, `Fraunces`, `Be Vietnam Pro`, `tabular-nums`).
+- **Vite Build:** `cd backend; npm run build` compiled assets in 150ms with 0 errors.
+- **Screens Delivered:**
+  - `A-AU-01`: Admin Staff Login (`resources/views/admin/auth/login.blade.php`).
+  - `A-DB-01`: Executive Operational Dashboard (`resources/views/admin/dashboard.blade.php`) with role-scoped metrics for Admin, Moderator, and Support.
+  - Master Shell Layout: `resources/views/layouts/admin.blade.php` and role-aware partials (`topbar`, `sidebar`, `alerts`, `errors`).
+
+### 3. Automated Test Verification Results
+- **Backend P8-01 Feature Test Suite (`backend/tests/Feature/Admin/`):** **26/26 PASS** (112 assertions, 0 failures, 2.7s):
+  - `P801_AdminAuthAndSessionTest`: 10/10 PASS
+  - `P801_AdminRbacAndDefaultDenyTest`: 12/12 PASS
+  - `P801_AdminAuditLogInvarianceTest`: 1/1 PASS
+  - `P801_RedisSessionRuntimeTest`: 3/3 PASS
+- **PostgreSQL 18 Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative integrity scenarios PASS**.
+- **Full Backend Regression:** `php artisan test` -> **114/114 PASS** (1,157 assertions, 0 failures across all API and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS** (100% across all 12 mobile test suites).
+
+
+---
+
+## TASK P8-02 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-02: Taxonomy, Products & Moderation Queue`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P802-01 (Moderation Queue & Split-Pane Evidence Detail):**
+  - Delivered `A-MD-01` (`/admin/moderation/products`): Hàng đợi `PENDING_REVIEW` với đầy đủ bộ lọc tìm kiếm, loại hình bán (`FIXED_PRICE`/`AUCTION`), đủ 5 mức `ProductCondition` (`NEW_WITH_TAGS`, `LIKE_NEW`, `GOOD`, `FAIR`, `VINTAGE_WORN` – `BR-PR-03`), danh mục, thương hiệu, và phân trang.
+  - Delivered `A-MD-02` (`/admin/moderation/products/{id}`): Giao diện **Split-Pane Evidence Review** và **Inspection-Slip Motif** hiển thị thư viện ảnh, thông tin người bán, huy hiệu 5 mức độ mới, phiếu mô tả khuyết điểm (`defect_info` >= 5 ký tự) và nhật ký thẩm định bất biến.
+- **AC-P802-02 (Approve & Reject Rules DEC-05):**
+  - Tái sử dụng `ProductModerationService::approveProduct()` cập nhật trạng thái `APPROVED`, gán `verification_level`, ghi log vào `product_moderation_logs` và `audit_logs`, gửi thông báo đến Seller.
+  - Tái sử dụng `ProductModerationService::rejectOrHideProduct()` bắt buộc nhập `reason` (>= 5 ký tự theo `DEC-05` và `BR-PR-04`), chuyển sang `REJECTED`, lưu lý do để hiển thị trên màn hình di động `M-SL-04` giúp Seller sửa bài.
+- **AC-P802-03 (Master Inventory A-PR-01):**
+  - Delivered `A-PR-01` (`/admin/products`): Quản lý kho hàng toàn diện qua 7 trạng thái (`DRAFT`, `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `SOLD`, `HIDDEN`, `ARCHIVED`).
+  - Hỗ trợ cưỡng chế tạm ẩn (`HIDDEN`) bài đăng vi phạm và khôi phục hiển thị (`APPROVED`) kèm lý do và ghi `audit_logs`.
+- **AC-P802-04 (Catalog Taxonomy CRUD DEC-08-02):**
+  - Mở rộng `CatalogTaxonomyService`: CRUD Category và Brand có kiểm soát trong `DB::transaction()`.
+  - Chống trùng `slug`, chặn vòng lặp phả hệ cha-con (Circular Hierarchy Guard: không cho phép danh mục làm cha của chính nó hoặc của danh mục con cháu).
+  - Chặn xóa danh mục/thương hiệu đang có sản phẩm liên kết (`ValidationException`).
+  - Đồng bộ thời gian thực với Mobile API `/api/v1/catalog/taxonomy` và ghi `audit_logs`.
+- **AC-P802-05 (RBAC & Append-Only Protection):**
+  - Moderator & Admin được phép truy cập `A-MD-01`, `A-MD-02`, `A-PR-01`, `A-CT-01` (xem).
+  - Moderator bị chặn `403` khi cố gắng thực hiện các thao tác thêm/sửa/xóa danh mục hoặc thương hiệu (`categories.manage` là quyền của riêng Admin).
+  - Support & Registered User bị chặn `403` trên toàn bộ các route kiểm duyệt và danh mục.
+  - `ProductModerationLog` được bảo vệ bằng `ImmutableLedgerRecord`: ném `LogicException` khi gọi `update()` hoặc `delete()`.
+
+### 2. UI & Frontend Asset Compilation
+- **Vite Build:** `cd backend; npm run build` biên dịch 68.53 kB CSS trong 239ms với 0 lỗi.
+- **Master Sidebar:** Bổ sung liên kết trực tiếp tới "Hàng đợi Kiểm duyệt", "Quản lý Sản phẩm", và "Phân loại & Danh mục".
+
+### 3. Automated Test Verification Results
+- **Backend P8-02 Feature Test Suite (`backend/tests/Feature/Admin/P802_TaxonomyProductsAndModerationTest.php`):** **9/9 PASS (100%)** (75 assertions, 0.98s).
+- **Backend Admin Tests (`P801_` + `P802_`):** **35/35 PASS (100%)** (187 assertions).
+- **PostgreSQL 18 DB Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative scenarios PASS**.
+- **Full Backend Regression:** `php artisan test` -> **123/123 PASS (100%)** (1,232 assertions, 0 failures across all API and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS (100%)** across all 12 mobile test suites.
+
+---
+
+## TASK P8-04 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-04: Immutable Escrow Ledger, Dispute Workbench DEC-07 & Violation Reports`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P804-01 (`A-ES-01` Escrow Overview & Immutable Ledger Explorer):**
+  - Delivered `A-ES-01` (`/admin/escrow`): Giao diện tra cứu sổ cái bất biến (Immutable Ledger Explorer) dành riêng cho Supreme Admin (`escrow.view`).
+  - **Bảng Đối soát Cân bằng Tài chính Sổ cái (Zero Ledger Drift Audit Panel):**
+    - Kiểm tra thời gian thực giữa tổng tiền hàng đang giữ trong các đơn hàng `escrow_status = HELD` (`Order::where('escrow_status', 'HELD')->sum('item_subtotal')`) và tổng số dư Escrow tạm giữ trên hồ sơ Người bán (`SellerProfile::sum('escrow_held_balance')`).
+    - Hiển thị huy hiệu xanh `✓ ZERO LEDGER DRIFT [PASS]` khi độ lệch đối soát = 0 đ (xác nhận 0.00 đ).
+  - **Tab 1: Sổ cái Ký quỹ (Escrow Transactions):** Hiển thị chi tiết giao dịch ký quỹ bất biến (`transaction_code`, liên kết đơn hàng `#ORD-...`, người mua, người bán, loại giao dịch `HOLD` / `RELEASE` / `FULL_REFUND` / `PARTIAL_REFUND`, tổng tiền ký quỹ, tiền hàng giải ngân người bán, tiền hoàn người mua, phí bảo vệ sàn giữ lại, thời gian và ghi chú).
+  - **Tab 2: Biến động Ví Người bán (Wallet Transactions):** Hiển thị chi tiết các bút toán tăng/giảm ví (`wallet_tx_code`, tên shop, mã đơn hàng, loại bút toán `CREDIT` / `DEBIT`, số tiền, số dư trước, số dư sau, diễn giải và thời gian).
+  - Tìm kiếm đa trường theo mã giao dịch ví, mã giao dịch ký quỹ, mã đơn hàng, tên/email người mua và người bán.
+  - Phân quyền: Moderator và Support bị chặn `403 Forbidden` khi cố truy cập `/admin/escrow`.
+- **AC-P804-02 (`A-DP-01` Dispute Management Queue):**
+  - Delivered `A-DP-01` (`/admin/disputes`): Hàng đợi xử lý tranh chấp khiếu nại dành cho Support Staff và Supreme Admin (`disputes.view`).
+  - 5 thẻ thống kê động: Tổng số khiếu nại, Đang mở (`OPEN`), Chờ bổ sung bằng chứng (`NEED_MORE_INFO`), Đã phân xử xong (`RESOLVED`), và Tổng tiền Escrow đang bị đóng băng (`frozen_amount`).
+  - Bộ lọc độc lập theo trạng thái khiếu nại (`status`), nhóm lý do vi phạm (`reason_category`), và tìm kiếm theo mã khiếu nại, mã đơn hàng, người mua, người bán.
+  - Phân quyền: Moderator bị chặn `403 Forbidden`.
+- **AC-P804-03 (`A-DP-02` Dispute Detail & 2-Way Evidence Workbench):**
+  - Delivered `A-DP-02` (`/admin/disputes/{id}`): Bàn làm việc phân xử tranh chấp đối chứng 2 chiều:
+    - **Banner Cảnh báo Đóng băng Ký quỹ (`BR-DP-02`):** Hiển thị số tiền ký quỹ đang bị đóng băng và tiến trình tự động giải ngân bị khóa.
+    - **Bảng điều khiển 4 Máy Trạng thái:** `order_status`, `payment_status`, `escrow_status`, `dispute_status`.
+    - **Snapshot Đơn hàng & Sản phẩm:** Giữ nguyên dữ liệu đóng băng tại thời điểm đặt hàng.
+    - **Dòng thời gian Bằng chứng Đối chứng 2 chiều:** Hiển thị bằng chứng của người mua (`BUYER_PROOF`), phản hồi đối chứng của người bán (`SELLER_COUNTER_PROOF`), và yêu cầu của nhân viên sàn (`STAFF_REQUEST_NOTE`) kèm liên kết tập tin đính kèm.
+    - **Yêu cầu Bổ sung Bằng chứng:** Support Staff và Admin có thể gửi ghi chú yêu cầu bổ sung chứng cứ (`POST /admin/disputes/{id}/request-info`), chuyển trạng thái khiếu nại sang `NEED_MORE_INFO` và tạo bản ghi bằng chứng loại `STAFF_REQUEST_NOTE`.
+- **AC-P804-04 (Tách biệt Thẩm quyền DEC-08-03 / P6-02 & Phán quyết Tài chính DEC-07 / BR-FN-06):**
+  - **Tách biệt Thẩm quyền (Separation of Duties):** Support Staff và Moderator tuyệt đối KHÔNG có thẩm quyền ra phán quyết tài chính. Thao tác `POST /admin/disputes/{id}/verdict` từ vai trò Support hoặc Moderator bị chặn cứng bằng **HTTP 403 Forbidden**. Giao diện `A-DP-02` hiển thị thông báo nghiệp vụ rõ ràng khi người dùng không phải Supreme Admin.
+  - **Thực thi Phán quyết Tài chính (Supreme Admin):**
+    1. `APPROVE_BUYER_REFUND` (`DEC-07` / `BR-FN-06`): Hủy đơn hàng, hoàn trả 100% tiền thanh toán, tạo bản ghi `FULL_REFUND` trong `escrow_transactions`, giảm `escrow_held_balance` của người bán, tăng `dispute_lost_count` của người bán, ghi nhật ký `AuditLog` bất biến.
+    2. `RELEASE_TO_SELLER` (`DEC-04` / `BR-FN-07`): Hoàn tất đơn hàng, giải ngân ký quỹ, cộng tiền ví người bán qua `WalletTransaction` (`CREDIT`), tạo bản ghi `RELEASE` trong `escrow_transactions`, ghi nhật ký `AuditLog` bất biến.
+    3. `PARTIAL_REFUND`: Phân chia hoàn tiền người mua và giải ngân người bán theo thỏa thuận.
+- **AC-P804-05 (`A-CM-01` Violation / Moderation Reports Management):**
+  - Delivered `A-CM-01` (`/admin/moderation/reports`): Quản lý báo cáo sai phạm từ cộng đồng dành cho Admin, Moderator và Support Staff (`reports.view`, `reports.resolve`).
+  - 4 thẻ thống kê: Tổng số báo cáo, Đang chờ xử lý (`PENDING`), Đã xử phạt (`RESOLVED_ACTION_TAKEN`), Đã bác bỏ (`DISMISSED`).
+  - Bộ lọc theo trạng thái, đối tượng vi phạm (`PRODUCT`, `USER`, `CONVERSATION`), lý do vi phạm (`reason_category`), và tìm kiếm.
+  - Bảng báo cáo hiển thị người báo cáo, đối tượng vi phạm (kèm liên kết đến màn hình chi tiết kiểm duyệt sản phẩm `admin.moderation.products.show`), lý do, nội dung, người xử lý, ghi chú phân xử.
+  - **Modal Xử lý Báo cáo:** Nhân viên lựa chọn quyết định (`RESOLVED_ACTION_TAKEN` hoặc `DISMISSED`) và bắt buộc nhập ghi chú xử lý (tối thiểu 5 ký tự, tối đa 1000 ký tự).
+  - Tích hợp `ViolationReportService::resolveReport()`: Cập nhật trạng thái báo cáo, ghi nhận người xử lý (`handled_by`), thời điểm (`handled_at`), và ghi nhật ký `AuditLog` bất biến với action `REPORT_RESOLVED`. Chặn tuyệt đối việc xử lý lại báo cáo đã đóng.
+- **AC-P804-06 (Bảo vệ Tính Bất biến Sổ cái Append-Only):**
+  - Toàn bộ các model `EscrowTransaction`, `WalletTransaction`, và `AuditLog` được bảo vệ bằng trait `ImmutableLedgerRecord`.
+  - Mọi thao tác gọi `update()` hoặc `delete()` đều ném ngoại lệ `LogicException` ('Immutable ledger/audit record cannot be updated or deleted').
+
+### 2. UI & Frontend Asset Compilation
+- **Vite Build:** `cd backend; npm run build` biên dịch 73.28 kB CSS trong 193ms với 0 lỗi.
+- **Master Sidebar:** Bổ sung liên kết "Báo cáo Vi phạm" (`admin.moderation.reports.index`), "Sổ cái Ký quỹ (Escrow)" (`admin.escrow.index`), và cập nhật "Tranh chấp & Khiếu nại" (`admin.disputes.index`). Footer hiển thị `Retro Market Admin v1.0 • P8-04`.
+
+### 3. Automated Test Verification Results
+- **Backend P8-04 Feature Test Suite (`backend/tests/Feature/Admin/P804_EscrowDisputesAndReportsTest.php`):** **15/15 PASS (100%)** (77 assertions, 1.33s).
+- **Backend Admin Tests (`P801_` + `P802_` + `P803_` + `P804_`):** **65/65 PASS (100%)** (425 assertions, 0 errors, 0 failures, 6.56s).
+- **PostgreSQL 18 DB Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative scenarios PASS (100%)**.
+- **Full Backend Regression:** `php artisan test` -> **147/147 PASS (100%)** (1,394 assertions, 0 failures across all API, Foundation, and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS (100%)** across all 12 mobile test suites.
+
+---
+
+## TASK P8-03 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-03: Auctions Monitor, 4-State Orders Inspector & Payments Management`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P803-01 (`A-AC-01`, `A-AC-02`, `A-AC-03` Auctions Monitor & Ticket-Stub Motif):**
+  - Delivered `A-AC-01` & `A-AC-03` (`/admin/auctions`): Quản lý các phiên đấu giá trực tiếp, sắp diễn ra, lịch sử đã đóng, và lọc người thắng bỏ cọc (`WINNER_DEFAULTED`). Thống kê số lượng phiên theo trạng thái, tìm kiếm đa trường và phân trang.
+  - Delivered `A-AC-02` (`/admin/auctions/{id}`): Giao diện **Ticket-Stub Motif** (`IZITHRIFT OFFICIAL AUCTION VOUCHER`, viền perforated edge nét đứt, lot voucher header). Hiển thị chi tiết giá khởi điểm, bước giá tối thiểu, giá sàn reserve (và cờ báo đã đạt sàn hay chưa), giá cao nhất hiện tại, thông tin leading bidder.
+  - **Cơ chế Chống Bắn Tỉa Anti-Sniping (`BR-AU-04`):** Hiển thị `extended_count` (+2 phút mỗi lần bid trong 2 phút cuối) và thời điểm gia hạn gần nhất.
+  - **Hạn Thanh toán Người thắng 30 phút (`BR-AU-07` / `DEC-02`):** Hiển thị cảnh báo và trạng thái đơn hàng khi người thắng bỏ cọc.
+  - **Nhật ký Đặt giá Bất biến (Immutable Bid Trail):** Hiển thị toàn bộ lịch sử bid (`auction_bids`), thời gian, người đặt giá, mức giá, cờ kích hoạt anti-sniping.
+  - **Can thiệp Hành chính (Cancel Auction):** Moderator/Admin có quyền hủy phiên (`POST /admin/auctions/{id}/cancel` gọi `AuctionLifecycleService::cancelAuctionByAdmin()`), bắt buộc nhập lý do (>= 5 ký tự), hoàn trả sản phẩm về `APPROVED`, ghi nhật ký kiểm toán bất biến `AUCTION_CANCELLED` và gửi thông báo cho người bán.
+- **AC-P803-02 (`A-OR-01`, `A-OR-02` Orders Management & 360° Inspector):**
+  - Delivered `A-OR-01` (`/admin/orders`): Hiển thị và lọc độc lập theo **4 Máy Trạng thái Độc lập** (`order_status`, `payment_status`, `escrow_status`, `dispute_status`). Tìm kiếm theo mã đơn, người mua, người bán.
+  - Delivered `A-OR-02` (`/admin/orders/{id}`): Bảng điều khiển soi 360° đơn hàng:
+    - Hồ sơ 360° Khách mua và Người bán (kèm số dư Escrow đang giữ của shop).
+    - Snapshot địa chỉ giao hàng của người mua.
+    - Bảng sản phẩm đóng băng bất biến (`order_items` snapshots: tiêu đề, mã sp, tình trạng, thông tin lỗi, đơn giá, số lượng, thành tiền).
+    - Tiến trình vận chuyển (`Shipment`: đơn vị vận chuyển, mã vận đơn, ghi chú, mốc thời gian giao hàng).
+    - Trạng thái hủy đơn 3 cấp độ (`DEC-06` / `DEC-07`).
+- **AC-P803-03 (Minh bạch Tài chính & Biểu phí DEC-04):**
+  - Màn hình `A-OR-02` hiển thị chính xác công thức toán tài chính server-calculated theo `DEC-04`:
+    - `item_subtotal`: Tiền hàng
+    - `shipping_fee`: 0 đ
+    - `buyer_protection_fee`: `(item_subtotal * 6%) + 7.000 đ`
+    - `total_amount`: Tổng tiền người mua trả (`item_subtotal + buyer_protection_fee`)
+    - `seller_net_amount`: 100% tiền hàng (0% chiết khấu người bán)
+    - Định dạng số monospace `tabular-nums font-mono`.
+- **AC-P803-04 (`A-PM-01` Payment Management):**
+  - Delivered `A-PM-01` (`/admin/payments`): Giám sát các phiên thanh toán Mock QR (`payments`), mã tham chiếu `payment_reference`, liên kết đơn hàng `#ORD-...`, người nộp, số tiền, nội dung chuyển khoản chuẩn hóa `qr_payload`, trạng thái (`PENDING`, `PAID`, `EXPIRED`, `FAILED`), hạn QR và thời điểm khớp lệnh.
+- **AC-P803-05 (RBAC Matrix & Immutable Ledger Protection):**
+  - Admin: Toàn quyền truy cập cả 6 màn hình.
+  - Moderator: Truy cập Đấu giá (`A-AC-01..03`), bị chặn `403` tuyệt đối tại Đơn hàng (`A-OR-01..02`) và Thanh toán (`A-PM-01`).
+  - Support: Truy cập Đơn hàng (`A-OR-01..02`), bị chặn `403` tuyệt đối tại Đấu giá (`A-AC-01..03`) và Thanh toán (`A-PM-01`).
+  - Registered User: Bị chặn `403` trên toàn bộ các route admin.
+  - Bảo vệ Immutability: Mọi lệnh gọi `update()` hoặc `delete()` trên `AuctionBid` và `OrderItem` đều kích hoạt trait `ImmutableLedgerRecord` và ném `LogicException`.
+
+### 2. UI & Frontend Asset Compilation
+- **Vite Build:** `cd backend; npm run build` biên dịch 71.90 kB CSS trong 189ms với 0 lỗi.
+- **Master Sidebar:** Cập nhật liên kết theo vai trò cho "Quản lý Đấu giá", "Đơn hàng & Escrow", và "Giao dịch Thanh toán" (Footer hiển thị `Retro Market Admin v1.0 • P8-03`).
+
+### 3. Automated Test Verification Results
+- **Backend P8-03 Feature Test Suite (`backend/tests/Feature/Admin/P803_AuctionsOrdersAndPaymentsTest.php`):** **9/9 PASS (100%)** (91 assertions, 2.16s).
+- **Backend Admin Tests (`P801_` + `P802_` + `P803_`):** **50/50 PASS (100%)** (348 assertions, 0 errors, 0 failures).
+- **PostgreSQL 18 DB Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative scenarios PASS (100%)**.
+- **Full Backend Regression:** `php artisan test` -> **132/132 PASS (100%)** (1,319 assertions, 0 failures across all API, Foundation, and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS (100%)** across all 12 mobile test suites.
+
+---
+
+## TASK P8-04 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-04: Immutable Escrow Ledger, Dispute Workbench DEC-07 & Violation Reports`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P804-01 (`A-ES-01` Escrow Overview & Immutable Ledger Explorer):**
+  - Delivered `A-ES-01` (`/admin/escrow`): Giao diện tra cứu sổ cái bất biến (Immutable Ledger Explorer) dành riêng cho Supreme Admin (`escrow.view`).
+  - **Bảng Đối soát Cân bằng Tài chính Sổ cái (Zero Ledger Drift Audit Panel):**
+    - Kiểm tra thời gian thực giữa tổng tiền hàng đang giữ trong các đơn hàng `escrow_status = HELD` (`Order::where('escrow_status', 'HELD')->sum('item_subtotal')`) và tổng số dư Escrow tạm giữ trên hồ sơ Người bán (`SellerProfile::sum('escrow_held_balance')`).
+    - Hiển thị huy hiệu xanh `✓ ZERO LEDGER DRIFT [PASS]` khi độ lệch đối soát = 0 đ (xác nhận 0.00 đ).
+  - **Tab 1: Sổ cái Ký quỹ (Escrow Transactions):** Hiển thị chi tiết giao dịch ký quỹ bất biến (`transaction_code`, liên kết đơn hàng `#ORD-...`, người mua, người bán, loại giao dịch `HOLD` / `RELEASE` / `FULL_REFUND` / `PARTIAL_REFUND`, tổng tiền ký quỹ, tiền hàng giải ngân người bán, tiền hoàn người mua, phí bảo vệ sàn giữ lại, thời gian và ghi chú).
+  - **Tab 2: Biến động Ví Người bán (Wallet Transactions):** Hiển thị chi tiết các bút toán tăng/giảm ví (`wallet_tx_code`, tên shop, mã đơn hàng, loại bút toán `CREDIT` / `DEBIT`, số tiền, số dư trước, số dư sau, diễn giải và thời gian).
+  - Tìm kiếm đa trường theo mã giao dịch ví, mã giao dịch ký quỹ, mã đơn hàng, tên/email người mua và người bán.
+  - Phân quyền: Moderator và Support bị chặn `403 Forbidden` khi cố truy cập `/admin/escrow`.
+- **AC-P804-02 (`A-DP-01` Dispute Management Queue):**
+  - Delivered `A-DP-01` (`/admin/disputes`): Hàng đợi xử lý tranh chấp khiếu nại dành cho Support Staff và Supreme Admin (`disputes.view`).
+  - 5 thẻ thống kê động: Tổng số khiếu nại, Đang mở (`OPEN`), Chờ bổ sung bằng chứng (`NEED_MORE_INFO`), Đã phân xử xong (`RESOLVED`), và Tổng tiền Escrow đang bị đóng băng (`frozen_amount`).
+  - Bộ lọc độc lập theo trạng thái khiếu nại (`status`), nhóm lý do vi phạm (`reason_category`), và tìm kiếm theo mã khiếu nại, mã đơn hàng, người mua, người bán.
+  - Phân quyền: Moderator bị chặn `403 Forbidden`.
+- **AC-P804-03 (`A-DP-02` Dispute Detail & 2-Way Evidence Workbench):**
+  - Delivered `A-DP-02` (`/admin/disputes/{id}`): Bàn làm việc phân xử tranh chấp đối chứng 2 chiều:
+    - **Banner Cảnh báo Đóng băng Ký quỹ (`BR-DP-02`):** Hiển thị số tiền ký quỹ đang bị đóng băng và tiến trình tự động giải ngân bị khóa.
+    - **Bảng điều khiển 4 Máy Trạng thái:** `order_status`, `payment_status`, `escrow_status`, `dispute_status`.
+    - **Snapshot Đơn hàng & Sản phẩm:** Giữ nguyên dữ liệu đóng băng tại thời điểm đặt hàng.
+    - **Dòng thời gian Bằng chứng Đối chứng 2 chiều:** Hiển thị bằng chứng của người mua (`BUYER_PROOF`), phản hồi đối chứng của người bán (`SELLER_COUNTER_PROOF`), và yêu cầu của nhân viên sàn (`STAFF_REQUEST_NOTE`) kèm liên kết tập tin đính kèm.
+    - **Yêu cầu Bổ sung Bằng chứng:** Support Staff và Admin có thể gửi ghi chú yêu cầu bổ sung chứng cứ (`POST /admin/disputes/{id}/request-info`), chuyển trạng thái khiếu nại sang `NEED_MORE_INFO` và tạo bản ghi bằng chứng loại `STAFF_REQUEST_NOTE`.
+- **AC-P804-04 (Tách biệt Thẩm quyền DEC-08-03 / P6-02 & Phán quyết Tài chính DEC-07 / BR-FN-06):**
+  - **Tách biệt Thẩm quyền (Separation of Duties):** Support Staff và Moderator tuyệt đối KHÔNG có thẩm quyền ra phán quyết tài chính. Thao tác `POST /admin/disputes/{id}/verdict` từ vai trò Support hoặc Moderator bị chặn cứng bằng **HTTP 403 Forbidden**. Giao diện `A-DP-02` hiển thị thông báo nghiệp vụ rõ ràng khi người dùng không phải Supreme Admin.
+  - **Thực thi Phán quyết Tài chính (Supreme Admin):**
+    1. `APPROVE_BUYER_REFUND` (`DEC-07` / `BR-FN-06`): Hủy đơn hàng, hoàn trả 100% tiền thanh toán, tạo bản ghi `FULL_REFUND` trong `escrow_transactions`, giảm `escrow_held_balance` của người bán, tăng `dispute_lost_count` của người bán, ghi nhật ký `AuditLog` bất biến.
+    2. `RELEASE_TO_SELLER` (`DEC-04` / `BR-FN-07`): Hoàn tất đơn hàng, giải ngân ký quỹ, cộng tiền ví người bán qua `WalletTransaction` (`CREDIT`), tạo bản ghi `RELEASE` trong `escrow_transactions`, ghi nhật ký `AuditLog` bất biến.
+    3. `PARTIAL_REFUND`: Phân chia hoàn tiền người mua và giải ngân người bán theo thỏa thuận.
+- **AC-P804-05 (`A-CM-01` Violation / Moderation Reports Management):**
+  - Delivered `A-CM-01` (`/admin/moderation/reports`): Quản lý báo cáo sai phạm từ cộng đồng dành cho Admin, Moderator và Support Staff (`reports.view`, `reports.resolve`).
+  - 4 thẻ thống kê: Tổng số báo cáo, Đang chờ xử lý (`PENDING`), Đã xử phạt (`RESOLVED_ACTION_TAKEN`), Đã bác bỏ (`DISMISSED`).
+  - Bộ lọc theo trạng thái, đối tượng vi phạm (`PRODUCT`, `USER`, `CONVERSATION`), lý do vi phạm (`reason_category`), và tìm kiếm.
+  - Bảng báo cáo hiển thị người báo cáo, đối tượng vi phạm (kèm liên kết đến màn hình chi tiết kiểm duyệt sản phẩm `admin.moderation.products.show`), lý do, nội dung, người xử lý, ghi chú phân xử.
+  - **Modal Xử lý Báo cáo:** Nhân viên lựa chọn quyết định (`RESOLVED_ACTION_TAKEN` hoặc `DISMISSED`) và bắt buộc nhập ghi chú xử lý (tối thiểu 5 ký tự, tối đa 1000 ký tự).
+  - Tích hợp `ViolationReportService::resolveReport()`: Cập nhật trạng thái báo cáo, ghi nhận người xử lý (`handled_by`), thời điểm (`handled_at`), và ghi nhật ký `AuditLog` bất biến với action `REPORT_RESOLVED`. Chặn tuyệt đối việc xử lý lại báo cáo đã đóng.
+- **AC-P804-06 (Bảo vệ Tính Bất biến Sổ cái Append-Only):**
+  - Toàn bộ các model `EscrowTransaction`, `WalletTransaction`, và `AuditLog` được bảo vệ bằng trait `ImmutableLedgerRecord`.
+  - Mọi thao tác gọi `update()` hoặc `delete()` đều ném ngoại lệ `LogicException` ('Immutable ledger/audit record cannot be updated or deleted').
+
+### 2. UI & Frontend Asset Compilation
+- **Vite Build:** `cd backend; npm run build` biên dịch 73.28 kB CSS trong 193ms với 0 lỗi.
+- **Master Sidebar:** Bổ sung liên kết "Báo cáo Vi phạm" (`admin.moderation.reports.index`), "Sổ cái Ký quỹ (Escrow)" (`admin.escrow.index`), và cập nhật "Tranh chấp & Khiếu nại" (`admin.disputes.index`). Footer hiển thị `Retro Market Admin v1.0 • P8-04`.
+
+### 3. Automated Test Verification Results
+- **Backend P8-04 Feature Test Suite (`backend/tests/Feature/Admin/P804_EscrowDisputesAndReportsTest.php`):** **15/15 PASS (100%)** (77 assertions, 1.33s).
+- **Backend Admin Tests (`P801_` + `P802_` + `P803_` + `P804_`):** **65/65 PASS (100%)** (425 assertions, 0 errors, 0 failures, 6.56s).
+- **PostgreSQL 18 DB Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative scenarios PASS (100%)**.
+- **Full Backend Regression:** `php artisan test` -> **147/147 PASS (100%)** (1,394 assertions, 0 failures across all API, Foundation, and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS (100%)** across all 12 mobile test suites.
+
+
+---
+
+## TASK P8-05 EXECUTION LOG & VERIFICATION REPORT
+- **Task ID:** `P8-05: Users & Role Governance, Platform Settings, Audit Logs & Developer Tools`
+- **Execution Mode:** END-TO-END IMPLEMENTATION & VERIFICATION
+- **Executed At:** `2026-11-16`
+- **Current Status:** `REVIEW` (Awaiting PO Inspection and Sign-Off)
+- **Baseline Git Commit:** `4a1171ff9087fd66365342a215e615ed001ea141` (`main`)
+
+### 1. Scope & Acceptance Criteria Delivery
+- **AC-P805-01 (`A-US-01` User Management Directory):**
+  - Delivered `A-US-01` (`/admin/users`): Danh mục quản lý người dùng đa chiều dành cho Admin và Support Staff (`users.view`). Moderator bị chặn bằng `HTTP 403 Forbidden`.
+  - 4 thẻ thống kê: Tổng số người dùng, Đang hoạt động (`ACTIVE`), Bị tạm khóa (`SUSPENDED`), và Tài khoản nội bộ sàn (`STAFF`).
+  - Bộ lọc kết hợp theo vai trò (`role`: `registered_user`, `moderator`, `support_staff`, `admin`), trạng thái (`status`: `ACTIVE`, `SUSPENDED`), và tìm kiếm từ khóa theo tên hiển thị, email hoặc số điện thoại.
+  - Phân trang 15 bản ghi/trang kèm huy hiệu màu chuẩn Vintage cho từng vai trò và trạng thái.
+- **AC-P805-02 (`A-US-02` User Detail, 360° Inspector & Role/Status Governance):**
+  - Delivered `A-US-02` (`/admin/users/{id}`): Bàn làm việc kiểm tra người dùng 360 độ và quản trị tài khoản:
+    - **Thông tin Tài khoản:** Monogram avatar, tên hiển thị, email, SĐT, ngày đăng ký, vai trò hiện tại, trạng thái, lý do thay đổi trạng thái gần nhất.
+    - **Hồ sơ Người bán (Seller Metrics):** Tên cửa hàng, bio, điểm uy tín (Trust Score), số đơn hàng đã bán, tổng doanh thu, số dư ký quỹ đang giữ (`escrow_held_balance`).
+    - **Lịch sử Người mua (Buyer Metrics):** Tổng đơn đã mua, đơn hoàn tất, đơn đã hủy, khiếu nại phát sinh.
+    - **Chỉ số Rủi ro & Gian lận (Fraud & Default Indicators):** Đấu giá đã thắng, số lần bùng kèo đấu giá (`WINNER_DEFAULTED`), số lần thua khiếu nại (`dispute_lost_count`), chỉ số rủi ro tính toán (`fraud_risk_score`) kèm nhãn cảnh báo.
+    - **Quản trị Trạng thái (`POST /admin/users/{id}/status`):** Khóa/Mở khóa tài khoản có bắt buộc nhập lý do (>= 5 ký tự), thu hồi toàn bộ token đăng nhập Sanctum khi khóa, ghi `audit_logs` bất biến.
+    - **Quản trị Vai trò (`POST /admin/users/{id}/role`):** Nâng cấp/hạ cấp vai trò (`registered_user`, `support_staff`, `moderator`, `admin`) có bắt buộc nhập lý do (>= 5 ký tự), thu hồi toàn bộ token Sanctum, ghi `audit_logs` bất biến.
+    - **Quy tắc Bất biến Tự bảo vệ:** Admin không thể tự khóa tài khoản của chính mình; Admin không thể tự đổi/hạ vai trò của chính mình; Không thể khóa hoặc hạ vai trò của Quản trị viên duy nhất còn lại trên hệ thống (`422 Unprocessable Entity`).
+    - **Tách biệt Thẩm quyền:** Nhân viên Hỗ trợ (Support Staff) chỉ có quyền xem thông tin hồ sơ; mọi hành động thay đổi trạng thái hoặc vai trò đều bị ẩn trên giao diện và chặn `403 Forbidden` ở backend.
+- **AC-P805-03 (`A-ST-01` Platform Settings & Bounds Validation):**
+  - Delivered `A-ST-01` (`/admin/settings`): Giao diện cấu hình tham số nền tảng dành riêng cho Supreme Admin (`settings.manage`). Support và Moderator bị chặn `403 Forbidden`.
+  - Cấu hình 3 nhóm tham số vận hành:
+    1. **Cơ cấu Phí Giao dịch (`DEC-04`):** Phí bảo vệ người mua (5% - 8%), Phí cố định (5,000 - 10,000 đ), Phí vận chuyển (0 đ), Hoa hồng người bán (0%).
+    2. **Bộ đếm Thời gian Vận hành:** Thời gian chờ thanh toán (`payment_window_hours`), Thời gian tự động hoàn tất giao hàng (`auto_complete_days`), Cửa sổ kích hoạt chống bắn tỉa (`anti_sniping_trigger_seconds`), Thời gian gia hạn chống bắn tỉa (`anti_sniping_extend_seconds`), Thời lượng phiên đấu giá mặc định (`auction_default_duration_hours`).
+    3. **Tùy biến Giao diện Theo mùa:** Bật/tắt trang trí giao diện (`seasonal_decor_enabled`), Chủ đề mùa lễ hội (`christmas`, `tet_holiday`, `none`).
+  - Kiểm định ràng buộc an toàn: Chặn các giá trị tỷ lệ phí ngoài khoảng [0.05, 0.08] hoặc thời gian âm.
+  - Xóa cache tự động: Kích hoạt `$configService->clearCache($key)` ngay lập tức trên Redis/Cache.
+  - Ghi vết bất biến `audit_logs` với action `PLATFORM_SETTING_UPDATED` lưu trữ giá trị cũ (`old_value`) và giá trị mới (`new_value`).
+- **AC-P805-04 (`A-AD-01` Activity Audit Logs Explorer - Strictly Read-Only):**
+  - Delivered `A-AD-01` (`/admin/audit-logs`): Tra cứu nhật ký kiểm toán hệ thống dành riêng cho Supreme Admin (`audit_logs.view`). Moderator và Support bị chặn `403 Forbidden`.
+  - Cam kết Tuyệt đối Read-Only: Không cung cấp bất kỳ API hoặc nút bấm chỉnh sửa/xóa nào; các bản ghi `AuditLog` được bảo vệ bằng trait `ImmutableLedgerRecord` chống gọi `update()` và `delete()`.
+  - Bộ lọc đa tiêu chí: Lọc theo người thực hiện (`actor_id`), nhóm hành động (`action`), loại thực thể mục tiêu (`target_type`), khoảng thời gian từ ngày - đến ngày, và tìm kiếm theo địa chỉ IP / ID mục tiêu / lý do.
+  - Modal JSON Diff: Xem chi tiết thay đổi `old_values` vs `new_values` định dạng JSON rõ ràng.
+- **AC-P805-05 (`A-DT-01` Developer Tools & Dual-Gate Security):**
+  - Delivered `A-DT-01` (`/admin/dev-tools`): Bộ công cụ nhà phát triển để kích hoạt thủ công các background jobs.
+  - Cơ chế Bảo mật Dual-Gate (2 Lớp Khóa):
+    - Cổng 1: Người dùng phải có vai trò `admin` (`auth()->user()->isAdmin()`).
+    - Cổng 2: Biến môi trường phải bật chế độ demo `DEMO_MODE=true` (`config('retromarket.demo_mode') === true`).
+    - Nếu thiếu một trong hai điều kiện, hệ thống từ chối bằng **HTTP 403 Forbidden**. Trên môi trường sản xuất (`DEMO_MODE=false`), liên kết Developer Tools hoàn toàn biến mất khỏi thanh điều hướng Sidebar.
+  - Hỗ trợ kích hoạt trực tiếp 4 Scheduled Background Jobs cốt lõi qua `SystemDevToolsService::triggerJobAction()`:
+    1. `OpenScheduledAuctionsJob`: Mở các phiên đấu giá đã đến giờ bắt đầu.
+    2. `CloseExpiredAuctionsJob`: Đóng các phiên đấu giá đã hết hạn, xác định người thắng hoặc đánh dấu không có người mua.
+    3. `ExpireUnpaidAuctionOrdersJob`: Hủy đơn đấu giá quá hạn thanh toán (`24h`), phạt đánh dấu người thắng bùng kèo (`WINNER_DEFAULTED`).
+    4. `AutoCompleteDeliveredOrdersJob`: Tự động hoàn tất đơn hàng giao thành công quá thời hạn khiếu nại (`3 ngày`), giải ngân tiền ký quỹ cho người bán.
+    5. `RUN_ALL_LIFECYCLE_JOBS`: Kích hoạt tuần tự cả 4 jobs trong một lượt.
+  - Ghi nhận `audit_logs` với hành động `DEVTOOLS_MANUAL_JOB_TRIGGER` ghi rõ loại job và số lượng bản ghi đã xử lý.
+
+### 2. UI & Frontend Asset Compilation
+- **Vite Build:** `cd backend; npm run build` biên dịch 74.61 kB CSS trong 192ms với 0 lỗi.
+- **Master Sidebar:** Bổ sung liên kết "Quản lý Người dùng" (`admin.users.index`), "Cấu hình Nền tảng" (`admin.settings.index`), "Nhật ký Kiểm toán" (`admin.audit_logs.index`), và "Developer Tools" (`admin.dev_tools.index` - điều kiện `isAdmin() && DEMO_MODE`). Footer cập nhật hiển thị `Retro Market Admin v1.0 • P8-05`.
+
+### 3. Automated Test Verification Results
+- **Backend P8-05 Feature Test Suite (`backend/tests/Feature/Admin/P805_UsersSettingsAuditAndDevToolsTest.php`):** **13/13 PASS (100%)** (75 assertions, 1.48s).
+- **Backend Admin Tests (`P801_` + `P802_` + `P803_` + `P804_` + `P805_`):** **78/78 PASS (100%)** (500 assertions, 0 errors, 0 failures, 7.21s).
+- **PostgreSQL 18 DB Integrity Constraints:** `php artisan db:verify-constraints` -> **79 CHECK constraints active, 10/10 negative scenarios PASS (100%)**.
+- **Full Backend Regression:** `php artisan test` -> **160/160 PASS (100%)** (1,473 assertions, 0 failures across all API, Foundation, and Admin suites).
+- **Mobile Regression:**
+  - `flutter analyze`: **0 issues found** (0 errors, 0 warnings).
+  - `flutter test`: **134/134 PASS (100%)** across all 12 mobile test suites.
+- **Tổng số màn hình Admin hoàn tất:** **21/21 màn hình** (P8-01: 2, P8-02: 4, P8-03: 6, P8-04: 4, P8-05: 5).
+
+
+### Phase 08 - Task P8-06 Completed (2026-11-16)
+- **Task:** Web E2E Integration Suite, 21-Screen Verification & Phase 08 Sign-off (`P8-06`).
+- **Artifacts:**
+  - `backend/tests/Feature/Admin/P806_Phase08EndToEndIntegrationTest.php` (Complete E2E cross-platform integration suite).
+  - `docs/08_ADMIN_DEVELOPMENT/P8_06_WEB_INTEGRATION_E2E_AND_SIGN_OFF.md` (P8-06 Implementation & Verification Report).
+  - `docs/08_ADMIN_DEVELOPMENT/PHASE_08_FINAL_AUDIT_REPORT.md` (Full Phase 08 Final Audit Report).
+  - `docs/08_ADMIN_DEVELOPMENT/PHASE_08_HANDOFF_TO_PHASE_09.md` (Phase 08 to Phase 09 Handoff Specification).
+- **Core Verification & Invariants Validated:**
+  - **AC-P806-01 (21/21 Canonical Screen Coverage):** All 21 Admin screens (`A-LG-01` to `A-DT-01`) verified with exact Screen IDs, routes, controllers, Blade views, and passing feature tests.
+  - **AC-P806-02 (Cross-Platform E2E Integration):** All 4 cross-platform flows verified:
+    - Flow 1: Moderation & Resubmit Lifecycle (`DEC-05`): Mobile Create -> Admin Reject -> Mobile Resubmit -> Admin Approve -> Public Search.
+    - Flow 2: Order, Escrow & Dispute Verdict Lifecycle with Zero Ledger Drift (`DEC-03`, `DEC-04`, `DEC-07`, `AC-P806-03`): Order Paid & Held -> Mobile Dispute -> Admin Evidence Request -> Supreme Admin Verdict (`APPROVE_BUYER_REFUND`).
+    - Flow 3: Auction Lifecycle & DevTools Trigger (`A-DT-01`, `BR-AU-04`, `BR-AU-07`): Dual-gate security + manual execution + audit logging.
+    - Flow 4: User Suspension & Cross-Guard Isolation: Immediate Sanctum token revocation (`tokens()->delete()`) + session lockout (`403 Account Suspended`).
+  - **AC-P806-03 (Zero Ledger Drift & Immutability):**
+    - Mathematical reconciliation confirms **0.00đ ledger drift** across all active sellers and held orders.
+    - Strict append-only immutability verified on all 6 ledger and audit models (`update()` and `delete()` throw `LogicException`).
+  - **AC-P806-04 (61-Permission RBAC & Security Verification):** Complete role matrix (`admin`, `moderator`, `support`, `registered_user`), Redis 7.4 Session Runtime, CSRF, and login rate limiting (5 attempts/min) verified 100%.
+  - **AC-P806-05 (100% Full-System Regression Baseline):**
+    - Backend Full Test Suite (`php artisan test`): **166/166 PASS (100%)** (1,599 assertions, 0 failures across all API, Foundation, and Admin suites).
+    - Backend Admin Tests (`php artisan test --filter=Admin`): **84/84 PASS (100%)** (628 assertions).
+    - Redis 7.4 Session Runtime (`P801_RedisSessionRuntimeTest`): **3/3 PASS (100%)** (13 assertions).
+    - PostgreSQL 18 Constraints (`php artisan db:verify-constraints`): **10/10 PASS (100%)**, 79 active check constraints.
+    - Seeded Data Integrity & Ledger Drift (`php artisan db:verify-seeders`): **100% PASS**, zero drift.
+    - Production Vite Build (`npm run build`): **74.61 kB CSS compiled in 197ms, 0 errors**.
+    - Mobile Flutter Analyze (`flutter analyze`): **0 issues found** (0 errors, 0 warnings).
+    - Mobile Flutter Tests (`flutter test`): **134/134 PASS (100%)** across all 12 mobile test suites.
+- **Phase 08 Status:** **REVIEW (100% COMPLETE & VERIFIED: P8-01..P8-06 PASS)**. Ready for PO Final Sign-off.
+
+---
+
+### Phase 09 - Task P9-03 Technical Implementation Accepted by PO (2026-11-17)
+- **Task:** Work Package P9-03 – Order Cancellation Matrix (`P9-03`).
+- **PO Decision:** `PO ACCEPTED – TECHNICAL IMPLEMENTATION` (Decision dated 2026-11-17 15:05+07:00).
+- **Work Package Closure:** `PENDING SEPARATE PO CLOSURE DECISION`.
+- **Approved Implementation Scope (Exactly 8 Files):**
+  1. `backend/app/Exceptions/EscrowLedgerIntegrityException.php` (CREATE)
+  2. `backend/app/Http/Requests/Api/V1/Order/SellerCancelOrderRequest.php` (CREATE)
+  3. `backend/app/Services/Escrow/MockQrPaymentService.php` (MODIFY)
+  4. `backend/app/Services/Order/OrderCancellationService.php` (MODIFY)
+  5. `backend/app/Services/Order/OrderExpirationService.php` (MODIFY)
+  6. `backend/app/Http/Controllers/Api/V1/SellerOrderController.php` (MODIFY)
+  7. `backend/routes/api.php` (MODIFY)
+  8. `backend/tests/Feature/Api/V1/OrderCancellationMatrixTest.php` (CREATE)
+- **Core Technical Verifications & Audited Invariants:**
+  - **Reconciled Inventory:** 22 original scenarios, 21 approved executable business scenarios, 1 excluded business capability (Scenario #08), 23 executable PHPUnit test methods.
+  - **Scenario #08 Functional Status:** Excluded business capability per `P9-03-DEC-01` (Option A). Direct seller cancellation at `PREPARING` with open buyer cancellation request is rejected with HTTP 409 `INVALID_STATE_TRANSITION` and zero state mutation.
+  - **Test Suite Verification:**
+    - `OrderCancellationMatrixTest.php`: **23/23 PASS (100%)** (160 assertions, duration: ~4.35s).
+    - `CartOrderAndPaymentTest.php`: **8/8 PASS (100%)** (100 assertions).
+    - `EscrowShippingAndDisputeTest.php`: **8/8 PASS (100%)** (78 assertions).
+    - `AuctionEngineTest.php`: **8/8 PASS (100%)** (66 assertions).
+  - **Concurrency & Lock Hierarchy:** Verified monotonic lock hierarchy ($\text{Order} \rightarrow \text{Payment} \rightarrow \text{Auction} \rightarrow \text{Product (ASC)} \rightarrow \text{SellerProfile}$) with direct `pg_blocking_pids()` evidence between independent OS worker processes in Tests #20B & #22. No concrete deadlock cycle identified in audited paths.
+  - **External Scheduler Defect:** 1 failure in `backend/tests/Feature/Api/V1/BackgroundJobsAndSchedulerTest.php` (5/6 pass) due to an idempotency bug in `AuctionLifecycleService::finalizeAuctionWithWinner()` on seeded `Auction 1` (`AUC-2026-0001`). Confirmed outside P9-03 scope and logged for separate tracking.
+- **Git State:** Baseline commit `4a1171ff9087fd66365342a215e615ed001ea141` preserved with dirty working tree intact (zero commits, resets, or cleans).

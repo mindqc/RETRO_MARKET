@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/server_time_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -21,13 +22,11 @@ import 'seller_relist_auction_modal.dart';
 class LiveBiddingRoomScreen extends ConsumerStatefulWidget {
   final int auctionId;
 
-  const LiveBiddingRoomScreen({
-    super.key,
-    required this.auctionId,
-  });
+  const LiveBiddingRoomScreen({super.key, required this.auctionId});
 
   @override
-  ConsumerState<LiveBiddingRoomScreen> createState() => _LiveBiddingRoomScreenState();
+  ConsumerState<LiveBiddingRoomScreen> createState() =>
+      _LiveBiddingRoomScreenState();
 }
 
 class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
@@ -56,8 +55,11 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
           title: const Text('Phòng Đấu Giá'),
         ),
         body: RetroErrorRetryView(
-          errorMessage: vm.errorMessage ?? 'Không thể tải chi tiết phòng đấu giá.',
-          onRetry: () => ref.read(liveAuctionViewModelProvider(widget.auctionId).notifier).loadAuction(),
+          errorMessage:
+              vm.errorMessage ?? 'Không thể tải chi tiết phòng đấu giá.',
+          onRetry: () => ref
+              .read(liveAuctionViewModelProvider(widget.auctionId).notifier)
+              .loadAuction(),
         ),
       );
     }
@@ -83,10 +85,14 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
           IconButton(
             icon: Icon(
               auction.isWatching ? Icons.favorite : Icons.favorite_border,
-              color: auction.isWatching ? Colors.redAccent : AppColors.textDarkCharcoal,
+              color: auction.isWatching
+                  ? Colors.redAccent
+                  : AppColors.textDarkCharcoal,
             ),
             onPressed: () {
-              ref.read(liveAuctionViewModelProvider(widget.auctionId).notifier).toggleWatch();
+              ref
+                  .read(liveAuctionViewModelProvider(widget.auctionId).notifier)
+                  .toggleWatch();
             },
           ),
         ],
@@ -101,8 +107,9 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primaryForestGreen,
-              onRefresh: () =>
-                  ref.read(liveAuctionViewModelProvider(widget.auctionId).notifier).loadAuction(),
+              onRefresh: () => ref
+                  .read(liveAuctionViewModelProvider(widget.auctionId).notifier)
+                  .loadAuction(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(DesignTokens.spacingMd),
@@ -136,7 +143,10 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
     );
   }
 
-  Widget _buildAntiSnipingBanner(LiveAuctionViewModel vm, AuctionDetailModel auction) {
+  Widget _buildAntiSnipingBanner(
+    LiveAuctionViewModel vm,
+    AuctionDetailModel auction,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -181,7 +191,9 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
-          color: auction.extendedCount > 0 ? AppColors.accentBurgundy : AppColors.borderWarm,
+          color: auction.extendedCount > 0
+              ? AppColors.accentBurgundy
+              : AppColors.borderWarm,
           width: auction.extendedCount > 0 ? 1.5 : DesignTokens.borderThin,
         ),
         boxShadow: DesignTokens.cardElevation,
@@ -194,14 +206,20 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
               Icon(
                 auction.isLive ? Icons.timer : Icons.lock_clock,
                 size: 18,
-                color: auction.isLive ? AppColors.accentBurgundy : AppColors.textCharcoalMuted,
+                color: auction.isLive
+                    ? AppColors.accentBurgundy
+                    : AppColors.textCharcoalMuted,
               ),
               const SizedBox(width: 8),
               Text(
                 auction.isLive
                     ? 'Thời gian còn lại của phiên đấu giá:'
-                    : (auction.isScheduled ? 'Thời gian mở phiên:' : 'Phiên đấu giá đã kết thúc'),
-                style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                    : (auction.isScheduled
+                          ? 'Thời gian mở phiên:'
+                          : 'Phiên đấu giá đã kết thúc'),
+                style: AppTypography.bodySmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -235,18 +253,28 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
             borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             child: AspectRatio(
               aspectRatio: 16 / 10,
-              child: auction.primaryImageUrl != null && auction.primaryImageUrl!.isNotEmpty
+              child:
+                  auction.primaryImageUrl != null &&
+                      auction.primaryImageUrl!.isNotEmpty
                   ? Image.network(
                       auction.primaryImageUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         color: AppColors.surfaceWarm,
-                        child: const Icon(Icons.broken_image, color: AppColors.textCharcoalMuted, size: 48),
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: AppColors.textCharcoalMuted,
+                          size: 48,
+                        ),
                       ),
                     )
                   : Container(
                       color: AppColors.surfaceWarm,
-                      child: const Icon(Icons.gavel, color: AppColors.primaryVintageBrown, size: 48),
+                      child: const Icon(
+                        Icons.gavel,
+                        color: AppColors.primaryVintageBrown,
+                        size: 48,
+                      ),
                     ),
             ),
           ),
@@ -255,7 +283,8 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
           // Condition Badge & Title
           Row(
             children: [
-              if (auction.condition != null) ConditionBadge(condition: auction.condition!),
+              if (auction.condition != null)
+                ConditionBadge(condition: auction.condition!),
               const SizedBox(width: 8),
               StatusPillBadge(status: auction.status),
             ],
@@ -265,11 +294,14 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
             auction.productTitle,
             style: AppTypography.headingMedium.copyWith(fontSize: 18),
           ),
-          if (auction.productDescription != null && auction.productDescription!.isNotEmpty) ...[
+          if (auction.productDescription != null &&
+              auction.productDescription!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               auction.productDescription!,
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textDarkCharcoal),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textDarkCharcoal,
+              ),
             ),
           ],
           const SizedBox(height: DesignTokens.spacingMd),
@@ -287,7 +319,10 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Giá cao nhất hiện tại:', style: AppTypography.bodySmall),
+                    Text(
+                      'Giá cao nhất hiện tại:',
+                      style: AppTypography.bodySmall,
+                    ),
                     Text(
                       VndFormatter.format(auction.currentHighestBid),
                       style: AppTypography.priceLarge.copyWith(
@@ -303,7 +338,9 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                     Text('Lượt trả giá:', style: AppTypography.bodySmall),
                     Text(
                       '${auction.bidCount} lượt',
-                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -331,10 +368,14 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.primaryForestGreen.withAlpha(30),
-                backgroundImage:
-                    auction.sellerAvatarUrl != null ? NetworkImage(auction.sellerAvatarUrl!) : null,
+                backgroundImage: auction.sellerAvatarUrl != null
+                    ? NetworkImage(auction.sellerAvatarUrl!)
+                    : null,
                 child: auction.sellerAvatarUrl == null
-                    ? const Icon(Icons.storefront, color: AppColors.primaryForestGreen)
+                    ? const Icon(
+                        Icons.storefront,
+                        color: AppColors.primaryForestGreen,
+                      )
                     : null,
               ),
               const SizedBox(width: 12),
@@ -344,18 +385,25 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                   children: [
                     Text(
                       auction.sellerDisplayName ?? 'Chủ tiệm Retro',
-                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       'Độ tin cậy: ${auction.sellerTrustScore.toStringAsFixed(0)}% uy tín',
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.textCharcoalMuted),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textCharcoalMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
               if (auction.isOwner)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryForestGreen.withAlpha(20),
                     borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
@@ -375,19 +423,25 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
             Row(
               children: [
                 Icon(
-                  auction.reservePriceMet ? Icons.check_circle : Icons.shield_outlined,
+                  auction.reservePriceMet
+                      ? Icons.check_circle
+                      : Icons.shield_outlined,
                   size: 18,
-                  color: auction.reservePriceMet ? AppColors.primaryForestGreen : Colors.orange,
+                  color: auction.reservePriceMet
+                      ? AppColors.primaryForestGreen
+                      : Colors.orange,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   auction.reservePriceMet
                       ? 'Đã đạt giá sàn bảo lưu của người bán.'
                       : (auction.reservePrice != null
-                          ? 'Giá sàn: ${VndFormatter.format(auction.reservePrice!)} (Chưa đạt)'
-                          : 'Phiên đấu giá có giá sàn bảo lưu ẩn.'),
+                            ? 'Giá sàn: ${VndFormatter.format(auction.reservePrice!)} (Chưa đạt)'
+                            : 'Phiên đấu giá có giá sàn bảo lưu ẩn.'),
                   style: AppTypography.bodySmall.copyWith(
-                    color: auction.reservePriceMet ? AppColors.primaryForestGreen : Colors.orange.shade800,
+                    color: auction.reservePriceMet
+                        ? AppColors.primaryForestGreen
+                        : Colors.orange.shade800,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -405,7 +459,11 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.history, size: 18, color: AppColors.primaryForestGreen),
+            const Icon(
+              Icons.history,
+              size: 18,
+              color: AppColors.primaryForestGreen,
+            ),
             const SizedBox(width: 6),
             Text(
               'Lịch Sử Trả Giá Trực Tiếp',
@@ -434,7 +492,9 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
             child: Center(
               child: Text(
                 'Chưa có lượt trả giá nào. Hãy là người đầu tiên đặt giá!',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.textCharcoalMuted),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textCharcoalMuted,
+                ),
               ),
             ),
           )
@@ -448,24 +508,35 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
               final bid = auction.recentBids[index];
               final isTop = index == 0;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isTop ? AppColors.primaryForestGreen.withAlpha(15) : AppColors.surfaceCard,
+                  color: isTop
+                      ? AppColors.primaryForestGreen.withAlpha(15)
+                      : AppColors.surfaceCard,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   border: Border.all(
-                    color: isTop ? AppColors.primaryForestGreen : AppColors.borderWarm,
+                    color: isTop
+                        ? AppColors.primaryForestGreen
+                        : AppColors.borderWarm,
                   ),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: isTop ? AppColors.primaryForestGreen : AppColors.surfaceWarm,
+                      backgroundColor: isTop
+                          ? AppColors.primaryForestGreen
+                          : AppColors.surfaceWarm,
                       child: Text(
                         bid.bidderName.substring(0, 1).toUpperCase(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isTop ? Colors.white : AppColors.textDarkCharcoal,
+                          color: isTop
+                              ? Colors.white
+                              : AppColors.textDarkCharcoal,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -479,33 +550,49 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                             children: [
                               Text(
                                 bid.bidderName,
-                                style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               if (isTop) ...[
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.primaryForestGreen,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Text(
                                     '👑 Dẫn đầu',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
                               if (bid.isMine) ...[
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.accentBurgundy,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Text(
                                     'Tôi',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -514,7 +601,10 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                           if (bid.triggeredAntiSniping)
                             Text(
                               '⚡ Kích hoạt Anti-Sniping',
-                              style: AppTypography.bodySmall.copyWith(fontSize: 10, color: Colors.orange.shade800),
+                              style: AppTypography.bodySmall.copyWith(
+                                fontSize: 10,
+                                color: Colors.orange.shade800,
+                              ),
                             ),
                         ],
                       ),
@@ -522,7 +612,9 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                     Text(
                       VndFormatter.format(bid.bidAmount),
                       style: AppTypography.priceMedium.copyWith(
-                        color: isTop ? AppColors.accentBurgundy : AppColors.textDarkCharcoal,
+                        color: isTop
+                            ? AppColors.accentBurgundy
+                            : AppColors.textDarkCharcoal,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -540,6 +632,13 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
     LiveAuctionViewModel vm,
     AuctionDetailModel auction,
   ) {
+    final isCurrentUserWinner =
+        auction.myBidStatus?.toUpperCase() == 'WON' ||
+        (auction.winnerId != null && auction.winnerId == vm.currentUserId);
+
+    final canPayAuctionOrder =
+        auction.isCompleted && isCurrentUserWinner && auction.orderId != null;
+
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
@@ -560,15 +659,63 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
           children: [
             // Completed auction states
             if (auction.isCompleted) ...[
-              if (auction.canRelist) ...[
+              if (canPayAuctionOrder) ...[
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3D6),
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusSm,
+                        ),
+                        border: Border.all(color: const Color(0xFFE6B84C)),
+                      ),
+                      child: const Text(
+                        '🏆 BẠN ĐÃ THẮNG ĐẤU GIÁ!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF805400),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          context.push(
+                            AppRoutes.orderDetailPath(auction.orderId!),
+                          );
+                        },
+                        icon: const Icon(Icons.payment),
+                        label: const Text('THANH TOÁN ĐƠN HÀNG NGAY'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.christmasBerryRed,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (auction.canRelist) ...[
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final newA = await SellerRelistAuctionModal.show(context, auction.id);
+                      final newA = await SellerRelistAuctionModal.show(
+                        context,
+                        auction.id,
+                      );
                       if (context.mounted && newA != null) {
-                        context.pushReplacement(AppRoutes.auctionRoomPath(newA.id));
+                        context.pushReplacement(
+                          AppRoutes.auctionRoomPath(newA.id),
+                        );
                       }
                     },
                     icon: const Icon(Icons.replay),
@@ -642,14 +789,19 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                       child: ElevatedButton(
                         onPressed: auction.isLive
                             ? () {
-                                BidPlacementBottomSheet.show(context, auction.id);
+                                BidPlacementBottomSheet.show(
+                                  context,
+                                  auction.id,
+                                );
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accentBurgundy,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusMd,
+                            ),
                           ),
                         ),
                         child: Row(

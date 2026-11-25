@@ -395,7 +395,7 @@ void main() {
       // Verify PriceBreakdownCard (DEC-04)
       expect(find.byType(PriceBreakdownCard), findsOneWidget);
       expect(find.text('Chi tiết thanh toán'), findsOneWidget);
-      expect(find.text('Phí bảo vệ người mua (DEC-04)'), findsOneWidget);
+      expect(find.text('Phí bảo vệ người mua'), findsOneWidget);
 
       // Verify Seller Micro-Card
       expect(find.text('Tiệm Đồ Si Chú Bảy'), findsOneWidget);

@@ -76,6 +76,12 @@ class AppRoutes {
   static String sellerOrderDetailPath(int id) => '/seller/orders/$id';
   static const String sellerWallet = '/seller/wallet';
 
+  // Notification Deep-Link Route Aliases (P9-01)
+  static const String buyerOrderAlias = '/buyer/orders/:id';
+  static const String buyerDisputeAlias = '/buyer/disputes/:id';
+  static const String sellerDisputeAlias = '/seller/disputes/:id';
+  static const String sellerProductAlias = '/seller/products/:id';
+
   // Profile Sub-screens
   static const String editProfile = '/profile/edit';
   static const String addresses = '/profile/addresses';

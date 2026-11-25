@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -14,20 +15,19 @@ import '../models/order_model.dart';
 import '../viewmodels/buyer_order_view_model.dart';
 import 'order_cancellation_dialog.dart';
 
-/// M-OR-02: My Purchases Screen with 9 status tabs, order snapshots, and contextual action buttons.
+/// M-OR-02: My Purchases Screen with 9 status tabs,
+/// order snapshots, and contextual action buttons.
 class MyPurchasesScreen extends ConsumerStatefulWidget {
   final String initialTab;
 
-  const MyPurchasesScreen({
-    super.key,
-    this.initialTab = 'ALL',
-  });
+  const MyPurchasesScreen({super.key, this.initialTab = 'ALL'});
 
   @override
   ConsumerState<MyPurchasesScreen> createState() => _MyPurchasesScreenState();
 }
 
-class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with SingleTickerProviderStateMixin {
+class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   static const List<Map<String, String>> _orderTabs = [
@@ -45,7 +45,10 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
   @override
   void initState() {
     super.initState();
-    int initialIndex = _orderTabs.indexWhere((t) => t['key'] == widget.initialTab);
+
+    int initialIndex = _orderTabs.indexWhere(
+      (tab) => tab['key'] == widget.initialTab,
+    );
     if (initialIndex < 0) initialIndex = 0;
 
     _tabController = TabController(
@@ -62,7 +65,9 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(buyerOrderViewModelProvider).loadPurchases(tab: _orderTabs[initialIndex]['key']);
+      ref
+          .read(buyerOrderViewModelProvider)
+          .loadPurchases(tab: _orderTabs[initialIndex]['key']);
     });
   }
 
@@ -79,29 +84,55 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
     return Scaffold(
       backgroundColor: AppColors.backgroundCream,
       appBar: AppBar(
+        backgroundColor: AppColors.backgroundCream,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Đơn mua của tôi'),
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: AppColors.primaryTerracotta,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.primaryTerracotta,
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          tabs: _orderTabs.map((t) => Tab(text: t['label'])).toList(),
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(54),
+          child: Container(
+            alignment: Alignment.centerLeft,
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              labelColor: AppColors.primaryTerracotta,
+              unselectedLabelColor: AppColors.textMuted,
+              indicatorColor: AppColors.primaryTerracotta,
+              indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              tabs: _orderTabs.map((tab) => Tab(text: tab['label'])).toList(),
+            ),
+          ),
         ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primaryTerracotta,
-          onRefresh: () => ref.read(buyerOrderViewModelProvider).loadPurchases(refresh: true),
+          onRefresh: () => ref
+              .read(buyerOrderViewModelProvider)
+              .loadPurchases(refresh: true),
           child: vm.state.when(
-            initial: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryTerracotta)),
+            initial: () => const _PurchasesLoadingState(),
+            loading: () => const _PurchasesLoadingState(),
             error: (msg, err) => RetroErrorRetryView(
               errorMessage: msg,
-              onRetry: () => ref.read(buyerOrderViewModelProvider).loadPurchases(refresh: true),
+              onRetry: () => ref
+                  .read(buyerOrderViewModelProvider)
+                  .loadPurchases(refresh: true),
             ),
             empty: (msg) => RetroEmptyStateView(
               title: 'Không có đơn mua',
@@ -128,7 +159,12 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+      padding: const EdgeInsets.fromLTRB(
+        DesignTokens.spaceMd,
+        DesignTokens.spaceMd,
+        DesignTokens.spaceMd,
+        28,
+      ),
       itemCount: orders.length,
       separatorBuilder: (_, _) => const SizedBox(height: DesignTokens.spaceMd),
       itemBuilder: (context, index) {
@@ -154,76 +190,25 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Store Header & Status Badges
-              Row(
-                children: [
-                  const Icon(Icons.storefront, size: 18, color: AppColors.secondaryPineGreen),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      order.shopName,
-                      style: AppTypography.headingSmall.copyWith(fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  StatusPillBadge(status: order.orderStatus, isCompact: true),
-                ],
-              ),
-
+              _buildOrderHeader(order),
               if (order.cancellationRequested) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                    border: Border.all(color: const Color(0xFFFFEEBA)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.hourglass_empty, size: 12, color: Color(0xFF856404)),
-                      SizedBox(width: 4),
-                      Text(
-                        'Đang chờ Tiệm duyệt hủy đơn (DEC-06)',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF856404)),
-                      ),
-                    ],
+                const SizedBox(height: 10),
+                _buildCancellationNotice(),
+              ],
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: const BoxDecoration(
+                  border: Border.symmetric(
+                    horizontal: BorderSide(color: AppColors.borderSubtle),
                   ),
                 ),
-              ],
-
-              const Divider(height: 16, color: AppColors.borderSubtle),
-
-              // Items Snapshot Preview
-              ...order.items.map((item) => _buildItemRow(item)),
-
-              const Divider(height: 16, color: AppColors.borderSubtle),
-
-              // Bottom Price & Actions Row
-              Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Tổng thanh toán:',
-                        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                      ),
-                      Text(
-                        VndFormatter.format(order.totalAmount),
-                        style: AppTypography.headingSmall.copyWith(
-                          color: AppColors.primaryTerracotta,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  _buildContextualButtons(order, vm),
-                ],
+                child: Column(
+                  children: order.items.map(_buildItemRow).toList(),
+                ),
               ),
+              const SizedBox(height: 12),
+              _buildOrderFooter(order, vm),
             ],
           ),
         ),
@@ -231,51 +216,170 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
     );
   }
 
+  Widget _buildOrderHeader(OrderModel order) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWarm,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.storefront_rounded,
+                size: 18,
+                color: AppColors.secondaryPineGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.shopName,
+                    style: AppTypography.headingSmall.copyWith(fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (order.orderCode.isNotEmpty)
+                    Text(
+                      order.orderCode,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            StatusPillBadge(status: order.orderStatus, isCompact: true),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCancellationNotice() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        border: Border.all(color: const Color(0xFFFFEEBA)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Icon(
+            Icons.hourglass_empty_rounded,
+            size: 15,
+            color: Color(0xFF856404),
+          ),
+          SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              'Đang chờ Tiệm duyệt hủy đơn (DEC-06)',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF856404),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildItemRow(dynamic item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
-              width: 52,
-              height: 52,
-              color: AppColors.surfaceWarm,
-              child: item.primaryImageUrl != null && item.primaryImageUrl!.isNotEmpty
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWarm,
+                border: Border.all(color: AppColors.borderSubtle),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child:
+                  item.primaryImageUrl != null &&
+                      item.primaryImageUrl!.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: item.primaryImageUrl!,
                       fit: BoxFit.cover,
                       placeholder: (_, _) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryTerracotta),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primaryTerracotta,
+                          ),
+                        ),
                       ),
-                      errorWidget: (_, _, _) => const Icon(Icons.checkroom, color: AppColors.secondaryPineGreen),
+                      errorWidget: (_, _, _) => const Icon(
+                        Icons.checkroom_rounded,
+                        color: AppColors.secondaryPineGreen,
+                        size: 25,
+                      ),
                     )
-                  : const Icon(Icons.checkroom, color: AppColors.secondaryPineGreen),
+                  : const Icon(
+                      Icons.checkroom_rounded,
+                      color: AppColors.secondaryPineGreen,
+                      size: 25,
+                    ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   item.productTitle,
-                  style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
-                  maxLines: 1,
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
+                const SizedBox(height: 7),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 5,
                   children: [
                     ConditionBadge(condition: item.condition, isCompact: true),
-                    const Spacer(),
                     Text(
-                      '${VndFormatter.format(item.unitPrice)} x ${item.quantity}',
-                      style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                      'x${item.quantity}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  VndFormatter.format(item.unitPrice),
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -285,64 +389,96 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
     );
   }
 
+  Widget _buildOrderFooter(OrderModel order, BuyerOrderViewModel vm) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.receipt_long_rounded,
+              size: 17,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Tổng thanh toán',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+            Text(
+              VndFormatter.format(order.totalAmount),
+              style: AppTypography.headingSmall.copyWith(
+                color: AppColors.primaryTerracotta,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: _buildContextualButtons(order, vm),
+        ),
+      ],
+    );
+  }
+
   Widget _buildContextualButtons(OrderModel order, BuyerOrderViewModel vm) {
     if (order.isPendingPayment) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
+      return Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 8,
+        runSpacing: 8,
         children: [
           OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            style: _outlinedActionStyle(),
             onPressed: () => OrderCancellationDialog.show(
               context,
               order: order,
-              onConfirmCancel: (reason) => vm.submitCancelOrder(order.id, reason: reason),
+              onConfirmCancel: (reason) =>
+                  vm.submitCancelOrder(order.id, reason: reason),
             ),
-            child: const Text('Hủy', style: TextStyle(fontSize: 12)),
+            child: const Text('Hủy'),
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
-              foregroundColor: AppColors.textLight,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            style: _primaryActionStyle(),
+            onPressed: () => context.push(
+              AppRoutes.paymentQrPath(order.paymentId ?? order.id),
             ),
-            onPressed: () => context.push(AppRoutes.paymentQrPath(order.paymentId ?? order.id)),
-            child: const Text('Thanh toán', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Thanh toán',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       );
     }
 
     if (order.isShipped || order.isDelivered) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
+      return Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 8,
+        runSpacing: 8,
         children: [
           OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: () => context.push(AppRoutes.shipmentTrackingPath(order.id)),
-            child: const Text('Vận đơn', style: TextStyle(fontSize: 12)),
+            style: _outlinedActionStyle(),
+            onPressed: () =>
+                context.push(AppRoutes.shipmentTrackingPath(order.id)),
+            child: const Text('Vận đơn'),
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondaryPineGreen,
-              foregroundColor: AppColors.textLight,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            style: _pineActionStyle(),
             onPressed: () => _showConfirmDeliveryDialog(order, vm),
-            child: const Text('Đã nhận hàng', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Đã nhận hàng',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       );
@@ -350,24 +486,54 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
 
     if (order.isCompleted) {
       return OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
+        style: _outlinedActionStyle(),
         onPressed: () => context.push(AppRoutes.orderDetailPath(order.id)),
-        child: const Text('Xem chi tiết', style: TextStyle(fontSize: 12)),
+        child: const Text('Xem chi tiết'),
       );
     }
 
     return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
+      style: _outlinedActionStyle(),
       onPressed: () => context.push(AppRoutes.orderDetailPath(order.id)),
-      child: const Text('Chi tiết', style: TextStyle(fontSize: 12)),
+      child: const Text('Chi tiết'),
+    );
+  }
+
+  ButtonStyle _outlinedActionStyle() {
+    return OutlinedButton.styleFrom(
+      foregroundColor: AppColors.secondaryPineGreen,
+      side: const BorderSide(color: AppColors.secondaryPineGreen),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      minimumSize: const Size(0, 38),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+    );
+  }
+
+  ButtonStyle _primaryActionStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: AppColors.primaryTerracotta,
+      foregroundColor: AppColors.textLight,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      minimumSize: const Size(0, 38),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      textStyle: const TextStyle(fontSize: 12),
+    );
+  }
+
+  ButtonStyle _pineActionStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: AppColors.secondaryPineGreen,
+      foregroundColor: AppColors.textLight,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      minimumSize: const Size(0, 38),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      textStyle: const TextStyle(fontSize: 12),
     );
   }
 
@@ -375,10 +541,14 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        ),
         title: const Text('Xác nhận đã nhận hàng?'),
         content: Text(
-          'Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng? Toàn bộ 100% tiền hàng (${VndFormatter.format(order.sellerNetPayout)}) sẽ được giải ngân ngay vào Ví Tiệm ${order.shopName} (DEC-04).',
+          'Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng? '
+          'Toàn bộ 100% tiền hàng (${VndFormatter.format(order.sellerNetPayout)}) '
+          'sẽ được giải ngân ngay vào Ví Tiệm ${order.shopName} (DEC-04).',
           style: AppTypography.bodySmall,
         ),
         actions: [
@@ -399,6 +569,17 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen> with Sing
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PurchasesLoadingState extends StatelessWidget {
+  const _PurchasesLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
     );
   }
 }

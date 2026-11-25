@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../widgets/main_navigation_shell.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
@@ -105,13 +106,13 @@ class AppRouter {
       // Catalog & Discovery Standalone Routes
       GoRoute(
         path: AppRoutes.search,
-        builder: (context, state) => ProductSearchScreen(
-          initialKeyword: state.uri.queryParameters['q'],
-        ),
+        builder: (context, state) =>
+            ProductSearchScreen(initialKeyword: state.uri.queryParameters['q']),
       ),
       GoRoute(
         path: AppRoutes.featuredSellers,
-        builder: (context, state) => const FeaturedSellersAndCollectionsScreen(),
+        builder: (context, state) =>
+            const FeaturedSellersAndCollectionsScreen(),
       ),
       GoRoute(
         path: AppRoutes.productDetail,
@@ -148,7 +149,10 @@ class AppRouter {
           final product = state.extra is SellerProductItemModel
               ? state.extra as SellerProductItemModel
               : null;
-          return EditResubmitListingScreen(productId: id, initialProduct: product);
+          return EditResubmitListingScreen(
+            productId: id,
+            initialProduct: product,
+          );
         },
       ),
       GoRoute(
@@ -167,17 +171,36 @@ class AppRouter {
           final extraMap = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : <String, dynamic>{};
+
+          final queryParams = state.uri.queryParameters;
+
+          // Extra takes priority; query parameters are fallback.
+          final source =
+              extraMap['source']?.toString() ?? queryParams['source'] ?? 'CART';
+
+          final rawCartItemIds = extraMap['cartItemIds'];
+
+          final cartItemIds = rawCartItemIds is List<int>
+              ? rawCartItemIds
+              : (rawCartItemIds is List
+                    ? rawCartItemIds
+                          .map((e) => int.tryParse(e.toString()) ?? 0)
+                          .toList()
+                    : null);
+
+          final productId = int.tryParse(
+            extraMap['productId']?.toString() ?? queryParams['productId'] ?? '',
+          );
+
+          final quantity = int.tryParse(
+            extraMap['quantity']?.toString() ?? queryParams['quantity'] ?? '',
+          );
+
           return CheckoutScreen(
-            source: extraMap['source']?.toString() ?? 'CART',
-            cartItemIds: extraMap['cartItemIds'] is List<int>
-                ? extraMap['cartItemIds'] as List<int>
-                : (extraMap['cartItemIds'] is List
-                    ? (extraMap['cartItemIds'] as List)
-                        .map((e) => int.tryParse(e.toString()) ?? 0)
-                        .toList()
-                    : null),
-            productId: int.tryParse(extraMap['productId']?.toString() ?? ''),
-            quantity: int.tryParse(extraMap['quantity']?.toString() ?? ''),
+            source: source,
+            cartItemIds: cartItemIds,
+            productId: productId,
+            quantity: quantity,
           );
         },
       ),
@@ -223,7 +246,9 @@ class AppRouter {
         path: AppRoutes.orderDetail,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
-          final order = state.extra is OrderModel ? state.extra as OrderModel : null;
+          final order = state.extra is OrderModel
+              ? state.extra as OrderModel
+              : null;
           return PurchaseOrderDetailScreen(orderId: id, initialOrder: order);
         },
       ),
@@ -231,7 +256,9 @@ class AppRouter {
         path: AppRoutes.shipmentTracking,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
-          final order = state.extra is OrderModel ? state.extra as OrderModel : null;
+          final order = state.extra is OrderModel
+              ? state.extra as OrderModel
+              : null;
           return ShipmentTrackingScreen(orderId: id, initialOrder: order);
         },
       ),
@@ -247,7 +274,9 @@ class AppRouter {
         path: AppRoutes.sellerOrderDetail,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
-          final order = state.extra is OrderModel ? state.extra as OrderModel : null;
+          final order = state.extra is OrderModel
+              ? state.extra as OrderModel
+              : null;
           return SellerOrderDetailScreen(orderId: id, initialOrder: order);
         },
       ),
@@ -264,7 +293,9 @@ class AppRouter {
         path: AppRoutes.disputeDetail,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
-          final dispute = state.extra is DisputeModel ? state.extra as DisputeModel : null;
+          final dispute = state.extra is DisputeModel
+              ? state.extra as DisputeModel
+              : null;
           return DisputeDetailScreen(disputeId: id, initialDispute: dispute);
         },
       ),
@@ -318,6 +349,38 @@ class AppRouter {
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
           return SellerReviewsListScreen(sellerId: id);
+        },
+      ),
+
+      // Notification Deep-Link Route Aliases (P9-01)
+      GoRoute(
+        path: AppRoutes.buyerOrderAlias,
+        redirect: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return state.uri.replace(path: '/orders/$id').toString();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.buyerDisputeAlias,
+        redirect: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return state.uri.replace(path: '/disputes/$id').toString();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.sellerDisputeAlias,
+        redirect: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return state.uri.replace(path: '/disputes/$id').toString();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.sellerProductAlias,
+        redirect: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return state.uri
+              .replace(path: '/seller/listings/$id/edit')
+              .toString();
         },
       ),
 

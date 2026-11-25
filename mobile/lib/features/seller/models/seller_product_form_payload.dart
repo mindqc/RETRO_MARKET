@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 /// Payload object packaging data for creating (M-SL-03) or updating/resubmitting (M-SL-04) a listing.
 /// Enforces BR-PR-01 (Auction quantity locked to 1), BR-PR-03 (Mandatory defect info >= 5 chars, 5 conditions),
 /// and NFR-SEC-03 (Max 10 images).
@@ -12,6 +14,9 @@ class SellerProductFormPayload {
   final String condition;
   final String defectInfo;
   final List<String> imageUrls;
+
+  /// Local paths for images selected from the device; uploaded separately as multipart.
+  final List<XFile> imageFiles;
   final bool submitForReview;
 
   // Auction specific
@@ -32,6 +37,7 @@ class SellerProductFormPayload {
     required this.condition,
     required this.defectInfo,
     this.imageUrls = const [],
+    this.imageFiles = const [],
     this.submitForReview = true,
     this.startingPrice,
     this.minBidIncrement,
@@ -52,7 +58,13 @@ class SellerProductFormPayload {
       return 'Giá bán sản phẩm phải lớn hơn 0 VNĐ.';
     }
 
-    const validConditions = ['NEW_WITH_TAGS', 'LIKE_NEW', 'GOOD', 'FAIR', 'VINTAGE_WORN'];
+    const validConditions = [
+      'NEW_WITH_TAGS',
+      'LIKE_NEW',
+      'GOOD',
+      'FAIR',
+      'VINTAGE_WORN',
+    ];
     if (!validConditions.contains(condition.toUpperCase())) {
       return 'Tình trạng sản phẩm không hợp lệ (hỗ trợ 5 mức độ mới).';
     }
@@ -63,7 +75,13 @@ class SellerProductFormPayload {
     }
 
     if (imageUrls.length > 10) {
-      return 'Tối đa chỉ được tải lên 10 hình ảnh cho mỗi sản phẩm.';
+      return 'Tối đa chỉ được lưu 10 ảnh URL cho sản phẩm.';
+    }
+    if (imageFiles.length > 8) {
+      return 'Mỗi lần tải lên tối đa 8 ảnh từ thiết bị.';
+    }
+    if (imageUrls.length + imageFiles.length > 10) {
+      return 'Tổng số ảnh cho sản phẩm không được vượt quá 10.';
     }
 
     // BR-PR-01: Auction constraints
@@ -80,7 +98,9 @@ class SellerProductFormPayload {
       if (reservePrice != null && reservePrice! < startingPrice!) {
         return 'Giá bảo lưu không được nhỏ hơn giá khởi điểm.';
       }
-      if (auctionStartsAt != null && auctionEndsAt != null && !auctionEndsAt!.isAfter(auctionStartsAt!)) {
+      if (auctionStartsAt != null &&
+          auctionEndsAt != null &&
+          !auctionEndsAt!.isAfter(auctionStartsAt!)) {
         return 'Thời gian kết thúc phiên phải sau thời gian bắt đầu.';
       }
     }
@@ -94,8 +114,12 @@ class SellerProductFormPayload {
       'category_id': categoryId,
       'listing_type': listingType,
       'price': price,
-      'total_quantity': listingType.toUpperCase() == 'AUCTION' ? 1 : availableQuantity,
-      'available_quantity': listingType.toUpperCase() == 'AUCTION' ? 1 : availableQuantity,
+      'total_quantity': listingType.toUpperCase() == 'AUCTION'
+          ? 1
+          : availableQuantity,
+      'available_quantity': listingType.toUpperCase() == 'AUCTION'
+          ? 1
+          : availableQuantity,
       'condition': condition.toUpperCase(),
       'defect_info': defectInfo.trim(),
       'submit_for_review': submitForReview,
@@ -112,11 +136,21 @@ class SellerProductFormPayload {
     }
 
     if (listingType.toUpperCase() == 'AUCTION') {
-      if (startingPrice != null) map['starting_price'] = startingPrice;
-      if (minBidIncrement != null) map['min_bid_increment'] = minBidIncrement;
-      if (reservePrice != null) map['reserve_price'] = reservePrice;
-      if (auctionStartsAt != null) map['auction_starts_at'] = auctionStartsAt!.toIso8601String();
-      if (auctionEndsAt != null) map['auction_ends_at'] = auctionEndsAt!.toIso8601String();
+      if (startingPrice != null) {
+        map['starting_price'] = startingPrice;
+      }
+      if (minBidIncrement != null) {
+        map['min_bid_increment'] = minBidIncrement;
+      }
+      if (reservePrice != null) {
+        map['reserve_price'] = reservePrice;
+      }
+      if (auctionStartsAt != null) {
+        map['auction_starts_at'] = auctionStartsAt!.toIso8601String();
+      }
+      if (auctionEndsAt != null) {
+        map['auction_ends_at'] = auctionEndsAt!.toIso8601String();
+      }
     }
 
     return map;

@@ -26,12 +26,12 @@ import 'package:izithrift/features/orders/screens/submit_counter_evidence_screen
 /// Mock Implementation of OrderFulfillmentRepository
 class MockOrderFulfillmentRepository extends OrderFulfillmentRepository {
   MockOrderFulfillmentRepository()
-      : super(
-          dioClient: DioClient(
-            tokenStorage: SecureTokenStorage(),
-            serverTimeService: ServerTimeService.instance,
-          ),
-        );
+    : super(
+        dioClient: DioClient(
+          tokenStorage: SecureTokenStorage(),
+          serverTimeService: ServerTimeService.instance,
+        ),
+      );
 
   List<OrderModel> stubBuyerOrders = [];
   OrderModel? stubBuyerOrderDetail;
@@ -228,7 +228,8 @@ class MockOrderFulfillmentRepository extends OrderFulfillmentRepository {
           buyerId: 1,
           sellerId: 2,
           reasonCategory: 'ITEM_NOT_AS_DESCRIBED',
-          description: 'Sản phẩm áo len bị rách vai 5cm không giống như mô tả ban đầu.',
+          description:
+              'Sản phẩm áo len bị rách vai 5cm không giống như mô tả ban đầu.',
           status: 'OPEN',
           escrowFrozenAmount: 350000.0,
           refundAmount: 0.0,
@@ -384,35 +385,36 @@ void main() {
       overrides: [
         orderFulfillmentRepositoryProvider.overrideWithValue(mockRepo),
       ],
-      child: MaterialApp(
-        home: child,
-      ),
+      child: MaterialApp(home: child),
     );
   }
 
   group('P7-09: Models SafeJsonParser Tests', () {
-    test('OrderItemSnapshotModel correctly parses json with fallback values', () {
-      final json = {
-        'id': 1,
-        'product_id': 101,
-        'product_code': 'PRD-101',
-        'title': 'Khăn Len Cổ Điển',
-        'condition': 'GOOD',
-        'unit_price': '150000.00',
-        'quantity': 1,
-        'item_subtotal': '150000.00',
-        'primary_image_url': 'https://example.com/scarf.jpg',
-      };
+    test(
+      'OrderItemSnapshotModel correctly parses json with fallback values',
+      () {
+        final json = {
+          'id': 1,
+          'product_id': 101,
+          'product_code': 'PRD-101',
+          'title': 'Khăn Len Cổ Điển',
+          'condition': 'GOOD',
+          'unit_price': '150000.00',
+          'quantity': 1,
+          'item_subtotal': '150000.00',
+          'primary_image_url': 'https://example.com/scarf.jpg',
+        };
 
-      final item = OrderItemSnapshotModel.fromJson(json);
-      expect(item.id, 1);
-      expect(item.productId, 101);
-      expect(item.productTitle, 'Khăn Len Cổ Điển');
-      expect(item.condition, 'GOOD');
-      expect(item.unitPrice, 150000.0);
-      expect(item.subtotal, 150000.0);
-      expect(item.primaryImageUrl, 'https://example.com/scarf.jpg');
-    });
+        final item = OrderItemSnapshotModel.fromJson(json);
+        expect(item.id, 1);
+        expect(item.productId, 101);
+        expect(item.productTitle, 'Khăn Len Cổ Điển');
+        expect(item.condition, 'GOOD');
+        expect(item.unitPrice, 150000.0);
+        expect(item.subtotal, 150000.0);
+        expect(item.primaryImageUrl, 'https://example.com/scarf.jpg');
+      },
+    );
 
     test('OrderModel correctly parses 4 independent state machines and monetary fields', () {
       final json = {
@@ -445,7 +447,7 @@ void main() {
             'unit_price': 500000,
             'quantity': 1,
             'item_subtotal': 500000,
-          }
+          },
         ],
       };
 
@@ -465,6 +467,26 @@ void main() {
       expect(order.items.first.productTitle, 'Máy ảnh cơ Pentax K1000');
     });
 
+    test('OrderModel.fromJson resolves paymentId priority (latest_payment > payment_id > current_payment_id)', () {
+      final caseA = OrderModel.fromJson({'id': 501, 'current_payment_id': 901});
+      expect(caseA.paymentId, 901);
+
+      final caseB = OrderModel.fromJson({
+        'id': 501,
+        'payment_id': 902,
+        'current_payment_id': 901,
+      });
+      expect(caseB.paymentId, 902);
+
+      final caseC = OrderModel.fromJson({
+        'id': 501,
+        'latest_payment': {'id': 903},
+        'payment_id': 902,
+        'current_payment_id': 901,
+      });
+      expect(caseC.paymentId, 903);
+    });
+
     test('ShipmentModel and Timeline Events parse correctly', () {
       final json = {
         'id': 55,
@@ -479,7 +501,7 @@ void main() {
             'description': 'Đang chuyển về kho phát',
             'timestamp': '2026-11-14T10:30:00Z',
             'is_completed': true,
-          }
+          },
         ],
       };
 
@@ -504,7 +526,8 @@ void main() {
         'escrow_frozen_amount': 500000.0,
         'refund_amount': 250000.0,
         'admin_verdict': 'PARTIAL_REFUND',
-        'admin_resolution_note': 'Hai bên thống nhất hỗ trợ tiền sửa chữa màn trập.',
+        'admin_resolution_note':
+            'Hai bên thống nhất hỗ trợ tiền sửa chữa màn trập.',
         'evidences': [
           {
             'id': 101,
@@ -541,63 +564,75 @@ void main() {
   });
 
   group('P7-09: Buyer Orders & Detail Widgets Tests (M-OR-02, M-OR-03, M-OR-04)', () {
-    testWidgets('MyPurchasesScreen displays 9 status tabs and lists purchases correctly', (tester) async {
-      mockRepo.stubBuyerOrders = [
-        _createDummyOrder(
+    testWidgets(
+      'MyPurchasesScreen displays 9 status tabs and lists purchases correctly',
+      (tester) async {
+        mockRepo.stubBuyerOrders = [
+          _createDummyOrder(
+            id: 101,
+            orderStatus: 'PENDING_PAYMENT',
+            paymentStatus: 'PENDING',
+            escrowStatus: 'PENDING',
+            disputeStatus: 'NONE',
+          ),
+        ];
+
+        await tester.pumpWidget(createTestWidget(const MyPurchasesScreen()));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.text('Đơn mua của tôi'), findsOneWidget);
+        expect(find.byType(TabBar), findsOneWidget);
+        expect(find.text('Tất cả'), findsOneWidget);
+        expect(find.widgetWithText(Tab, 'Chờ thanh toán'), findsOneWidget);
+        expect(find.text('Tiệm Đồ Cũ Sài Gòn'), findsOneWidget);
+        expect(find.text('Áo Len Vintage Họa Tiết Bắc Âu'), findsOneWidget);
+        expect(find.text('Hủy'), findsOneWidget);
+        expect(find.text('Thanh toán'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'PurchaseOrderDetailScreen displays 4 state machines and PriceBreakdownCard',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final dummyOrder = _createDummyOrder(
           id: 101,
-          orderStatus: 'PENDING_PAYMENT',
-          paymentStatus: 'PENDING',
-          escrowStatus: 'PENDING',
+          orderStatus: 'DELIVERED',
+          paymentStatus: 'PAID',
+          escrowStatus: 'HELD',
           disputeStatus: 'NONE',
-        ),
-      ];
+        );
+        mockRepo.stubBuyerOrderDetail = dummyOrder;
 
-      await tester.pumpWidget(createTestWidget(const MyPurchasesScreen()));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(
+          createTestWidget(
+            PurchaseOrderDetailScreen(orderId: 101, initialOrder: dummyOrder),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Đơn mua của tôi'), findsOneWidget);
-      expect(find.byType(TabBar), findsOneWidget);
-      expect(find.text('Tất cả'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Chờ thanh toán'), findsOneWidget);
-      expect(find.text('Tiệm Đồ Cũ Sài Gòn'), findsOneWidget);
-      expect(find.text('Áo Len Vintage Họa Tiết Bắc Âu'), findsOneWidget);
-      expect(find.text('Hủy'), findsOneWidget);
-      expect(find.text('Thanh toán'), findsOneWidget);
-    });
+        expect(find.text('Đơn hàng ORD-20261115-101'), findsOneWidget);
+        expect(find.text('Trạng thái đơn hàng'), findsOneWidget);
+        expect(find.text('Trạng thái thanh toán'), findsOneWidget);
+        expect(find.text('Quỹ ký quỹ Escrow'), findsOneWidget);
+        expect(find.text('Trạng thái khiếu nại'), findsOneWidget);
+        expect(find.byType(PriceBreakdownCard), findsOneWidget);
+        expect(find.text('Đã nhận được hàng & Hài lòng'), findsOneWidget);
+        expect(find.text('Khiếu nại / Trả hàng'), findsOneWidget);
+      },
+    );
 
-    testWidgets('PurchaseOrderDetailScreen displays 4 state machines and PriceBreakdownCard', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final dummyOrder = _createDummyOrder(
-        id: 101,
-        orderStatus: 'DELIVERED',
-        paymentStatus: 'PAID',
-        escrowStatus: 'HELD',
-        disputeStatus: 'NONE',
-      );
-      mockRepo.stubBuyerOrderDetail = dummyOrder;
-
-      await tester.pumpWidget(createTestWidget(PurchaseOrderDetailScreen(orderId: 101, initialOrder: dummyOrder)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.text('Đơn hàng ORD-20261115-101'), findsOneWidget);
-      expect(find.text('Trạng thái đơn hàng'), findsOneWidget);
-      expect(find.text('Trạng thái thanh toán'), findsOneWidget);
-      expect(find.text('Quỹ ký quỹ Escrow'), findsOneWidget);
-      expect(find.text('Trạng thái khiếu nại'), findsOneWidget);
-      expect(find.byType(PriceBreakdownCard), findsOneWidget);
-      expect(find.text('Đã nhận được hàng & Hài lòng'), findsOneWidget);
-      expect(find.text('Khiếu nại / Trả hàng'), findsOneWidget);
-    });
-
-    testWidgets('OrderCancellationDialog 3-Tier logic operates properly', (tester) async {
+    testWidgets('OrderCancellationDialog 3-Tier logic operates properly', (
+      tester,
+    ) async {
       String? cancelledReason;
       final dummyOrder = _createDummyOrder(
         id: 101,
@@ -644,46 +679,60 @@ void main() {
       expect(cancelledReason, 'Đổi ý, không muốn mua nữa');
     });
 
-    testWidgets('Escrow Release (DEC-04) triggers confirm delivery dialog on M-OR-03', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'Escrow Release (DEC-04) triggers confirm delivery dialog on M-OR-03',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final dummyOrder = _createDummyOrder(
-        id: 101,
-        orderStatus: 'DELIVERED',
-        paymentStatus: 'PAID',
-        escrowStatus: 'HELD',
-        disputeStatus: 'NONE',
-      );
-      mockRepo.stubBuyerOrderDetail = dummyOrder;
+        final dummyOrder = _createDummyOrder(
+          id: 101,
+          orderStatus: 'DELIVERED',
+          paymentStatus: 'PAID',
+          escrowStatus: 'HELD',
+          disputeStatus: 'NONE',
+        );
+        mockRepo.stubBuyerOrderDetail = dummyOrder;
 
-      await tester.pumpWidget(createTestWidget(PurchaseOrderDetailScreen(orderId: 101, initialOrder: dummyOrder)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(
+          createTestWidget(
+            PurchaseOrderDetailScreen(orderId: 101, initialOrder: dummyOrder),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      final releaseBtn = find.byKey(const Key('btn_confirm_delivery_release_escrow'));
-      expect(releaseBtn, findsOneWidget);
+        final releaseBtn = find.byKey(
+          const Key('btn_confirm_delivery_release_escrow'),
+        );
+        expect(releaseBtn, findsOneWidget);
 
-      await tester.tap(releaseBtn);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.tap(releaseBtn);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Xác nhận nhận hàng & Giải ngân Escrow?'), findsOneWidget);
+        expect(
+          find.text('Xác nhận nhận hàng & Giải ngân Escrow?'),
+          findsOneWidget,
+        );
 
-      await tester.tap(find.byKey(const Key('btn_confirm_release_dialog')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.tap(find.byKey(const Key('btn_confirm_release_dialog')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(mockRepo.confirmDeliveryCalled, isTrue);
-    });
+        expect(mockRepo.confirmDeliveryCalled, isTrue);
+      },
+    );
   });
 
   group('P7-09: Seller Fulfillment & Decision Card Tests (M-SL-05, M-SL-06, M-SL-07)', () {
-    testWidgets('SellerOrdersScreen renders tabs and lists seller orders', (tester) async {
+    testWidgets('SellerOrdersScreen renders tabs and lists seller orders', (
+      tester,
+    ) async {
       mockRepo.stubSellerOrders = [
         _createDummyOrder(
           id: 301,
@@ -704,47 +753,68 @@ void main() {
       expect(find.text('Chuẩn bị hàng'), findsOneWidget);
     });
 
-    testWidgets('SellerOrderDetailScreen displays urgent cancellation decision card when buyer requested cancel', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'SellerOrderDetailScreen displays urgent cancellation decision card when buyer requested cancel',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final dummyOrder = _createDummyOrder(
-        id: 301,
-        orderStatus: 'PREPARING',
-        paymentStatus: 'PAID',
-        escrowStatus: 'HELD',
-        disputeStatus: 'NONE',
-        cancellationRequested: true,
-        cancellationRequestReason: 'Tìm thấy sản phẩm khác rẻ hơn',
-      );
-      mockRepo.stubSellerOrderDetail = dummyOrder;
+        final dummyOrder = _createDummyOrder(
+          id: 301,
+          orderStatus: 'PREPARING',
+          paymentStatus: 'PAID',
+          escrowStatus: 'HELD',
+          disputeStatus: 'NONE',
+          cancellationRequested: true,
+          cancellationRequestReason: 'Tìm thấy sản phẩm khác rẻ hơn',
+        );
+        mockRepo.stubSellerOrderDetail = dummyOrder;
 
-      await tester.pumpWidget(createTestWidget(SellerOrderDetailScreen(orderId: 301, initialOrder: dummyOrder)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(
+          createTestWidget(
+            SellerOrderDetailScreen(orderId: 301, initialOrder: dummyOrder),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Khách mua gửi yêu cầu xin hủy đơn (DEC-06)'), findsOneWidget);
-      expect(find.textContaining('Tìm thấy sản phẩm khác rẻ hơn'), findsOneWidget);
-      expect(find.byKey(const Key('btn_seller_approve_cancel')), findsOneWidget);
-      expect(find.byKey(const Key('btn_seller_reject_cancel')), findsOneWidget);
+        expect(
+          find.text('Khách mua gửi yêu cầu xin hủy đơn (DEC-06)'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Tìm thấy sản phẩm khác rẻ hơn'),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('btn_seller_approve_cancel')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('btn_seller_reject_cancel')),
+          findsOneWidget,
+        );
 
-      await tester.tap(find.byKey(const Key('btn_seller_approve_cancel')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.tap(find.byKey(const Key('btn_seller_approve_cancel')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Đồng ý hủy đơn & Hoàn tiền?'), findsOneWidget);
-      await tester.tap(find.text('Đồng ý hủy'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        expect(find.text('Đồng ý hủy đơn & Hoàn tiền?'), findsOneWidget);
+        await tester.tap(find.text('Đồng ý hủy'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(mockRepo.respondCancelCalled, isTrue);
-    });
+        expect(mockRepo.respondCancelCalled, isTrue);
+      },
+    );
 
-    testWidgets('ShipOrderFormModal validates carrier and tracking code', (tester) async {
+    testWidgets('ShipOrderFormModal validates carrier and tracking code', (
+      tester,
+    ) async {
       String? shippedCarrier;
       String? shippedTracking;
 
@@ -760,10 +830,15 @@ void main() {
                     builder: (bCtx) => ShipOrderFormModal(
                       orderId: 301,
                       orderCode: 'ORD-301',
-                      onConfirmShip: ({required carrierName, required trackingCode, shippingNote}) async {
-                        shippedCarrier = carrierName;
-                        shippedTracking = trackingCode;
-                      },
+                      onConfirmShip:
+                          ({
+                            required carrierName,
+                            required trackingCode,
+                            shippingNote,
+                          }) async {
+                            shippedCarrier = carrierName;
+                            shippedTracking = trackingCode;
+                          },
                     ),
                   );
                 },
@@ -780,7 +855,10 @@ void main() {
 
       expect(find.text('Giao hàng cho vận chuyển'), findsOneWidget);
 
-      await tester.enterText(find.byKey(const Key('input_tracking_code')), 'GHTK-HCM-112233');
+      await tester.enterText(
+        find.byKey(const Key('input_tracking_code')),
+        'GHTK-HCM-112233',
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -792,134 +870,178 @@ void main() {
       expect(shippedTracking, 'GHTK-HCM-112233');
     });
 
-    testWidgets('ShipmentTrackingScreen displays carrier, tracking code, and timeline steps', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'ShipmentTrackingScreen displays carrier, tracking code, and timeline steps',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final dummyOrder = _createDummyOrder(
-        id: 101,
-        orderStatus: 'SHIPPED',
-        paymentStatus: 'PAID',
-        escrowStatus: 'HELD',
-        disputeStatus: 'NONE',
-      );
-      mockRepo.stubBuyerOrderDetail = dummyOrder;
+        final dummyOrder = _createDummyOrder(
+          id: 101,
+          orderStatus: 'SHIPPED',
+          paymentStatus: 'PAID',
+          escrowStatus: 'HELD',
+          disputeStatus: 'NONE',
+        );
+        mockRepo.stubBuyerOrderDetail = dummyOrder;
 
-      await tester.pumpWidget(createTestWidget(ShipmentTrackingScreen(orderId: 101, initialOrder: dummyOrder)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(
+          createTestWidget(
+            ShipmentTrackingScreen(orderId: 101, initialOrder: dummyOrder),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Vận đơn ORD-20261115-101'), findsOneWidget);
-      expect(find.text('Giao Hàng Tiết Kiệm (GHTK)'), findsOneWidget);
-      expect(find.text('Mã vận đơn: GHTK-VNT-889922'), findsOneWidget);
-      expect(find.text('Tiệm đang chuẩn bị hàng'), findsOneWidget);
-      expect(find.textContaining('Đã giao cho vận chuyển'), findsOneWidget);
-    });
+        expect(find.text('Vận đơn ORD-20261115-101'), findsOneWidget);
+        expect(find.text('Giao Hàng Tiết Kiệm (GHTK)'), findsOneWidget);
+        expect(find.text('Mã vận đơn: GHTK-VNT-889922'), findsOneWidget);
+        expect(find.text('Tiệm đang chuẩn bị hàng'), findsOneWidget);
+        expect(find.textContaining('Đã giao cho vận chuyển'), findsOneWidget);
+      },
+    );
   });
 
   group('P7-09: Dispute Resolution Tests (M-DP-01, M-DP-02, M-DP-03)', () {
-    testWidgets('OpenDisputeScreen validates description >= 10 chars and handles submission', (tester) async {
-      await tester.pumpWidget(createTestWidget(const OpenDisputeScreen(orderId: 101)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+    testWidgets(
+      'OpenDisputeScreen validates description >= 10 chars and handles submission',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestWidget(const OpenDisputeScreen(orderId: 101)),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Mở khiếu nại / Trả hàng'), findsOneWidget);
-      expect(find.text('Hàng không đúng mô tả / Khuyết điểm ẩn'), findsOneWidget);
+        expect(find.text('Mở khiếu nại / Trả hàng'), findsOneWidget);
+        expect(
+          find.text('Hàng không đúng mô tả / Khuyết điểm ẩn'),
+          findsOneWidget,
+        );
 
-      // Try submitting without description -> validation fails
-      await tester.ensureVisible(find.byKey(const Key('btn_submit_dispute')));
-      await tester.tap(find.byKey(const Key('btn_submit_dispute')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('Vui lòng mô tả chi tiết lý do khiếu nại (tối thiểu 10 ký tự).'), findsOneWidget);
-
-      // Fill description >= 10 chars
-      await tester.enterText(
-        find.byKey(const Key('input_dispute_description')),
-        'Chiếc áo len bị rách ở nách trái và có vết bẩn lớn ở vạt áo.',
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      await tester.ensureVisible(find.byKey(const Key('btn_submit_dispute')));
-      await tester.tap(find.byKey(const Key('btn_submit_dispute')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(mockRepo.openDisputeCalled, isTrue);
-    });
-
-    testWidgets('DisputeDetailScreen renders status banner, claims, and counter-evidence history', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final dummyDispute = DisputeModel(
-        id: 99,
-        disputeCode: 'DSP-20261115-99',
-        orderId: 100,
-        orderCode: 'ORD-20261115-100',
-        buyerId: 1,
-        sellerId: 2,
-        reasonCategory: 'ITEM_NOT_AS_DESCRIBED',
-        description: 'Sản phẩm áo len bị rách vai 5cm không giống như mô tả ban đầu.',
-        status: 'OPEN',
-        escrowFrozenAmount: 350000.0,
-        refundAmount: 0.0,
-        evidences: [
-          DisputeEvidenceModel(
-            id: 1,
-            disputeId: 99,
-            uploaderId: 1,
-            uploaderRole: 'BUYER',
-            uploaderName: 'Người mua Đỗ Đức',
-            evidenceType: 'BUYER_PROOF',
-            messageNote: 'Hình ảnh chi tiết vết rách ở nách áo len',
-            attachmentUrls: const ['https://example.com/photo1.jpg'],
-            createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+        // Try submitting without description -> validation fails
+        await tester.ensureVisible(find.byKey(const Key('btn_submit_dispute')));
+        await tester.tap(find.byKey(const Key('btn_submit_dispute')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          find.text(
+            'Vui lòng mô tả chi tiết lý do khiếu nại (tối thiểu 10 ký tự).',
           ),
-        ],
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-      );
-      mockRepo.stubDisputeDetail = dummyDispute;
+          findsOneWidget,
+        );
 
-      await tester.pumpWidget(createTestWidget(DisputeDetailScreen(disputeId: 99, initialDispute: dummyDispute)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        // Fill description >= 10 chars
+        await tester.enterText(
+          find.byKey(const Key('input_dispute_description')),
+          'Chiếc áo len bị rách ở nách trái và có vết bẩn lớn ở vạt áo.',
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Hồ sơ khiếu nại DSP-20261115-99'), findsOneWidget);
-      expect(find.text('Mã khiếu nại: DSP-20261115-99'), findsOneWidget);
-      expect(find.text('Tiền ký quỹ đang đóng băng (FROZEN):'), findsOneWidget);
-      expect(find.textContaining('Sản phẩm áo len bị rách vai 5cm'), findsOneWidget);
-      expect(find.byKey(const Key('btn_submit_counter_evidence')), findsOneWidget);
-    });
+        await tester.ensureVisible(find.byKey(const Key('btn_submit_dispute')));
+        await tester.tap(find.byKey(const Key('btn_submit_dispute')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-    testWidgets('SubmitCounterEvidenceScreen validates and calls submitEvidence', (tester) async {
-      await tester.pumpWidget(createTestWidget(const SubmitCounterEvidenceScreen(disputeId: 99)));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        expect(mockRepo.openDisputeCalled, isTrue);
+      },
+    );
 
-      expect(find.text('Nộp chứng cứ & Giải trình'), findsOneWidget);
+    testWidgets(
+      'DisputeDetailScreen renders status banner, claims, and counter-evidence history',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      await tester.enterText(
-        find.byKey(const Key('input_counter_evidence_note')),
-        'Tiệm cam kết đã kiểm tra kỹ trước khi bọc túi bóng khí niêm phong.',
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        final dummyDispute = DisputeModel(
+          id: 99,
+          disputeCode: 'DSP-20261115-99',
+          orderId: 100,
+          orderCode: 'ORD-20261115-100',
+          buyerId: 1,
+          sellerId: 2,
+          reasonCategory: 'ITEM_NOT_AS_DESCRIBED',
+          description:
+              'Sản phẩm áo len bị rách vai 5cm không giống như mô tả ban đầu.',
+          status: 'OPEN',
+          escrowFrozenAmount: 350000.0,
+          refundAmount: 0.0,
+          evidences: [
+            DisputeEvidenceModel(
+              id: 1,
+              disputeId: 99,
+              uploaderId: 1,
+              uploaderRole: 'BUYER',
+              uploaderName: 'Người mua Đỗ Đức',
+              evidenceType: 'BUYER_PROOF',
+              messageNote: 'Hình ảnh chi tiết vết rách ở nách áo len',
+              attachmentUrls: const ['https://example.com/photo1.jpg'],
+              createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+            ),
+          ],
+          createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+        );
+        mockRepo.stubDisputeDetail = dummyDispute;
 
-      await tester.tap(find.byKey(const Key('btn_confirm_submit_counter_evidence')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(
+          createTestWidget(
+            DisputeDetailScreen(disputeId: 99, initialDispute: dummyDispute),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
-      expect(mockRepo.submitEvidenceCalled, isTrue);
-    });
+        expect(find.text('Hồ sơ khiếu nại DSP-20261115-99'), findsOneWidget);
+        expect(find.text('Mã khiếu nại: DSP-20261115-99'), findsOneWidget);
+        expect(
+          find.text('Tiền ký quỹ đang đóng băng (FROZEN):'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Sản phẩm áo len bị rách vai 5cm'),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('btn_submit_counter_evidence')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'SubmitCounterEvidenceScreen validates and calls submitEvidence',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestWidget(const SubmitCounterEvidenceScreen(disputeId: 99)),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.text('Nộp chứng cứ & Giải trình'), findsOneWidget);
+
+        await tester.enterText(
+          find.byKey(const Key('input_counter_evidence_note')),
+          'Tiệm cam kết đã kiểm tra kỹ trước khi bọc túi bóng khí niêm phong.',
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        await tester.tap(
+          find.byKey(const Key('btn_confirm_submit_counter_evidence')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(mockRepo.submitEvidenceCalled, isTrue);
+      },
+    );
   });
 }

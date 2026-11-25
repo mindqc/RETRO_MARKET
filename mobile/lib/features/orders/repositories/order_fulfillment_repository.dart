@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_envelope.dart';
 import '../../../core/network/dio_client.dart';
@@ -12,6 +13,23 @@ class OrderFulfillmentRepository {
 
   OrderFulfillmentRepository({required this.dioClient});
 
+  Map<String, dynamic> _extractDataMap(dynamic rawData) {
+    if (rawData is Map<String, dynamic>) {
+      final nested = rawData['data'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return rawData;
+    }
+    if (rawData is Map) {
+      final converted = Map<String, dynamic>.from(rawData);
+      final nested = converted['data'];
+      if (nested is Map<String, dynamic>) return nested;
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return converted;
+    }
+    return <String, dynamic>{};
+  }
+
   // ==========================================
   // BUYER PURCHASES ENDPOINTS (M-OR-02..05)
   // ==========================================
@@ -23,10 +41,7 @@ class OrderFulfillmentRepository {
     int page = 1,
     int perPage = 10,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'per_page': perPage,
-    };
+    final queryParams = <String, dynamic>{'page': page, 'per_page': perPage};
     if (status != null && status.isNotEmpty && status != 'ALL') {
       queryParams['status'] = status.toUpperCase();
     }
@@ -48,7 +63,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.orderDetail(orderId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -59,7 +74,7 @@ class OrderFulfillmentRepository {
       ApiEndpoints.cancelOrder(orderId),
       data: {'reason': reason},
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -69,7 +84,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.withdrawCancelRequest(orderId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -79,7 +94,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.confirmDelivery(orderId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -94,10 +109,7 @@ class OrderFulfillmentRepository {
     int page = 1,
     int perPage = 12,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'per_page': perPage,
-    };
+    final queryParams = <String, dynamic>{'page': page, 'per_page': perPage};
     if (status != null && status.isNotEmpty && status != 'ALL') {
       queryParams['status'] = status.toUpperCase();
     }
@@ -119,7 +131,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.sellerOrderPrepare(orderId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -136,10 +148,11 @@ class OrderFulfillmentRepository {
       data: {
         'carrier_name': carrierName,
         'tracking_code': trackingCode,
-        if (shippingNote != null && shippingNote.isNotEmpty) 'shipping_note': shippingNote,
+        if (shippingNote != null && shippingNote.isNotEmpty)
+          'shipping_note': shippingNote,
       },
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -149,7 +162,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.sellerOrderDeliver(orderId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -167,7 +180,7 @@ class OrderFulfillmentRepository {
         if (reason != null && reason.isNotEmpty) 'note': reason,
       },
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return OrderModel.fromJson(data);
   }
 
@@ -198,7 +211,7 @@ class OrderFulfillmentRepository {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.disputeDetail(disputeId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return DisputeModel.fromJson(data);
   }
 
@@ -218,7 +231,7 @@ class OrderFulfillmentRepository {
         if (attachmentUrls.isNotEmpty) 'evidences': attachmentUrls,
       },
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return DisputeModel.fromJson(data);
   }
 
@@ -238,13 +251,15 @@ class OrderFulfillmentRepository {
         if (attachmentUrls.isNotEmpty) 'file_url': attachmentUrls.first,
       },
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return DisputeEvidenceModel.fromJson(data);
   }
 }
 
 /// Riverpod provider for OrderFulfillmentRepository
-final orderFulfillmentRepositoryProvider = Provider<OrderFulfillmentRepository>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
-  return OrderFulfillmentRepository(dioClient: dioClient);
-});
+final orderFulfillmentRepositoryProvider = Provider<OrderFulfillmentRepository>(
+  (ref) {
+    final dioClient = ref.watch(dioClientProvider);
+    return OrderFulfillmentRepository(dioClient: dioClient);
+  },
+);

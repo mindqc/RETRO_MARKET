@@ -51,6 +51,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function getFullNameAttribute(): string
+    {
+        return $this->display_name ?? '';
+    }
+
     // Role & Status Convenience Helpers
     public function isAdmin(): bool
     {

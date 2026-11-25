@@ -11,6 +11,7 @@ class SellerProductItemModel {
   final String listingType;
   final String condition;
   final String? defectInfo;
+  final String? description;
   final String status;
   final int availableQuantity;
   final int totalQuantity;
@@ -38,6 +39,7 @@ class SellerProductItemModel {
     required this.listingType,
     required this.condition,
     this.defectInfo,
+    this.description,
     required this.status,
     this.availableQuantity = 1,
     this.totalQuantity = 1,
@@ -56,8 +58,12 @@ class SellerProductItemModel {
   });
 
   factory SellerProductItemModel.fromJson(Map<String, dynamic> json) {
-    String? imgUrl = SafeJsonParser.toNullableString(json['primary_image_url'] ?? json['image_url']);
-    if (imgUrl == null && json['images'] is List && (json['images'] as List).isNotEmpty) {
+    String? imgUrl = SafeJsonParser.toNullableString(
+      json['primary_image_url'] ?? json['image_url'],
+    );
+    if (imgUrl == null &&
+        json['images'] is List &&
+        (json['images'] as List).isNotEmpty) {
       final first = (json['images'] as List).first;
       if (first is Map<String, dynamic>) {
         imgUrl = SafeJsonParser.toNullableString(first['image_url']);
@@ -81,40 +87,78 @@ class SellerProductItemModel {
     }
 
     // Check auction info
-    double? startPrice = SafeJsonParser.toNullableDouble(json['starting_price']);
-    double? increment = SafeJsonParser.toNullableDouble(json['min_bid_increment'] ?? json['bid_increment']);
+    double? startPrice = SafeJsonParser.toNullableDouble(
+      json['starting_price'],
+    );
+    double? increment = SafeJsonParser.toNullableDouble(
+      json['min_bid_increment'] ?? json['bid_increment'],
+    );
     double? reserve = SafeJsonParser.toNullableDouble(json['reserve_price']);
-    DateTime? aStarts = SafeJsonParser.toNullableDateTime(json['auction_starts_at']);
-    DateTime? aEnds = SafeJsonParser.toNullableDateTime(json['auction_ends_at']);
+    DateTime? aStarts = SafeJsonParser.toNullableDateTime(
+      json['auction_starts_at'],
+    );
+    DateTime? aEnds = SafeJsonParser.toNullableDateTime(
+      json['auction_ends_at'],
+    );
 
     if (json['active_auction'] is Map<String, dynamic>) {
       final auc = json['active_auction'] as Map<String, dynamic>;
       startPrice ??= SafeJsonParser.toNullableDouble(auc['starting_price']);
       increment ??= SafeJsonParser.toNullableDouble(auc['min_bid_increment']);
       reserve ??= SafeJsonParser.toNullableDouble(auc['reserve_price']);
-      aStarts ??= SafeJsonParser.toNullableDateTime(auc['starts_at'] ?? auc['auction_starts_at']);
-      aEnds ??= SafeJsonParser.toNullableDateTime(auc['ends_at'] ?? auc['auction_ends_at']);
+      aStarts ??= SafeJsonParser.toNullableDateTime(
+        auc['starts_at'] ?? auc['auction_starts_at'],
+      );
+      aEnds ??= SafeJsonParser.toNullableDateTime(
+        auc['ends_at'] ?? auc['auction_ends_at'],
+      );
     }
 
-    final rawStatus = SafeJsonParser.toStringValue(json['status'], defaultValue: 'DRAFT').toUpperCase();
+    final rawStatus = SafeJsonParser.toStringValue(
+      json['status'],
+      defaultValue: 'DRAFT',
+    ).toUpperCase();
     final bool relistable = SafeJsonParser.toBool(
-      json['can_relist'] ?? (rawStatus == 'AUCTION_ENDED' || (rawStatus == 'REJECTED' && json['listing_type'] == 'AUCTION')),
+      json['can_relist'] ??
+          (rawStatus == 'AUCTION_ENDED' ||
+              (rawStatus == 'REJECTED' && json['listing_type'] == 'AUCTION')),
     );
 
     return SellerProductItemModel(
       id: SafeJsonParser.toInt(json['id']),
-      productCode: SafeJsonParser.toStringValue(json['product_code'], defaultValue: 'PRD-${json['id']}'),
-      title: SafeJsonParser.toStringValue(json['title'], defaultValue: 'Sản phẩm vintage'),
+      productCode: SafeJsonParser.toStringValue(
+        json['product_code'],
+        defaultValue: 'PRD-${json['id']}',
+      ),
+      title: SafeJsonParser.toStringValue(
+        json['title'],
+        defaultValue: 'Sản phẩm vintage',
+      ),
       slug: SafeJsonParser.toStringValue(json['slug']),
       price: SafeJsonParser.toDouble(json['price']),
-      listingType: SafeJsonParser.toStringValue(json['listing_type'], defaultValue: 'FIXED_PRICE'),
-      condition: SafeJsonParser.toStringValue(json['condition'], defaultValue: 'GOOD'),
+      listingType: SafeJsonParser.toStringValue(
+        json['listing_type'],
+        defaultValue: 'FIXED_PRICE',
+      ),
+      condition: SafeJsonParser.toStringValue(
+        json['condition'],
+        defaultValue: 'GOOD',
+      ),
       defectInfo: SafeJsonParser.toNullableString(json['defect_info']),
+      description: SafeJsonParser.toNullableString(json['description']),
       status: rawStatus,
-      availableQuantity: SafeJsonParser.toInt(json['available_quantity'], defaultValue: 1),
-      totalQuantity: SafeJsonParser.toInt(json['total_quantity'], defaultValue: 1),
+      availableQuantity: SafeJsonParser.toInt(
+        json['available_quantity'],
+        defaultValue: 1,
+      ),
+      totalQuantity: SafeJsonParser.toInt(
+        json['total_quantity'],
+        defaultValue: 1,
+      ),
       primaryImageUrl: imgUrl,
-      rejectionReason: SafeJsonParser.toNullableString(json['rejection_reason']),
+      rejectionReason: SafeJsonParser.toNullableString(
+        json['rejection_reason'],
+      ),
       canRelist: relistable,
       categoryId: catId,
       categoryName: catName,
@@ -143,6 +187,7 @@ class SellerProductItemModel {
       listingType: listingType,
       condition: condition,
       defectInfo: defectInfo,
+      description: description,
       status: status ?? this.status,
       availableQuantity: availableQuantity ?? this.availableQuantity,
       totalQuantity: totalQuantity,

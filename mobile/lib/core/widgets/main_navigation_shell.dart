@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// 5-Tab Stateful Bottom Navigation Shell (NAV-DEC-01) for izithrift.
-/// Preserves the scroll and widget state of all 5 tabs using StatefulNavigationShell.
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../theme/design_tokens.dart';
+
+/// Five-tab stateful navigation shell (NAV-DEC-01) for izithrift.
+/// StatefulNavigationShell preserves each branch's navigation and scroll state.
 class MainNavigationShell extends StatelessWidget {
-  const MainNavigationShell({
-    super.key,
-    required this.navigationShell,
-  });
+  const MainNavigationShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
@@ -20,54 +21,60 @@ class MainNavigationShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const forestGreen = Color(0xFF294638);
-    const vintageBrown = Color(0xFF84664C);
-    const warmCream = Color(0xFFF4EBDD);
-    const softBeige = Color(0xFFE9DDCB);
-
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: Container(
+      bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
-          color: warmCream,
+          color: AppColors.surfaceCard,
           border: Border(
             top: BorderSide(
-              color: Color(0x3384664C),
-              width: 1.0,
+              color: AppColors.borderWarm,
+              width: DesignTokens.borderThin,
             ),
           ),
         ),
         child: NavigationBar(
           selectedIndex: navigationShell.currentIndex,
           onDestinationSelected: _onDestinationSelected,
-          backgroundColor: warmCream,
-          indicatorColor: softBeige,
+          backgroundColor: AppColors.surfaceCard,
+          indicatorColor: AppColors.primaryForestGreenLight,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
+          height: 70,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            final isSelected = states.contains(WidgetState.selected);
+            return AppTypography.caption.copyWith(
+              color: isSelected
+                  ? AppColors.primaryForestGreen
+                  : AppColors.textMuted,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            );
+          }),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.storefront_outlined, color: vintageBrown),
-              selectedIcon: Icon(Icons.storefront, color: forestGreen),
+              icon: Icon(Icons.storefront_outlined),
+              selectedIcon: Icon(Icons.storefront_rounded),
               label: 'Trang chủ',
             ),
             NavigationDestination(
-              icon: Icon(Icons.manage_search_outlined, color: vintageBrown),
-              selectedIcon: Icon(Icons.manage_search, color: forestGreen),
+              icon: Icon(Icons.manage_search_outlined),
+              selectedIcon: Icon(Icons.manage_search_rounded),
               label: 'Khám phá',
             ),
             NavigationDestination(
-              icon: Icon(Icons.gavel_outlined, color: vintageBrown),
-              selectedIcon: Icon(Icons.gavel, color: forestGreen),
+              icon: Icon(Icons.gavel_outlined),
+              selectedIcon: Icon(Icons.gavel_rounded),
               label: 'Đấu giá',
             ),
             NavigationDestination(
-              icon: Icon(Icons.chat_bubble_outline, color: vintageBrown),
-              selectedIcon: Icon(Icons.chat_bubble, color: forestGreen),
+              icon: Icon(Icons.chat_bubble_outline_rounded),
+              selectedIcon: Icon(Icons.chat_bubble_rounded),
               label: 'Tin nhắn',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline, color: vintageBrown),
-              selectedIcon: Icon(Icons.person, color: forestGreen),
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
               label: 'Cá nhân',
             ),
           ],

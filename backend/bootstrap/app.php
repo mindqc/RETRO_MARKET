@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
             'role' => \App\Http\Middleware\EnsureInternalRole::class,
             'demo.only' => \App\Http\Middleware\EnsureDemoModeEnabled::class,
+            'admin.auth' => \App\Http\Middleware\EnsureAdminAuthenticated::class,
+            'admin.can' => \App\Http\Middleware\EnsureAdminPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/retro_product_card.dart';
@@ -13,13 +15,11 @@ import '../widgets/product_filter_bottom_sheet.dart';
 class ProductSearchScreen extends ConsumerStatefulWidget {
   final String? initialKeyword;
 
-  const ProductSearchScreen({
-    super.key,
-    this.initialKeyword,
-  });
+  const ProductSearchScreen({super.key, this.initialKeyword});
 
   @override
-  ConsumerState<ProductSearchScreen> createState() => _ProductSearchScreenState();
+  ConsumerState<ProductSearchScreen> createState() =>
+      _ProductSearchScreenState();
 }
 
 class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
@@ -29,14 +29,18 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialKeyword ?? '');
+    _searchController = TextEditingController(
+      text: widget.initialKeyword ?? '',
+    );
     _scrollController.addListener(_onScroll);
 
     // Initial search if keyword provided & load search history
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(catalogSearchViewModelProvider).loadRecentKeywords();
       if (widget.initialKeyword != null && widget.initialKeyword!.isNotEmpty) {
-        ref.read(catalogSearchViewModelProvider).setKeyword(widget.initialKeyword);
+        ref
+            .read(catalogSearchViewModelProvider)
+            .setKeyword(widget.initialKeyword);
       }
     });
   }
@@ -75,25 +79,40 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     final state = searchVM.state;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundCream,
+      backgroundColor: AppColors.warmIvory,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
+        backgroundColor: AppColors.warmIvory,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: AppColors.borderSubtle),
+        ),
         title: Padding(
           padding: const EdgeInsets.only(right: 16),
           child: TextField(
             controller: _searchController,
             textInputAction: TextInputAction.search,
             onSubmitted: (value) => searchVM.setKeyword(value),
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: 'Tìm kiếm trên izithrift...',
-              hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-              prefixIcon: const Icon(Icons.search, color: AppColors.textMuted, size: 20),
+              hintStyle: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textMuted,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                color: AppColors.primaryForestGreen,
+                size: 20,
+              ),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18, color: AppColors.textMuted),
+                      icon: const Icon(
+                        Icons.clear,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
                       onPressed: () {
                         _searchController.clear();
                         searchVM.setKeyword(null);
@@ -101,15 +120,22 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                     )
                   : null,
               filled: true,
-              fillColor: AppColors.surfaceWarm,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              fillColor: AppColors.surfaceCard,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 borderSide: const BorderSide(color: AppColors.borderWarm),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 borderSide: const BorderSide(color: AppColors.borderWarm),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+                borderSide: const BorderSide(
+                  color: AppColors.primaryForestGreen,
+                  width: DesignTokens.borderMedium,
+                ),
               ),
             ),
           ),
@@ -120,7 +146,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
           // Filter & Quick Chips Toolbar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: AppColors.surfaceCard,
+            color: AppColors.warmIvory,
             child: Row(
               children: [
                 // Filter BottomSheet trigger button
@@ -128,15 +154,20 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                   onTap: () => _openFilterBottomSheet(searchVM),
                   borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: currentQuery.hasActiveFilters
-                          ? AppColors.primaryTerracotta.withAlpha(35)
+                          ? AppColors.primaryForestGreenLight
                           : AppColors.surfaceWarm,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusSm,
+                      ),
                       border: Border.all(
                         color: currentQuery.hasActiveFilters
-                            ? AppColors.primaryTerracotta
+                            ? AppColors.primaryForestGreen
                             : AppColors.borderWarm,
                       ),
                     ),
@@ -146,7 +177,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                           Icons.tune,
                           size: 16,
                           color: currentQuery.hasActiveFilters
-                              ? AppColors.primaryTerracotta
+                              ? AppColors.primaryForestGreen
                               : AppColors.textCharcoal,
                         ),
                         const SizedBox(width: 4),
@@ -158,7 +189,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: currentQuery.hasActiveFilters
-                                ? AppColors.primaryTerracotta
+                                ? AppColors.primaryForestGreen
                                 : AppColors.textCharcoal,
                           ),
                         ),
@@ -178,13 +209,16 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                           label: 'Mua ngay',
                           isActive: currentQuery.listingType == 'FIXED_PRICE',
                           onTap: () {
-                            final next = currentQuery.listingType == 'FIXED_PRICE'
+                            final next =
+                                currentQuery.listingType == 'FIXED_PRICE'
                                 ? null
                                 : 'FIXED_PRICE';
-                            searchVM.search(currentQuery.copyWith(
-                              listingType: next,
-                              clearListingType: next == null,
-                            ));
+                            searchVM.search(
+                              currentQuery.copyWith(
+                                listingType: next,
+                                clearListingType: next == null,
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(width: 6),
@@ -195,10 +229,12 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                             final next = currentQuery.listingType == 'AUCTION'
                                 ? null
                                 : 'AUCTION';
-                            searchVM.search(currentQuery.copyWith(
-                              listingType: next,
-                              clearListingType: next == null,
-                            ));
+                            searchVM.search(
+                              currentQuery.copyWith(
+                                listingType: next,
+                                clearListingType: next == null,
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(width: 6),
@@ -209,10 +245,12 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                             final next = currentQuery.condition == 'LIKE_NEW'
                                 ? null
                                 : 'LIKE_NEW';
-                            searchVM.search(currentQuery.copyWith(
-                              condition: next,
-                              clearCondition: next == null,
-                            ));
+                            searchVM.search(
+                              currentQuery.copyWith(
+                                condition: next,
+                                clearCondition: next == null,
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -235,22 +273,26 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
               builder: (context) {
                 if (state.isLoading && products.isEmpty) {
                   return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryForestGreen,
+                    ),
                   );
                 }
                 if (state.isError && products.isEmpty) {
                   return RetroErrorRetryView(
-                    errorMessage: state.errorMessage ?? 'Đã xảy ra sự cố tìm kiếm.',
+                    errorMessage:
+                        state.errorMessage ?? 'Đã xảy ra sự cố tìm kiếm.',
                     onRetry: () => searchVM.search(),
                   );
                 }
                 if (state.isEmpty || products.isEmpty) {
                   return RetroEmptyStateView(
                     title: 'Không tìm thấy sản phẩm',
-                    message: state.errorMessage ??
-                        'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc.',
+                    message: state.errorMessage ?? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc.',
                     icon: Icons.search_off,
-                    actionLabel: currentQuery.hasActiveFilters ? 'Xóa bộ lọc' : null,
+                    actionLabel: currentQuery.hasActiveFilters
+                        ? 'Xóa bộ lọc'
+                        : null,
                     onAction: currentQuery.hasActiveFilters
                         ? () => searchVM.resetFilters()
                         : null,
@@ -276,18 +318,23 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryTerracotta.withAlpha(35) : AppColors.surfaceWarm,
+          color: isActive
+              ? AppColors.primaryForestGreenLight
+              : AppColors.surfaceWarm,
           borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           border: Border.all(
-            color: isActive ? AppColors.primaryTerracotta : AppColors.borderWarm,
+            color: isActive
+                ? AppColors.primaryForestGreen
+                : AppColors.borderWarm,
           ),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? AppColors.primaryTerracotta : AppColors.textCharcoal,
+          style: AppTypography.bodySmall.copyWith(
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            color: isActive
+                ? AppColors.primaryForestGreen
+                : AppColors.textCharcoal,
           ),
         ),
       ),
@@ -299,44 +346,63 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     CatalogSearchViewModel searchVM,
     List<dynamic> productList,
   ) {
-    return RefreshIndicator(
-      onRefresh: () => searchVM.search(),
-      color: AppColors.primaryTerracotta,
-      child: GridView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: productList.length + (searchVM.isLoadingMore ? 1 : 0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.62,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemBuilder: (context, index) {
-          if (index == productList.length) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(color: AppColors.primaryTerracotta),
-              ),
-            );
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth >= 1100
+            ? 4
+            : constraints.maxWidth >= 680
+            ? 3
+            : 2;
+        final cardAspectRatio = crossAxisCount == 4
+            ? 0.68
+            : crossAxisCount == 3
+            ? 0.70
+            : 0.62;
 
-          final product = productList[index];
-          return RetroProductCard(
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            primaryImageUrl: product.primaryImageUrl,
-            condition: product.condition,
-            sellerName: product.sellerDisplayName,
-            isOwner: product.isOwner,
-            isLiked: product.isFavorited,
-            onTap: () => context.push(AppRoutes.productDetailPath(product.id)),
-            onLikeToggle: () => searchVM.toggleFavorite(context, product.id),
-          );
-        },
-      ),
+        return RefreshIndicator(
+          onRefresh: () => searchVM.search(),
+          color: AppColors.primaryForestGreen,
+          child: GridView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(DesignTokens.spaceLg),
+            itemCount: productList.length + (searchVM.isLoadingMore ? 1 : 0),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: cardAspectRatio,
+              crossAxisSpacing: DesignTokens.spaceMd,
+              mainAxisSpacing: DesignTokens.spaceMd,
+            ),
+            itemBuilder: (context, index) {
+              if (index == productList.length) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryForestGreen,
+                    ),
+                  ),
+                );
+              }
+
+              final product = productList[index];
+              return RetroProductCard(
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                primaryImageUrl: product.primaryImageUrl,
+                condition: product.condition,
+                sellerName: product.sellerDisplayName,
+                isOwner: product.isOwner,
+                isLiked: product.isFavorited,
+                onTap: () =>
+                    context.push(AppRoutes.productDetailPath(product.id)),
+                onLikeToggle: () =>
+                    searchVM.toggleFavorite(context, product.id),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -345,7 +411,7 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: AppColors.warmIvory,
         border: Border(bottom: BorderSide(color: AppColors.borderWarm)),
       ),
       child: Column(
@@ -354,16 +420,15 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.history, size: 18, color: AppColors.textMuted),
+                  const Icon(Icons.history, size: 18, color: AppColors.textMuted),
                   SizedBox(width: 6),
                   Text(
                     'Tìm kiếm gần đây',
-                    style: TextStyle(
+                    style: AppTypography.labelMedium.copyWith(
                       fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textCharcoal,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -388,11 +453,18 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
               return InputChip(
                 label: Text(
                   kw,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textCharcoal),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textCharcoal,
+                  ),
                 ),
                 backgroundColor: AppColors.surfaceWarm,
                 side: const BorderSide(color: AppColors.borderWarm),
-                deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                deleteIcon: const Icon(
+                  Icons.close,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
                 onDeleted: () => searchVM.removeRecentKeyword(kw),
                 onPressed: () {
                   _searchController.text = kw;

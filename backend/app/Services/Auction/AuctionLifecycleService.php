@@ -494,4 +494,71 @@ class AuctionLifecycleService
             'unsold_auction_ids' => $unsoldIds,
         ];
     }
+
+    /**
+     * Administrative Anti-Fraud Cancel for LIVE or SCHEDULED auction (PERM-AC-09).
+     *
+     * @throws RolePermissionDeniedException
+     * @throws InvalidStateTransitionException
+     */
+    public function cancelAuctionByAdmin(User $admin, int $auctionId, string $reason): Auction
+    {
+        if (! $admin->isAdmin() && ! $admin->isModerator()) {
+            throw new RolePermissionDeniedException('Chỉ Quản trị viên hoặc Kiểm duyệt viên mới có quyền hủy phiên đấu giá.');
+        }
+
+        return DB::transaction(function () use ($admin, $auctionId, $reason) {
+            /** @var Auction $auction */
+            $auction = Auction::with(['product'])
+                ->where('id', $auctionId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! in_array($auction->status, [AuctionStatus::SCHEDULED, AuctionStatus::LIVE], true)) {
+                throw new InvalidStateTransitionException('Chỉ có thể hủy phiên đấu giá đang diễn ra (LIVE) hoặc sắp mở (SCHEDULED).');
+            }
+
+            $oldStatus = $auction->status->value;
+
+            $auction->update([
+                'status' => AuctionStatus::CANCELLED,
+                'cancel_reason' => $reason,
+                'closed_at' => now(),
+            ]);
+
+            // Restore product to APPROVED so it's not permanently stuck
+            if ($auction->product) {
+                $auction->product->update([
+                    'status' => ProductStatus::APPROVED,
+                    'available_quantity' => 1,
+                ]);
+            }
+
+            // Record immutable audit log
+            $this->auditLogService->record(
+                actor: $admin,
+                action: 'AUCTION_CANCELLED',
+                targetType: 'auctions',
+                targetId: $auction->id,
+                reason: $reason,
+                oldValues: ['status' => $oldStatus],
+                newValues: ['status' => 'CANCELLED', 'closed_at' => now()->toIso8601String()],
+                ipAddress: request()?->ip() ?? '127.0.0.1'
+            );
+
+            // Notify Seller
+            Notification::create([
+                'user_id' => $auction->seller_id,
+                'type' => 'AUCTION_CANCELLED',
+                'title' => 'Phiên đấu giá bị hủy bởi quản trị',
+                'body' => "Phiên đấu giá #{$auction->auction_code} đã bị quản trị viên hủy với lý do: {$reason}.",
+                'target_type' => 'auctions',
+                'target_id' => $auction->id,
+                'deep_link_route' => "/seller/products/{$auction->product_id}",
+                'is_read' => false,
+            ]);
+
+            return $auction->fresh();
+        });
+    }
 }

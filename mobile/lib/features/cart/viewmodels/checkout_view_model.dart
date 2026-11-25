@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/state/base_view_model.dart';
 import '../../profile/models/user_address_model.dart';
 import '../models/checkout_preview_model.dart';
@@ -20,6 +21,17 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
   int? _quantity;
 
   CheckoutViewModel({required this.repository});
+
+  /// Checks whether the checkout preview has valid order groups, items, and grand total.
+  bool get isCheckoutValid {
+    final preview = state.data;
+    if (preview == null) return false;
+    if (preview.orderGroups.isEmpty) return false;
+    if (preview.itemsCount <= 0) return false;
+    if (preview.orderGroups.every((g) => g.items.isEmpty)) return false;
+    if (preview.grandTotalAmount <= 0) return false;
+    return true;
+  }
 
   /// Loads checkout breakdown from POST /api/v1/checkout/preview
   Future<void> loadCheckoutPreview({
@@ -50,6 +62,10 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
 
         return preview;
       },
+      isEmpty: (preview) =>
+          preview.orderGroups.isEmpty ||
+          preview.itemsCount <= 0 ||
+          preview.orderGroups.every((group) => group.items.isEmpty),
       emptyMessage: 'Không có sản phẩm nào để thanh toán.',
     );
   }
@@ -69,6 +85,21 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
 
   /// Places the order and returns the Payment session (M-PM-01)
   Future<PaymentSessionModel?> placeOrder() async {
+    final preview = state.data;
+
+    if (preview == null ||
+        preview.orderGroups.isEmpty ||
+        preview.itemsCount <= 0 ||
+        preview.orderGroups.every((group) => group.items.isEmpty)) {
+      setError('Không có sản phẩm hợp lệ để đặt hàng.');
+      return null;
+    }
+
+    if (preview.grandTotalAmount <= 0) {
+      setError('Tổng thanh toán không hợp lệ.');
+      return null;
+    }
+
     if (selectedAddress == null) {
       setError('Vui lòng chọn hoặc thêm địa chỉ nhận hàng.');
       return null;
@@ -99,7 +130,8 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
 }
 
 /// Riverpod provider for CheckoutViewModel
-final checkoutViewModelProvider = ChangeNotifierProvider.autoDispose<CheckoutViewModel>((ref) {
-  final repo = ref.watch(cartCheckoutRepositoryProvider);
-  return CheckoutViewModel(repository: repo);
-});
+final checkoutViewModelProvider =
+    ChangeNotifierProvider.autoDispose<CheckoutViewModel>((ref) {
+      final repo = ref.watch(cartCheckoutRepositoryProvider);
+      return CheckoutViewModel(repository: repo);
+    });

@@ -2,11 +2,20 @@
 
 namespace App\Services\Governance;
 
+use App\Exceptions\RolePermissionDeniedException;
 use App\Models\PlatformSetting;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PlatformConfigService
 {
+    public function __construct(
+        protected ?AuditLogService $auditLogService = null
+    ) {
+        $this->auditLogService = $this->auditLogService ?? app(AuditLogService::class);
+    }
     /**
      * Get a setting value with caching.
      */
@@ -183,5 +192,105 @@ class PlatformConfigService
             'auction_payment_window_seconds' => $this->auctionWinnerPaymentWindowSeconds(),
             'auto_complete_window_seconds' => $this->autoCompleteWindowSeconds(),
         ];
+    }
+
+    /**
+     * Update a platform setting with validation, cache flush, and audit logging (DEC-08-02).
+     *
+     * @throws RolePermissionDeniedException
+     * @throws ValidationException
+     */
+    public function updateSetting(
+        User $admin,
+        string $key,
+        mixed $value,
+        ?string $reason = null
+    ): PlatformSetting {
+        if (! $admin->isAdmin()) {
+            throw new RolePermissionDeniedException('Chỉ Quản trị viên (Admin) mới có quyền cập nhật cấu hình nền tảng.');
+        }
+
+        $cleanReason = trim($reason ?? 'Cập nhật tham số cấu hình nền tảng');
+
+        return DB::transaction(function () use ($admin, $key, $value, $cleanReason) {
+            /** @var PlatformSetting $setting */
+            $setting = PlatformSetting::where('key', $key)->lockForUpdate()->firstOrFail();
+
+            $oldValue = $setting->value;
+
+            // Type and business bounds validation
+            $newValueStr = match ($key) {
+                'protection_fee_rate' => (function () use ($value) {
+                    $rate = (float) $value;
+                    if ($rate < 0.05 || $rate > 0.08) {
+                        throw ValidationException::withMessages([
+                            'protection_fee_rate' => 'Tỷ lệ phí bảo vệ người mua phải từ 0.05 (5%) đến 0.08 (8%) theo DEC-04.',
+                        ]);
+                    }
+                    return number_format($rate, 4, '.', '');
+                })(),
+                'protection_fixed_fee' => (function () use ($value) {
+                    $fee = (float) $value;
+                    if ($fee < 5000.0 || $fee > 10000.0) {
+                        throw ValidationException::withMessages([
+                            'protection_fixed_fee' => 'Phí bảo vệ cố định phải từ 5.000đ đến 10.000đ theo DEC-04.',
+                        ]);
+                    }
+                    return number_format($fee, 2, '.', '');
+                })(),
+                'shipping_fee_default' => (function () use ($value) {
+                    if ((float) $value != 0.0) {
+                        throw ValidationException::withMessages([
+                            'shipping_fee_default' => 'Phí vận chuyển mặc định cố định 0 đ theo DEC-04.',
+                        ]);
+                    }
+                    return '0.00';
+                })(),
+                'seller_commission_rate' => (function () use ($value) {
+                    if ((float) $value != 0.0) {
+                        throw ValidationException::withMessages([
+                            'seller_commission_rate' => 'Hoa hồng người bán cố định 0% theo DEC-04.',
+                        ]);
+                    }
+                    return '0.00';
+                })(),
+                default => (function () use ($setting, $value) {
+                    if ($setting->value_type === 'INTEGER') {
+                        $intVal = (int) $value;
+                        if ($intVal <= 0) {
+                            throw ValidationException::withMessages([
+                                $setting->key => 'Thời gian cấu hình phải là số nguyên dương lớn hơn 0.',
+                            ]);
+                        }
+                        return (string) $intVal;
+                    }
+                    if ($setting->value_type === 'BOOLEAN') {
+                        return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+                    }
+                    return (string) $value;
+                })(),
+            };
+
+            $setting->value = $newValueStr;
+            $setting->updated_by = $admin->id;
+            $setting->save();
+
+            // Clear cache
+            $this->clearCache($key);
+
+            // Record immutable audit log
+            $this->auditLogService->record(
+                actor: $admin,
+                action: 'UPDATE_PLATFORM_SETTING',
+                targetType: 'platform_settings',
+                targetId: null,
+                reason: $cleanReason,
+                oldValues: ['key' => $key, 'value' => $oldValue],
+                newValues: ['key' => $key, 'value' => $newValueStr],
+                ipAddress: request()?->ip() ?? '127.0.0.1'
+            );
+
+            return $setting;
+        });
     }
 }

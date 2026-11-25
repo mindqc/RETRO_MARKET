@@ -102,8 +102,8 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Phase 06** | `P6-01` .. `P6-10` | Domain Services, Policies, FormRequests, 74 API Endpoints (/api/v1/*), 4 Jobs, 88 Tests | `backend/` | `P5-07` | `DONE / APPROVED (100%)` |
 | **Phase 07** | `P7-01` .. `P7-12` | Flutter Mobile App (52 Screens), MVVM, Provider/Riverpod, GoRouter, Dio (134/134 Tests PASS) | `mobile/` | `P6-10` | `DONE / APPROVED (OFFICIAL PO SIGN-OFF)` |
-| **Phase 08** | `MP-01` .. `MP-07` | Admin Web Dashboard (Laravel Blade sharing backend/ core, Session-based web guard via Redis 7.4, 34 PG18 Tables) | `backend/`, `admin/` | `P7-12` | `READY FOR DISCOVERY` |
-| **Phase 09** | `TR-01` .. `TR-08` | Checkout, Order Snapshot, QR Mock Payment, Escrow Ledger, Shipping, Auto-Complete | `backend/`, `mobile/`, `admin/` | `MP-07` | `PENDING` |
+| **Phase 08** | `P8-01` .. `P8-06` | Admin Web Dashboard (21 Screens, Laravel Blade, Redis 7.4 Session Auth, 3-Tier RBAC, Immutable Audit Logs, PG18 34 Tables) | `backend/` | `P7-12` | `REVIEW (100% COMPLETE & VERIFIED: P8-01..P8-06 PASS)` |
+| **Phase 09** | `P9-01` .. `P9-06` (`TR-01` .. `TR-08`) | Advanced Concurrency, Order Cancellation Matrix (P9-03 TECHNICAL ACCEPTANCE: ACCEPTED BY PO; 23/23 PASS), High-Concurrency Auctions | `backend/`, `mobile/`, `admin/` | `P8-06` | `IN PROGRESS (P9-03 TECHNICAL ACCEPTED; CLOSURE PENDING PO DECISION)` |
 | **Phase 10** | `AU-01` .. `AU-08` | Auction Sessions, Anti-Sniping, Closing + Supplementary Test Backlog (8 Direct HTTP routes & Condition 422 Negative Tests) | `backend/`, `mobile/`, `admin/` | `TR-08` | `PENDING` |
 | **Phase 11** | `CM-01` .. `CM-05` | Polling Chat, Rating & Review, Seller Trust Score, Disputes & Escrow Lock, Notifications | `backend/`, `mobile/`, `admin/` | `AU-08` | `PENDING` |
 | **Phase 12** | `AD-01` .. `AD-10` | Admin Dashboard Completion, Developer Tools (Demo Mode Triggers), Audit Logs, Reports | `backend/`, `admin/` | `CM-05` | `PENDING` |

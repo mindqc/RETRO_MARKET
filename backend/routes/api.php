@@ -129,6 +129,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/seller/orders', [SellerOrderController::class, 'index']);
         Route::post('/seller/orders/{id}/prepare', [SellerOrderController::class, 'prepare'])
             ->middleware('throttle:transactional');
+        Route::post('/seller/orders/{id}/cancel', [SellerOrderController::class, 'cancel'])
+            ->middleware('throttle:transactional');
         Route::post('/seller/orders/{id}/ship', [SellerOrderController::class, 'ship'])
             ->middleware('throttle:transactional');
         Route::post('/seller/orders/{id}/deliver', [SellerOrderController::class, 'deliver'])

@@ -116,8 +116,10 @@ class OrderModel {
   bool get isDisputed => disputeStatus != 'NONE' && disputeStatus != 'RESOLVED';
 
   // Escrow State Getters
-  bool get isEscrowHeld => escrowStatus == 'HELD' || escrowStatus == 'ESCROW_HELD';
-  bool get isEscrowFrozen => escrowStatus == 'FROZEN' || escrowStatus == 'DISPUTE_FROZEN';
+  bool get isEscrowHeld =>
+      escrowStatus == 'HELD' || escrowStatus == 'ESCROW_HELD';
+  bool get isEscrowFrozen =>
+      escrowStatus == 'FROZEN' || escrowStatus == 'DISPUTE_FROZEN';
   bool get isEscrowReleased => escrowStatus == 'RELEASED';
   bool get isEscrowRefunded => escrowStatus == 'REFUNDED';
 
@@ -130,7 +132,8 @@ class OrderModel {
   // Completion & Dispute Capabilities
   bool get canBuyerConfirmDelivery => (isShipped || isDelivered) && !isDisputed;
   bool get canBuyerOpenDispute =>
-      (isShipped || isDelivered) && (disputeStatus == 'NONE' || disputeStatus.isEmpty);
+      (isShipped || isDelivered) &&
+      (disputeStatus == 'NONE' || disputeStatus.isEmpty);
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     // 1. Seller & Buyer Parsing
@@ -152,7 +155,10 @@ class OrderModel {
       tScore = SafeJsonParser.toDouble(s['trust_score'], defaultValue: 100.0);
     } else {
       sId = SafeJsonParser.toInt(json['seller_id']);
-      sName = SafeJsonParser.toStringValue(json['shop_name'], defaultValue: 'Tiệm Đồ Si');
+      sName = SafeJsonParser.toStringValue(
+        json['shop_name'],
+        defaultValue: 'Tiệm Đồ Si',
+      );
       sSlug = SafeJsonParser.toNullableString(json['shop_slug']);
     }
 
@@ -161,10 +167,16 @@ class OrderModel {
     if (json['buyer'] is Map<String, dynamic>) {
       final b = json['buyer'] as Map<String, dynamic>;
       bId = SafeJsonParser.toInt(b['id'] ?? b['buyer_id']);
-      bName = SafeJsonParser.toStringValue(b['display_name'] ?? b['name'], defaultValue: 'Người mua');
+      bName = SafeJsonParser.toStringValue(
+        b['display_name'] ?? b['name'],
+        defaultValue: 'Người mua',
+      );
     } else {
       bId = SafeJsonParser.toInt(json['buyer_id']);
-      bName = SafeJsonParser.toStringValue(json['buyer_name'], defaultValue: 'Người mua');
+      bName = SafeJsonParser.toStringValue(
+        json['buyer_name'],
+        defaultValue: 'Người mua',
+      );
     }
 
     // 2. Shipping Address Snapshot
@@ -204,7 +216,9 @@ class OrderModel {
 
     final String eStatus = SafeJsonParser.toStringValue(
       json['escrow_status'],
-      defaultValue: (oStatus == 'PAID' || pStatus == 'PAID') ? 'HELD' : 'PENDING',
+      defaultValue: (oStatus == 'PAID' || pStatus == 'PAID')
+          ? 'HELD'
+          : 'PENDING',
     ).toUpperCase();
 
     final String dStatus = SafeJsonParser.toStringValue(
@@ -214,7 +228,10 @@ class OrderModel {
 
     // 4. Financials (DEC-04)
     final double subtotal = SafeJsonParser.toDouble(json['item_subtotal']);
-    final double ship = SafeJsonParser.toDouble(json['shipping_fee'], defaultValue: 0.0);
+    final double ship = SafeJsonParser.toDouble(
+      json['shipping_fee'],
+      defaultValue: 0.0,
+    );
     final double protectFee = SafeJsonParser.toDouble(
       json['buyer_protection_fee'] ?? json['protection_fee'],
       defaultValue: (subtotal * 0.06) + 7000.0,
@@ -242,14 +259,24 @@ class OrderModel {
     // 6. Shipment Model
     ShipmentModel? shipmentObj;
     if (json['shipment'] is Map<String, dynamic>) {
-      shipmentObj = ShipmentModel.fromJson(json['shipment'] as Map<String, dynamic>);
+      shipmentObj = ShipmentModel.fromJson(
+        json['shipment'] as Map<String, dynamic>,
+      );
     } else if (json['tracking_code'] != null || json['carrier_name'] != null) {
       shipmentObj = ShipmentModel(
         id: SafeJsonParser.toInt(json['shipment_id']),
         orderId: SafeJsonParser.toInt(json['id']),
-        carrierName: SafeJsonParser.toStringValue(json['carrier_name'], defaultValue: 'Đang vận chuyển'),
-        trackingCode: SafeJsonParser.toStringValue(json['tracking_code'], defaultValue: 'CHƯA CẬP NHẬT'),
-        status: oStatus == 'DELIVERED' ? 'DELIVERED' : (oStatus == 'SHIPPED' ? 'SHIPPED' : 'PENDING'),
+        carrierName: SafeJsonParser.toStringValue(
+          json['carrier_name'],
+          defaultValue: 'Đang vận chuyển',
+        ),
+        trackingCode: SafeJsonParser.toStringValue(
+          json['tracking_code'],
+          defaultValue: 'CHƯA CẬP NHẬT',
+        ),
+        status: oStatus == 'DELIVERED'
+            ? 'DELIVERED'
+            : (oStatus == 'SHIPPED' ? 'SHIPPED' : 'PENDING'),
         shippedAt: SafeJsonParser.toNullableDateTime(json['shipped_at']),
         deliveredAt: SafeJsonParser.toNullableDateTime(json['delivered_at']),
       );
@@ -259,17 +286,23 @@ class OrderModel {
     int? pId;
     if (json['latest_payment'] is Map<String, dynamic>) {
       pId = SafeJsonParser.toNullableInt(json['latest_payment']['id']);
-    } else if (json['payments'] is List && (json['payments'] as List).isNotEmpty) {
+    } else if (json['payments'] is List &&
+        (json['payments'] as List).isNotEmpty) {
       final lastP = (json['payments'] as List).last;
       if (lastP is Map<String, dynamic>) {
         pId = SafeJsonParser.toNullableInt(lastP['id']);
       }
     }
-    pId ??= SafeJsonParser.toNullableInt(json['payment_id']);
+    pId ??= SafeJsonParser.toNullableInt(
+      json['payment_id'] ?? json['current_payment_id'],
+    );
 
     return OrderModel(
       id: SafeJsonParser.toInt(json['id']),
-      orderCode: SafeJsonParser.toStringValue(json['order_code'], defaultValue: 'ORD-${json['id']}'),
+      orderCode: SafeJsonParser.toStringValue(
+        json['order_code'],
+        defaultValue: 'ORD-${json['id']}',
+      ),
       buyerId: bId,
       buyerName: bName,
       sellerId: sId,
@@ -290,23 +323,41 @@ class OrderModel {
       buyerProtectionFee: protectFee,
       totalAmount: grandTotal,
       sellerNetPayout: netPayout,
-      cancellationRequested: SafeJsonParser.toBool(json['cancellation_requested'], defaultValue: false),
-      cancellationRequestReason: SafeJsonParser.toNullableString(json['cancellation_request_reason']),
-      cancelledByRole: SafeJsonParser.toNullableString(json['cancelled_by_role']),
+      cancellationRequested: SafeJsonParser.toBool(
+        json['cancellation_requested'],
+        defaultValue: false,
+      ),
+      cancellationRequestReason: SafeJsonParser.toNullableString(
+        json['cancellation_request_reason'],
+      ),
+      cancelledByRole: SafeJsonParser.toNullableString(
+        json['cancelled_by_role'],
+      ),
       cancelReason: SafeJsonParser.toNullableString(json['cancel_reason']),
-      sellerCancelRejectReason: SafeJsonParser.toNullableString(json['seller_cancel_reject_reason']),
-      paymentExpiresAt: SafeJsonParser.toNullableDateTime(json['payment_expires_at']),
+      sellerCancelRejectReason: SafeJsonParser.toNullableString(
+        json['seller_cancel_reject_reason'],
+      ),
+      paymentExpiresAt: SafeJsonParser.toNullableDateTime(
+        json['payment_expires_at'],
+      ),
       paidAt: SafeJsonParser.toNullableDateTime(json['paid_at']),
       preparingAt: SafeJsonParser.toNullableDateTime(json['preparing_at']),
       shippedAt: SafeJsonParser.toNullableDateTime(json['shipped_at']),
       deliveredAt: SafeJsonParser.toNullableDateTime(json['delivered_at']),
-      autoCompleteAt: SafeJsonParser.toNullableDateTime(json['auto_complete_at']),
+      autoCompleteAt: SafeJsonParser.toNullableDateTime(
+        json['auto_complete_at'],
+      ),
       completedAt: SafeJsonParser.toNullableDateTime(json['completed_at']),
       cancelledAt: SafeJsonParser.toNullableDateTime(json['cancelled_at']),
       createdAt: SafeJsonParser.toNullableDateTime(json['created_at']),
       paymentId: pId,
-      activeDisputeId: SafeJsonParser.toNullableInt(json['active_dispute_id'] ?? json['dispute_id']),
-      canReview: SafeJsonParser.toBool(json['can_review'], defaultValue: oStatus == 'COMPLETED'),
+      activeDisputeId: SafeJsonParser.toNullableInt(
+        json['active_dispute_id'] ?? json['dispute_id'],
+      ),
+      canReview: SafeJsonParser.toBool(
+        json['can_review'],
+        defaultValue: oStatus == 'COMPLETED',
+      ),
       items: itemsList,
       shipment: shipmentObj,
     );
@@ -327,7 +378,13 @@ class OrderModel {
     );
 
     // 2. Escrow Payment Held
-    final bool isPaidStep = paidAt != null || isPaid || isPreparing || isShipped || isDelivered || isCompleted;
+    final bool isPaidStep =
+        paidAt != null ||
+        isPaid ||
+        isPreparing ||
+        isShipped ||
+        isDelivered ||
+        isCompleted;
     events.add(
       ShipmentTimelineEventModel(
         title: 'Thanh toán & Giữ tiền Escrow',
@@ -340,7 +397,12 @@ class OrderModel {
     );
 
     // 3. Seller Preparing
-    final bool isPrepStep = preparingAt != null || isPreparing || isShipped || isDelivered || isCompleted;
+    final bool isPrepStep =
+        preparingAt != null ||
+        isPreparing ||
+        isShipped ||
+        isDelivered ||
+        isCompleted;
     events.add(
       ShipmentTimelineEventModel(
         title: 'Tiệm đang chuẩn bị hàng',
@@ -353,7 +415,8 @@ class OrderModel {
     );
 
     // 4. Shipped to Carrier
-    final bool isShipStep = shippedAt != null || isShipped || isDelivered || isCompleted;
+    final bool isShipStep =
+        shippedAt != null || isShipped || isDelivered || isCompleted;
     final carrier = shipment?.carrierName ?? 'Đơn vị vận chuyển';
     final tracking = shipment?.trackingCode ?? '';
     events.add(
@@ -368,7 +431,8 @@ class OrderModel {
     );
 
     // 5. Delivered to Buyer
-    final bool isDeliverStep = deliveredAt != null || isDelivered || isCompleted;
+    final bool isDeliverStep =
+        deliveredAt != null || isDelivered || isCompleted;
     events.add(
       ShipmentTimelineEventModel(
         title: 'Đã giao đến người mua',

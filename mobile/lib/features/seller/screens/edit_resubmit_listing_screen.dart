@@ -1,12 +1,19 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/state_feedback_views.dart';
 import '../models/seller_product_item_model.dart';
 import '../viewmodels/seller_product_form_view_model.dart';
+import '../../catalog/models/category_model.dart';
+import '../../catalog/viewmodels/catalog_search_view_model.dart';
 
 /// M-SL-04: Edit & Resubmit Product Listing Screen
 /// Enforces DEC-05 (Rejection reason inspection banner & clearance on resubmission),
@@ -22,13 +29,16 @@ class EditResubmitListingScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EditResubmitListingScreen> createState() => _EditResubmitListingScreenState();
+  ConsumerState<EditResubmitListingScreen> createState() =>
+      _EditResubmitListingScreenState();
 }
 
-class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingScreen> {
+class _EditResubmitListingScreenState
+    extends ConsumerState<EditResubmitListingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
   late TextEditingController _priceController;
   late TextEditingController _quantityController;
   late TextEditingController _defectController;
@@ -36,13 +46,56 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
   late TextEditingController _startPriceController;
   late TextEditingController _bidIncrementController;
 
-  static const List<Map<String, dynamic>> _dummyCategories = [
-    {'id': 1, 'name': 'Áo khoác Vintage & Retro'},
-    {'id': 2, 'name': 'Quần Jeans & Denim Cổ Điển'},
-    {'id': 3, 'name': 'Đầm & Váy Cổ Điển'},
-    {'id': 4, 'name': 'Phụ kiện Da & Đồng hồ Cổ'},
-    {'id': 5, 'name': 'Giày & Boots Da Vintage'},
-  ];
+  List<CategoryModel> _flattenCategories(List<CategoryModel> categories) {
+    final result = <CategoryModel>[];
+    for (final parent in categories) {
+      result.add(parent);
+      if (parent.children.isNotEmpty) {
+        result.addAll(parent.children);
+      }
+    }
+    return result;
+  }
+
+  Future<void> _loadTaxonomy({bool forceRefresh = false}) async {
+    await ref
+        .read(catalogSearchViewModelProvider)
+        .loadTaxonomy(forceRefresh: forceRefresh);
+  }
+
+  Future<void> _pickImages(SellerProductFormViewModel vm) async {
+    final remaining = [
+      8 - vm.imageFiles.length,
+      10 - vm.imageUrls.length - vm.imageFiles.length,
+    ].reduce((a, b) => a < b ? a : b);
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bạn đã chọn tối đa 8 ảnh tải lên từ thiết bị.'),
+        ),
+      );
+      return;
+    }
+    try {
+      final selected = await ImagePicker().pickMultiImage(imageQuality: 85);
+      if (!mounted || selected.isEmpty) return;
+      vm.addImageFiles(selected);
+      if (selected.length > remaining && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Chỉ nhận thêm $remaining ảnh để không vượt giới hạn 8 ảnh/request.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Không thể chọn ảnh: $e')));
+      }
+    }
+  }
 
   static const List<_ConditionOption> _conditions = [
     _ConditionOption('NEW_WITH_TAGS', 'Mới còn tag'),
@@ -56,6 +109,7 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
   void initState() {
     super.initState();
     _titleController = TextEditingController();
+    _descriptionController = TextEditingController();
     _priceController = TextEditingController();
     _quantityController = TextEditingController(text: '1');
     _defectController = TextEditingController();
@@ -65,15 +119,29 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final vm = ref.read(sellerProductFormViewModelProvider);
+      _loadTaxonomy();
       if (widget.initialProduct != null) {
         _populateFields(widget.initialProduct!, vm);
+      } else if (widget.productId > 0) {
+        _loadProductData(vm);
       }
     });
   }
 
-  void _populateFields(SellerProductItemModel product, SellerProductFormViewModel vm) {
+  Future<void> _loadProductData(SellerProductFormViewModel vm) async {
+    final product = await vm.loadProductForEdit(widget.productId);
+    if (mounted && product != null) {
+      _populateFields(product, vm);
+    }
+  }
+
+  void _populateFields(
+    SellerProductItemModel product,
+    SellerProductFormViewModel vm,
+  ) {
     vm.initForEdit(product);
     _titleController.text = product.title;
+    _descriptionController.text = product.description ?? '';
     _priceController.text = product.price.toStringAsFixed(0);
     _quantityController.text = product.availableQuantity.toString();
     _defectController.text = product.defectInfo ?? '';
@@ -89,6 +157,7 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     _priceController.dispose();
     _quantityController.dispose();
     _defectController.dispose();
@@ -102,47 +171,84 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
   Widget build(BuildContext context) {
     final vm = ref.watch(sellerProductFormViewModelProvider);
     final isAuction = vm.listingType == 'AUCTION';
-    final hasRejection = vm.currentRejectionReason != null && vm.currentRejectionReason!.isNotEmpty;
+    final hasRejection =
+        vm.currentRejectionReason != null &&
+        vm.currentRejectionReason!.isNotEmpty;
+    final isInvalidId = widget.initialProduct == null && widget.productId <= 0;
+    final isLoaded =
+        (widget.initialProduct != null || vm.editingProductId != null) &&
+        !isInvalidId;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCream,
       appBar: AppBar(
-        title: Text(hasRejection ? 'Sửa & Gửi duyệt lại' : 'Chỉnh sửa bài đăng'),
+        title: Text(
+          hasRejection ? 'Sửa & Gửi duyệt lại' : 'Chỉnh sửa bài đăng',
+        ),
         elevation: 0,
       ),
-      bottomNavigationBar: _buildBottomActionBar(vm, hasRejection),
+      bottomNavigationBar: isLoaded
+          ? _buildBottomActionBar(vm, hasRejection)
+          : null,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(DesignTokens.spaceLg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // DEC-05: Pinned Rejection Banner in Burgundy/Red
-                if (hasRejection) ...[
-                  _buildRejectionBanner(vm.currentRejectionReason!),
-                  const SizedBox(height: DesignTokens.spaceLg),
-                ],
+        child: isInvalidId
+            ? RetroEmptyStateView(
+                title: 'Sản phẩm không hợp lệ',
+                message: 'Mã sản phẩm không hợp lệ hoặc không còn tồn tại.',
+                icon: Icons.error_outline,
+                actionLabel: 'Quay lại danh sách bài đăng',
+                onAction: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.sellerListings);
+                  }
+                },
+              )
+            : !isLoaded
+            ? (vm.state.isError
+                  ? RetroErrorRetryView(
+                      errorMessage:
+                          vm.errorMessage ??
+                          'Không thể tải thông tin bài đăng.',
+                      onRetry: () => _loadProductData(vm),
+                    )
+                  : const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryTerracotta,
+                      ),
+                    ))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(DesignTokens.spaceLg),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // DEC-05: Pinned Rejection Banner in Burgundy/Red
+                      if (hasRejection) ...[
+                        _buildRejectionBanner(vm.currentRejectionReason!),
+                        const SizedBox(height: DesignTokens.spaceLg),
+                      ],
 
-                // Photos Section
-                _buildPhotosSection(vm),
+                      // Photos Section
+                      _buildPhotosSection(vm),
 
-                const SizedBox(height: DesignTokens.spaceLg),
+                      const SizedBox(height: DesignTokens.spaceLg),
 
-                // Basic Info Card
-                _buildBasicInfoSection(vm, isAuction),
+                      // Basic Info Card
+                      _buildBasicInfoSection(vm, isAuction),
 
-                const SizedBox(height: DesignTokens.spaceLg),
+                      const SizedBox(height: DesignTokens.spaceLg),
 
-                // Condition & Defect Info (BR-PR-03)
-                _buildConditionAndDefectSection(vm),
+                      // Condition & Defect Info (BR-PR-03)
+                      _buildConditionAndDefectSection(vm),
 
-                const SizedBox(height: DesignTokens.space2xl),
-              ],
-            ),
-          ),
-        ),
+                      const SizedBox(height: DesignTokens.space2xl),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -162,7 +268,11 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline, color: AppColors.statusDanger, size: 22),
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.statusDanger,
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Lý do từ chối kiểm duyệt (DEC-05)',
@@ -194,7 +304,9 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
           const SizedBox(height: 6),
           Text(
             'Vui lòng cập nhật hình ảnh, thông tin khuyết điểm hoặc giá bán và nhấn "Gửi duyệt lại (Resubmit)". Khi gửi lại, lý do từ chối sẽ được xóa và chuyển về trạng thái Chờ duyệt.',
-            style: AppTypography.caption.copyWith(color: AppColors.statusDanger),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.statusDanger,
+            ),
           ),
         ],
       ),
@@ -221,8 +333,10 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
                 style: AppTypography.headingSmall.copyWith(fontSize: 15),
               ),
               Text(
-                '${vm.imageUrls.length}/10',
-                style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                '${vm.imageUrls.length + vm.imageFiles.length}/10',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
               ),
             ],
           ),
@@ -231,14 +345,28 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
             height: 90,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: vm.imageUrls.length + 1,
+              itemCount: vm.imageUrls.length + vm.imageFiles.length + 1,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                if (index == vm.imageUrls.length) {
+                if (index == vm.imageUrls.length + vm.imageFiles.length) {
                   return _buildAddPhotoButton(vm);
                 }
-                return _buildPhotoThumbnail(vm, index);
+                if (index < vm.imageUrls.length) {
+                  return _buildPhotoThumbnail(vm, index);
+                }
+                return _buildLocalPhotoThumbnail(
+                  vm,
+                  index - vm.imageUrls.length,
+                );
               },
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _promptAddImageUrl(vm),
+              icon: const Icon(Icons.link, size: 16),
+              label: const Text('Thêm ảnh bằng đường dẫn URL'),
             ),
           ),
         ],
@@ -246,9 +374,63 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
     );
   }
 
+  Widget _buildLocalPhotoThumbnail(SellerProductFormViewModel vm, int index) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+          child: FutureBuilder<Uint8List>(
+            future: vm.imageFiles[index].readAsBytes(),
+            builder: (context, snapshot) => snapshot.hasData
+                ? Image.memory(
+                    snapshot.data!,
+                    width: 88,
+                    height: 90,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 88,
+                    height: 90,
+                    color: AppColors.surfaceWarm,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+          ),
+        ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: InkWell(
+            onTap: () => vm.removeImageFile(index),
+            child: const CircleAvatar(
+              radius: 10,
+              backgroundColor: Colors.black54,
+              child: Icon(Icons.close, size: 13, color: Colors.white),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            color: Colors.black54,
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: const Text(
+              'Ảnh mới',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 9),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAddPhotoButton(SellerProductFormViewModel vm) {
     return InkWell(
-      onTap: () => _promptAddImageUrl(vm),
+      onTap: () => _pickImages(vm),
       borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       child: Container(
         width: 88,
@@ -260,9 +442,16 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.add_a_photo_outlined, color: AppColors.primaryTerracotta, size: 28),
+            Icon(
+              Icons.add_a_photo_outlined,
+              color: AppColors.primaryTerracotta,
+              size: 28,
+            ),
             SizedBox(height: 4),
-            Text('Thêm ảnh', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            Text(
+              'Thêm ảnh',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
           ],
         ),
       ),
@@ -281,13 +470,12 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
             color: AppColors.surfaceWarm,
             borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             border: Border.all(
-              color: isPrimary ? AppColors.primaryTerracotta : AppColors.borderWarm,
+              color: isPrimary
+                  ? AppColors.primaryTerracotta
+                  : AppColors.borderWarm,
               width: isPrimary ? 2 : 1,
             ),
-            image: DecorationImage(
-              image: NetworkImage(url),
-              fit: BoxFit.cover,
-            ),
+            image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
           ),
         ),
         if (isPrimary)
@@ -301,7 +489,11 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
               child: const Text(
                 'Ảnh đại diện',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -338,9 +530,14 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTerracotta),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTerracotta,
+            ),
             onPressed: () {
               if (urlController.text.trim().isNotEmpty) {
                 vm.addImageUrl(urlController.text.trim());
@@ -366,7 +563,10 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Thông tin chi tiết sản phẩm', style: AppTypography.headingSmall.copyWith(fontSize: 15)),
+          Text(
+            'Thông tin chi tiết sản phẩm',
+            style: AppTypography.headingSmall.copyWith(fontSize: 15),
+          ),
           const SizedBox(height: 12),
 
           // Title
@@ -377,7 +577,9 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
               border: OutlineInputBorder(),
             ),
             validator: (v) {
-              if (v == null || v.trim().length < 5) return 'Tên phải >= 5 ký tự';
+              if (v == null || v.trim().length < 5) {
+                return 'Tên phải >= 5 ký tự';
+              }
               return null;
             },
             onChanged: (v) => vm.title = v.trim(),
@@ -385,24 +587,93 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
 
           const SizedBox(height: 12),
 
-          // Category Dropdown
-          DropdownButtonFormField<int>(
-            value: vm.categoryId != 0 ? vm.categoryId : _dummyCategories.first['id'] as int,
+          TextFormField(
+            controller: _descriptionController,
+            maxLines: 4,
+            maxLength: 5000,
             decoration: const InputDecoration(
-              labelText: 'Danh mục *',
+              labelText: 'Mô tả sản phẩm',
+              hintText: 'Chất liệu, kiểu dáng, nguồn gốc, cách phối...',
               border: OutlineInputBorder(),
+              alignLabelWithHint: true,
             ),
-            items: _dummyCategories.map((cat) {
-              return DropdownMenuItem<int>(
-                value: cat['id'] as int,
-                child: Text(cat['name'] as String),
+            onChanged: (value) => vm.description = value,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Category Dropdown — active categories from taxonomy API.
+          Builder(
+            builder: (context) {
+              final taxonomyVm = ref.watch(catalogSearchViewModelProvider);
+              final taxonomy = taxonomyVm.taxonomy;
+              final categories = taxonomy == null
+                  ? <CategoryModel>[]
+                  : _flattenCategories(taxonomy.categories);
+              final selectedCategoryId = vm.categoryId;
+              final hasSelectedCategory = categories.any(
+                (category) => category.id == selectedCategoryId,
               );
-            }).toList(),
-            onChanged: (catId) {
-              if (catId != null) {
-                final found = _dummyCategories.firstWhere((c) => c['id'] == catId);
-                vm.setCategory(catId, found['name'] as String);
-              }
+              return DropdownButtonFormField<int>(
+                value: hasSelectedCategory ? selectedCategoryId : null,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: 'Danh mục *',
+                  prefixIcon: const Icon(Icons.category_outlined),
+                  border: const OutlineInputBorder(),
+                  helperText: taxonomyVm.isLoadingTaxonomy
+                      ? 'Đang tải danh mục...'
+                      : null,
+                  errorText: taxonomyVm.taxonomyError,
+                  suffixIcon: taxonomyVm.taxonomyError != null
+                      ? IconButton(
+                          icon: const Icon(Icons.refresh),
+                          tooltip: 'Tải lại danh mục',
+                          onPressed: () => _loadTaxonomy(forceRefresh: true),
+                        )
+                      : null,
+                ),
+                hint: Text(
+                  taxonomyVm.isLoadingTaxonomy
+                      ? 'Đang tải danh mục...'
+                      : 'Chọn danh mục sản phẩm',
+                ),
+                items: categories.map((category) {
+                  final parent = category.parentId == null
+                      ? null
+                      : taxonomy?.categories
+                            .where((root) => root.id == category.parentId)
+                            .firstOrNull;
+                  return DropdownMenuItem<int>(
+                    value: category.id,
+                    child: Text(
+                      parent == null
+                          ? category.name
+                          : '${parent.name} › ${category.name}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged:
+                    taxonomyVm.isLoadingTaxonomy ||
+                        (taxonomyVm.taxonomyError != null &&
+                            categories.isEmpty) ||
+                        categories.isEmpty
+                    ? null
+                    : (categoryId) {
+                        if (categoryId == null) return;
+                        final category = categories.firstWhere(
+                          (item) => item.id == categoryId,
+                        );
+                        vm.setCategory(category.id, category.name);
+                      },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Vui lòng chọn danh mục sản phẩm';
+                  }
+                  return null;
+                },
+              );
             },
           ),
 
@@ -550,7 +821,10 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
     );
   }
 
-  Widget _buildBottomActionBar(SellerProductFormViewModel vm, bool hasRejection) {
+  Widget _buildBottomActionBar(
+    SellerProductFormViewModel vm,
+    bool hasRejection,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: DesignTokens.spaceLg,
@@ -566,7 +840,9 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
           // Lưu thay đổi nháp
           Expanded(
             child: OutlinedButton(
-              onPressed: vm.isSubmitting ? null : () => _submitEditForm(vm, submitForReview: false),
+              onPressed: vm.isSubmitting
+                  ? null
+                  : () => _submitEditForm(vm, submitForReview: false),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF84664C),
                 side: const BorderSide(color: AppColors.borderWarm),
@@ -575,7 +851,10 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
                   borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
               ),
-              child: const Text('Lưu thay đổi', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Lưu thay đổi',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -584,9 +863,13 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
             flex: 2,
             child: ElevatedButton(
               key: const Key('btn_resubmit_action'),
-              onPressed: vm.isSubmitting ? null : () => _submitEditForm(vm, submitForReview: true),
+              onPressed: vm.isSubmitting
+                  ? null
+                  : () => _submitEditForm(vm, submitForReview: true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: hasRejection ? AppColors.statusDanger : AppColors.primaryTerracotta,
+                backgroundColor: hasRejection
+                    ? AppColors.statusDanger
+                    : AppColors.primaryTerracotta,
                 foregroundColor: AppColors.textLight,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -597,10 +880,15 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : Text(
-                      hasRejection ? 'Gửi duyệt lại (Resubmit)' : 'Lưu & Gửi phê duyệt',
+                      hasRejection
+                          ? 'Gửi duyệt lại (Resubmit)'
+                          : 'Lưu & Gửi phê duyệt',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
             ),
@@ -610,7 +898,10 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
     );
   }
 
-  Future<void> _submitEditForm(SellerProductFormViewModel vm, {required bool submitForReview}) async {
+  Future<void> _submitEditForm(
+    SellerProductFormViewModel vm, {
+    required bool submitForReview,
+  }) async {
     if (submitForReview) {
       if (!_formKey.currentState!.validate()) {
         return;
@@ -623,6 +914,7 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
         return;
       }
       vm.title = _titleController.text.trim();
+      vm.description = _descriptionController.text.trim();
       vm.defectInfo = _defectController.text.trim();
     }
 
@@ -631,9 +923,11 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
       if (res != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(submitForReview
-                ? 'Đã gửi duyệt lại sản phẩm "${res.title}". Lý do từ chối đã được xóa!'
-                : 'Đã lưu thay đổi sản phẩm.'),
+            content: Text(
+              submitForReview
+                  ? 'Đã gửi duyệt lại sản phẩm "${res.title}". Lý do từ chối đã được xóa!'
+                  : 'Đã lưu thay đổi sản phẩm.',
+            ),
           ),
         );
         context.pushReplacement(AppRoutes.sellerListings);
@@ -641,10 +935,12 @@ class _EditResubmitListingScreenState extends ConsumerState<EditResubmitListingS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.statusDanger,
-            content: Text(vm.state.maybeWhen(
-              error: (err, _) => err,
-              orElse: () => 'Lỗi khi cập nhật sản phẩm.',
-            )),
+            content: Text(
+              vm.state.maybeWhen(
+                error: (err, _) => err,
+                orElse: () => 'Lỗi khi cập nhật sản phẩm.',
+              ),
+            ),
           ),
         );
       }

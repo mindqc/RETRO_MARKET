@@ -5,6 +5,7 @@ namespace App\Services\Escrow;
 use App\Enums\EscrowStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Exceptions\EscrowLedgerIntegrityException;
 use App\Exceptions\InvalidStateTransitionException;
 use App\Exceptions\RolePermissionDeniedException;
 use App\Models\EscrowTransaction;
@@ -39,15 +40,23 @@ class MockQrPaymentService
      *
      * @throws RolePermissionDeniedException
      * @throws InvalidStateTransitionException
+     * @throws EscrowLedgerIntegrityException
      */
     public function simulateSuccess(User $buyer, int $paymentId): array
     {
-        return DB::transaction(function () use ($buyer, $paymentId) {
+        $locator = Payment::select('id', 'order_id')->findOrFail($paymentId);
+
+        return DB::transaction(function () use ($buyer, $paymentId, $locator) {
+            // Lock Hierarchy: Order -> Payment -> SellerProfile
+            /** @var Order $order */
+            $order = Order::where('id', $locator->order_id)->lockForUpdate()->firstOrFail();
+
             /** @var Payment $payment */
             $payment = Payment::where('id', $paymentId)->lockForUpdate()->firstOrFail();
 
-            /** @var Order $order */
-            $order = Order::where('id', $payment->order_id)->lockForUpdate()->firstOrFail();
+            if ((int) $payment->order_id !== (int) $order->id) {
+                throw new InvalidStateTransitionException('Dữ liệu thanh toán không hợp lệ với đơn hàng.');
+            }
 
             if ($payment->payer_id !== $buyer->id && ! $buyer->isInternalStaff()) {
                 throw new RolePermissionDeniedException('Bạn không phải người thực hiện thanh toán cho đơn hàng này.');
@@ -106,12 +115,18 @@ class MockQrPaymentService
                 'note' => 'Giữ tiền trung gian Escrow khi người mua thanh toán QR thành công.',
             ]);
 
-            // 4. Update Seller Profile escrow_held_balance
+            // 4. Update Seller Profile escrow_held_balance using BCMath
             $sellerProfile = SellerProfile::where('user_id', $order->seller_id)->lockForUpdate()->first();
-            if ($sellerProfile) {
-                $sellerProfile->escrow_held_balance = round((float) $sellerProfile->escrow_held_balance + (float) $order->item_subtotal, 2);
-                $sellerProfile->save();
+            if (! $sellerProfile) {
+                throw new EscrowLedgerIntegrityException('Không tìm thấy hồ sơ người bán để ký quỹ Escrow.');
             }
+
+            $sellerProfile->escrow_held_balance = bcadd(
+                (string) $sellerProfile->escrow_held_balance,
+                (string) $order->item_subtotal,
+                2
+            );
+            $sellerProfile->save();
 
             // 5. Notify Seller
             Notification::create([
@@ -141,12 +156,19 @@ class MockQrPaymentService
      */
     public function simulateFailure(User $buyer, int $paymentId, ?string $reason = null): array
     {
-        return DB::transaction(function () use ($buyer, $paymentId, $reason) {
+        $locator = Payment::select('id', 'order_id')->findOrFail($paymentId);
+
+        return DB::transaction(function () use ($buyer, $paymentId, $locator, $reason) {
+            // Lock Hierarchy: Order -> Payment
+            /** @var Order $order */
+            $order = Order::where('id', $locator->order_id)->lockForUpdate()->firstOrFail();
+
             /** @var Payment $payment */
             $payment = Payment::where('id', $paymentId)->lockForUpdate()->firstOrFail();
 
-            /** @var Order $order */
-            $order = Order::where('id', $payment->order_id)->lockForUpdate()->firstOrFail();
+            if ((int) $payment->order_id !== (int) $order->id) {
+                throw new InvalidStateTransitionException('Dữ liệu thanh toán không hợp lệ với đơn hàng.');
+            }
 
             if ($payment->payer_id !== $buyer->id && ! $buyer->isInternalStaff()) {
                 throw new RolePermissionDeniedException('Bạn không phải người thực hiện thanh toán cho đơn hàng này.');
@@ -155,6 +177,11 @@ class MockQrPaymentService
             $orderPaymentStatus = $order->payment_status instanceof PaymentStatus ? $order->payment_status->value : (string) $order->payment_status;
             if ($orderPaymentStatus === 'PAID') {
                 throw new InvalidStateTransitionException('Đơn hàng đã được thanh toán thành công, không thể giả lập thất bại.');
+            }
+
+            $orderStatus = $order->order_status instanceof OrderStatus ? $order->order_status->value : (string) $order->order_status;
+            if ($orderStatus === 'CANCELLED') {
+                throw new InvalidStateTransitionException('Đơn hàng đã bị hủy, không thể tiếp tục thanh toán.');
             }
 
             // 1. Mark current payment FAILED

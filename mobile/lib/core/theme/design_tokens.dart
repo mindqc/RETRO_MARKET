@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
-/// Design tokens for RETRO MARKET (izithrift)
-/// Defines standard spacing, radius, border width, and elevation/shadows.
+/// Shared spacing, shape, border and elevation tokens for RETRO MARKET.
 class DesignTokens {
   DesignTokens._();
 
-  // Spacing Tokens
+  // Spacing scale (multiples of 4 logical pixels)
+  static const double space2xs = 2.0;
   static const double spaceXs = 4.0;
   static const double spaceSm = 8.0;
   static const double spaceMd = 12.0;
@@ -14,8 +15,10 @@ class DesignTokens {
   static const double spaceXl = 24.0;
   static const double space2xl = 32.0;
   static const double space3xl = 40.0;
+  static const double space4xl = 48.0;
+  static const double space5xl = 64.0;
 
-  // Spacing Aliases
+  // Backward-compatible spacing aliases
   static const double spacingXs = spaceXs;
   static const double spacingSm = spaceSm;
   static const double spacingMd = spaceMd;
@@ -24,28 +27,37 @@ class DesignTokens {
   static const double spacing2xl = space2xl;
   static const double spacing3xl = space3xl;
 
-  // Corner Radius Tokens
+  // Corner radius scale
   static const double radiusXs = 4.0;
   static const double radiusSm = 8.0;
   static const double radiusMd = 12.0;
   static const double radiusLg = 16.0;
   static const double radiusXl = 24.0;
+  static const double radius2xl = 32.0;
   static const double radiusFull = 999.0;
   static const double radiusRound = radiusFull;
 
-  // Border Widths
+  // Border widths
   static const double borderThin = 1.0;
   static const double borderMedium = 1.5;
   static const double borderThick = 2.0;
 
-  // Standard Border Radii
-  static const BorderRadius borderRadiusSm = BorderRadius.all(Radius.circular(radiusSm));
-  static const BorderRadius borderRadiusMd = BorderRadius.all(Radius.circular(radiusMd));
-  static const BorderRadius borderRadiusLg = BorderRadius.all(Radius.circular(radiusLg));
-  static const BorderRadius borderRadiusFull = BorderRadius.all(Radius.circular(radiusFull));
+  // Standard border radii
+  static const BorderRadius borderRadiusXs =
+      BorderRadius.all(Radius.circular(radiusXs));
+  static const BorderRadius borderRadiusSm =
+      BorderRadius.all(Radius.circular(radiusSm));
+  static const BorderRadius borderRadiusMd =
+      BorderRadius.all(Radius.circular(radiusMd));
+  static const BorderRadius borderRadiusLg =
+      BorderRadius.all(Radius.circular(radiusLg));
+  static const BorderRadius borderRadiusXl =
+      BorderRadius.all(Radius.circular(radiusXl));
+  static const BorderRadius borderRadiusFull =
+      BorderRadius.all(Radius.circular(radiusFull));
   static const BorderRadius borderRadiusRound = borderRadiusFull;
 
-  // Card & Container Shadows
+  // Elevation and shadows
   static const List<BoxShadow> cardElevation = [
     BoxShadow(
       color: Color(0x0F231F20),
@@ -66,21 +78,21 @@ class DesignTokens {
 
   static const List<BoxShadow> floatingButtonElevation = [
     BoxShadow(
-      color: Color(0x24C85A32),
+      color: Color(0x242D5A3C),
       offset: Offset(0, 4),
       blurRadius: 12,
       spreadRadius: 0,
     ),
   ];
 
-  // Standard Outlined Borders
+  // Borders
   static Border defaultBorder = Border.all(
     color: AppColors.borderWarm,
     width: borderThin,
   );
 
   static Border activeBorder = Border.all(
-    color: AppColors.primaryTerracotta,
+    color: AppColors.primaryForestGreen,
     width: borderMedium,
   );
 }

@@ -465,7 +465,7 @@ void main() {
 
       expect(find.text('Chi tiết thanh toán'), findsOneWidget);
       expect(find.text('Tiền hàng'), findsOneWidget);
-      expect(find.text('Phí bảo vệ người mua (DEC-04)'), findsOneWidget);
+      expect(find.text('Phí bảo vệ người mua'), findsOneWidget);
       expect(find.text('Thực nhận của người bán'), findsOneWidget);
       expect(find.text('Tổng thanh toán'), findsOneWidget);
 

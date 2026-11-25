@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
@@ -8,8 +9,9 @@ import 'condition_badge.dart';
 import 'verification_badge.dart';
 import 'state_feedback_views.dart';
 
-/// RetroProductCard displays a fixed-price secondhand product card
-/// Enforces BR-AC-02 awareness (highlights if the item belongs to the viewing seller).
+/// Editorial product card for fixed-price secondhand listings.
+///
+/// Keeps the existing listing, ownership, verification and favorite behavior.
 class RetroProductCard extends StatelessWidget {
   final int id;
   final String title;
@@ -40,115 +42,156 @@ class RetroProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-          border: Border.all(color: AppColors.borderWarm, width: DesignTokens.borderThin),
-          boxShadow: DesignTokens.cardElevation,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Thumbnail with badges and like button
-            AspectRatio(
-              aspectRatio: 1.0,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildProductImage(),
-                  // Top left condition badge
-                  Positioned(
-                    top: DesignTokens.spaceSm,
-                    left: DesignTokens.spaceSm,
-                    child: ConditionBadge(condition: condition, isCompact: true),
-                  ),
-                  // Top right like button
-                  if (onLikeToggle != null)
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+            border: Border.all(
+              color: AppColors.borderWarm,
+              width: DesignTokens.borderThin,
+            ),
+            boxShadow: DesignTokens.cardElevation,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildProductImage(),
                     Positioned(
-                      top: DesignTokens.spaceXs,
-                      right: DesignTokens.spaceXs,
-                      child: IconButton(
-                        iconSize: 20,
-                        visualDensity: VisualDensity.compact,
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? AppColors.christmasBerryRed : AppColors.textMuted,
-                        ),
-                        onPressed: onLikeToggle,
+                      top: DesignTokens.spaceSm,
+                      left: DesignTokens.spaceSm,
+                      child: ConditionBadge(
+                        condition: condition,
+                        isCompact: true,
                       ),
                     ),
-                  // Bottom left verification badge or owner banner
-                  if (isOwner)
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        color: AppColors.surfaceDark.withValues(alpha: 0.8),
-                        child: Text(
-                          'Sản phẩm của bạn (BR-AC-02)',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textLight,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 10,
+                    if (onLikeToggle != null)
+                      Positioned(
+                        top: DesignTokens.spaceXs,
+                        right: DesignTokens.spaceXs,
+                        child: Material(
+                          color: AppColors.surfaceCard.withValues(alpha: 0.94),
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            tooltip: isLiked
+                                ? 'Bỏ khỏi yêu thích'
+                                : 'Thêm vào yêu thích',
+                            iconSize: 19,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 38,
+                              height: 38,
+                            ),
+                            icon: Icon(
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: isLiked
+                                  ? AppColors.christmasBerryRed
+                                  : AppColors.textMuted,
+                            ),
+                            onPressed: onLikeToggle,
                           ),
                         ),
                       ),
-                    )
-                  else if (verificationStatus != null && verificationStatus != 'NONE')
-                    Positioned(
-                      bottom: DesignTokens.spaceSm,
-                      left: DesignTokens.spaceSm,
-                      child: VerificationBadge(
-                        status: verificationStatus!,
-                        isCompact: true,
-                        showLabel: false,
+                    if (isOwner)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: DesignTokens.spaceSm,
+                            vertical: DesignTokens.spaceXs,
+                          ),
+                          color: AppColors.primaryForestGreen.withValues(
+                            alpha: 0.92,
+                          ),
+                          child: Text(
+                            'Sản phẩm của bạn (BR-AC-02)',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (verificationStatus != null &&
+                        verificationStatus != 'NONE')
+                      Positioned(
+                        bottom: DesignTokens.spaceSm,
+                        left: DesignTokens.spaceSm,
+                        child: VerificationBadge(
+                          status: verificationStatus!,
+                          isCompact: true,
+                          showLabel: false,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  DesignTokens.spaceMd,
+                  DesignTokens.spaceSm,
+                  DesignTokens.spaceMd,
+                  DesignTokens.spaceMd,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
                       ),
                     ),
-                ],
-              ),
-            ),
-
-            // Product Details
-            Padding(
-              padding: const EdgeInsets.all(DesignTokens.spaceSm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: DesignTokens.spaceXs),
-                  Text(
-                    VndFormatter.format(price),
-                    style: AppTypography.priceMedium,
-                  ),
-                  if (sellerName != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: DesignTokens.spaceSm),
                     Text(
-                      sellerName!,
+                      VndFormatter.format(price),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.caption,
+                      style: AppTypography.priceMedium,
                     ),
+                    if (sellerName != null) ...[
+                      const SizedBox(height: DesignTokens.spaceXs),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.storefront_outlined,
+                            size: 13,
+                            color: AppColors.textMuted,
+                          ),
+                          const SizedBox(width: DesignTokens.spaceXs),
+                          Expanded(
+                            child: Text(
+                              sellerName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.caption,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -159,7 +202,11 @@ class RetroProductCard extends StatelessWidget {
       return Container(
         color: AppColors.surfaceWarm,
         child: const Center(
-          child: Icon(Icons.inventory_2_outlined, color: AppColors.textMuted, size: 36),
+          child: Icon(
+            Icons.inventory_2_outlined,
+            color: AppColors.textMuted,
+            size: 36,
+          ),
         ),
       );
     }
@@ -167,11 +214,18 @@ class RetroProductCard extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: primaryImageUrl!,
       fit: BoxFit.cover,
-      placeholder: (context, url) => const RetroShimmerBox(width: double.infinity, height: double.infinity),
+      placeholder: (context, url) => const RetroShimmerBox(
+        width: double.infinity,
+        height: double.infinity,
+      ),
       errorWidget: (context, url, error) => Container(
         color: AppColors.surfaceWarm,
         child: const Center(
-          child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted, size: 36),
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: AppColors.textMuted,
+            size: 36,
+          ),
         ),
       ),
     );

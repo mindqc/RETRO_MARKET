@@ -19,7 +19,7 @@ void main() {
   group('P7-02: Design System Tokens & Typography Tests', () {
     test('test_design_tokens_and_colors_match_spec', () {
       // 1. Verify Warm Thrift Palette tokens
-      expect(AppColors.backgroundCream, const Color(0xFFFBF8F3));
+      expect(AppColors.warmIvory, const Color(0xFFFBF8F3));
       expect(AppColors.primaryTerracotta, const Color(0xFFC85A32));
       expect(AppColors.secondaryPineGreen, const Color(0xFF2D5A3C));
       expect(AppColors.accentVintageGold, const Color(0xFFD4AF37));
@@ -156,7 +156,7 @@ void main() {
       // Verify total
       expect(find.text('537.000đ'), findsOneWidget);
       // Verify Escrow notice
-      expect(find.textContaining('Bảo vệ người mua 100%'), findsOneWidget);
+      expect(find.textContaining('Tiền thanh toán được giữ trung gian tại Escrow'), findsOneWidget);
       // Verify seller net amount row
       expect(find.text('Thực nhận của người bán'), findsOneWidget);
     });

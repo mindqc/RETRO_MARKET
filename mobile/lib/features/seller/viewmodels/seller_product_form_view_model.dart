@@ -1,4 +1,6 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/state/base_view_model.dart';
 import '../models/seller_product_form_payload.dart';
 import '../models/seller_product_item_model.dart';
@@ -7,7 +9,8 @@ import '../repositories/seller_channel_repository.dart';
 /// ViewModel managing product form creation (M-SL-03) and editing/resubmission (M-SL-04).
 /// Enforces BR-PR-01 (Auction quantity locked to 1), BR-PR-03 (Mandatory defect info >= 5 chars),
 /// and DEC-05 (Rejection reason display & clearing upon resubmission).
-class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> {
+class SellerProductFormViewModel
+    extends BaseViewModel<SellerProductItemModel?> {
   final SellerChannelRepository repository;
 
   int? editingProductId;
@@ -21,9 +24,11 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
   String listingType = 'FIXED_PRICE'; // FIXED_PRICE / AUCTION
   double price = 0.0;
   int quantity = 1;
-  String condition = 'GOOD'; // NEW_WITH_TAGS, LIKE_NEW, GOOD, FAIR, VINTAGE_WORN
+  String condition =
+      'GOOD'; // NEW_WITH_TAGS, LIKE_NEW, GOOD, FAIR, VINTAGE_WORN
   String defectInfo = '';
   List<String> imageUrls = [];
+  List<XFile> imageFiles = [];
 
   // Auction specific
   double? startingPrice;
@@ -52,6 +57,7 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
     condition = 'GOOD';
     defectInfo = '';
     imageUrls = [];
+    imageFiles = [];
     startingPrice = null;
     minBidIncrement = null;
     reservePrice = null;
@@ -66,7 +72,7 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
     editingProductId = product.id;
     currentRejectionReason = product.rejectionReason;
     title = product.title;
-    description = '';
+    description = product.description ?? '';
     categoryId = product.categoryId ?? 0;
     categoryName = product.categoryName ?? '';
     brandId = product.brandId;
@@ -76,7 +82,11 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
     quantity = product.listingType == 'AUCTION' ? 1 : product.availableQuantity;
     condition = product.condition;
     defectInfo = product.defectInfo ?? '';
-    imageUrls = product.primaryImageUrl != null ? [product.primaryImageUrl!] : [];
+    imageUrls = product.primaryImageUrl != null
+        ? [product.primaryImageUrl!]
+        : [];
+    imageFiles = [];
+    description = product.description ?? '';
     startingPrice = product.startingPrice;
     minBidIncrement = product.bidIncrement;
     reservePrice = product.reservePrice;
@@ -84,6 +94,20 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
     auctionEndsAt = product.auctionEndsAt;
     isSubmitting = false;
     notifyListeners();
+  }
+
+  /// Asynchronously loads product details by ID for editing/resubmission (P9-01 / Option 2)
+  Future<SellerProductItemModel?> loadProductForEdit(int productId) async {
+    setLoading();
+    try {
+      final product = await repository.fetchProductDetail(productId);
+      initForEdit(product);
+      setSuccess(product);
+      return product;
+    } catch (e) {
+      setError('Lỗi khi tải thông tin bài đăng: $e');
+      return null;
+    }
   }
 
   /// Toggles listing type and enforces BR-PR-01
@@ -114,8 +138,25 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
   }
 
   void addImageUrl(String url) {
-    if (imageUrls.length < 10) {
+    if (imageUrls.length + imageFiles.length < 10) {
       imageUrls.add(url);
+      notifyListeners();
+    }
+  }
+
+  void addImageFiles(Iterable<XFile> files) {
+    final remaining = [
+      8 - imageFiles.length,
+      10 - imageUrls.length - imageFiles.length,
+    ].reduce((a, b) => a < b ? a : b);
+    if (remaining <= 0) return;
+    imageFiles.addAll(files.take(remaining));
+    notifyListeners();
+  }
+
+  void removeImageFile(int index) {
+    if (index >= 0 && index < imageFiles.length) {
+      imageFiles.removeAt(index);
       notifyListeners();
     }
   }
@@ -128,7 +169,9 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
   }
 
   /// Validates and submits product listing
-  Future<SellerProductItemModel?> submit({required bool submitForReview}) async {
+  Future<SellerProductItemModel?> submit({
+    required bool submitForReview,
+  }) async {
     final payload = SellerProductFormPayload(
       title: title,
       description: description,
@@ -140,6 +183,7 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
       condition: condition,
       defectInfo: defectInfo,
       imageUrls: imageUrls,
+      imageFiles: imageFiles,
       submitForReview: submitForReview,
       startingPrice: startingPrice,
       minBidIncrement: minBidIncrement,
@@ -161,7 +205,10 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
       SellerProductItemModel result;
       if (editingProductId != null) {
         // Edit / Resubmit (DEC-05)
-        result = await repository.updateAndResubmitProduct(editingProductId!, payload);
+        result = await repository.updateAndResubmitProduct(
+          editingProductId!,
+          payload,
+        );
         // DEC-05: Clearing rejection reason upon successful resubmission
         currentRejectionReason = null;
       } else {
@@ -181,7 +228,8 @@ class SellerProductFormViewModel extends BaseViewModel<SellerProductItemModel?> 
 }
 
 /// Riverpod provider for SellerProductFormViewModel
-final sellerProductFormViewModelProvider = ChangeNotifierProvider.autoDispose<SellerProductFormViewModel>((ref) {
-  final repo = ref.watch(sellerChannelRepositoryProvider);
-  return SellerProductFormViewModel(repository: repo);
-});
+final sellerProductFormViewModelProvider =
+    ChangeNotifierProvider.autoDispose<SellerProductFormViewModel>((ref) {
+      final repo = ref.watch(sellerChannelRepositoryProvider);
+      return SellerProductFormViewModel(repository: repo);
+    });

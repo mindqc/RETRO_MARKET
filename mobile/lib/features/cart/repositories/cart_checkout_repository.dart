@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/cart_item_model.dart';
@@ -12,11 +13,35 @@ class CartCheckoutRepository {
 
   CartCheckoutRepository({required this.dioClient});
 
+  /// Safely extracts a JSON Map from dynamic response data.
+  /// Prevents runtime TypeErrors if backend envelopes return a List, null, or unexpected type.
+  Map<String, dynamic> _extractDataMap(dynamic responseData) {
+    if (responseData is! Map) return <String, dynamic>{};
+
+    final data = responseData['data'];
+
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    return <String, dynamic>{};
+  }
+
+  /// Visible for testing safe data extraction.
+  Map<String, dynamic> extractDataMap(dynamic responseData) =>
+      _extractDataMap(responseData);
+
   /// Fetches the current user's shopping cart grouped by store (M-CR-01).
   /// GET /api/v1/cart
   Future<CartModel> fetchCart() async {
-    final response = await dioClient.get<Map<String, dynamic>>(ApiEndpoints.cart);
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final response = await dioClient.get<Map<String, dynamic>>(
+      ApiEndpoints.cart,
+    );
+    final data = _extractDataMap(response.data);
     return CartModel.fromJson(data);
   }
 
@@ -28,12 +53,9 @@ class CartCheckoutRepository {
   }) async {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.cartItems,
-      data: {
-        'product_id': productId,
-        'quantity': quantity,
-      },
+      data: {'product_id': productId, 'quantity': quantity},
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return CartItemModel.fromJson(data);
   }
 
@@ -45,11 +67,23 @@ class CartCheckoutRepository {
   }) async {
     final response = await dioClient.put<Map<String, dynamic>>(
       ApiEndpoints.cartItemDetail(cartItemId),
-      data: {
-        'quantity': quantity,
-      },
+      data: {'quantity': quantity},
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
+    return CartItemModel.fromJson(data);
+  }
+
+  /// Updates selection status of an item in cart (Batch 2.1 Selection Synchronization).
+  /// PUT /api/v1/cart/items/{id}
+  Future<CartItemModel> updateCartItemSelection({
+    required int cartItemId,
+    required bool isSelected,
+  }) async {
+    final response = await dioClient.put<Map<String, dynamic>>(
+      ApiEndpoints.cartItemDetail(cartItemId),
+      data: {'is_selected': isSelected},
+    );
+    final data = _extractDataMap(response.data);
     return CartItemModel.fromJson(data);
   }
 
@@ -71,9 +105,7 @@ class CartCheckoutRepository {
     int? quantity,
     int? addressId,
   }) async {
-    final payload = <String, dynamic>{
-      'source': source.toUpperCase(),
-    };
+    final payload = <String, dynamic>{'source': source.toUpperCase()};
     if (cartItemIds != null && cartItemIds.isNotEmpty) {
       payload['cart_item_ids'] = cartItemIds;
     }
@@ -89,7 +121,7 @@ class CartCheckoutRepository {
       ApiEndpoints.checkoutPreview,
       data: payload,
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return CheckoutPreviewModel.fromJson(data);
   }
 
@@ -122,7 +154,7 @@ class CartCheckoutRepository {
       ApiEndpoints.placeOrder,
       data: payload,
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return PaymentSessionModel.fromJson(data);
   }
 
@@ -132,7 +164,7 @@ class CartCheckoutRepository {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.paymentDetail(paymentId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return PaymentSessionModel.fromJson(data);
   }
 
@@ -142,18 +174,21 @@ class CartCheckoutRepository {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.simulatePaymentSuccess(paymentId),
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return PaymentSessionModel.fromJson(data);
   }
 
   /// Simulates QR payment failure (M-PM-01 -> M-PM-03).
   /// POST /api/v1/payments/{id}/simulate-failure
-  Future<PaymentSessionModel> simulatePaymentFailure(int paymentId, {String? reason}) async {
+  Future<PaymentSessionModel> simulatePaymentFailure(
+    int paymentId, {
+    String? reason,
+  }) async {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.simulatePaymentFailure(paymentId),
       data: reason != null ? {'reason': reason} : null,
     );
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return PaymentSessionModel.fromJson(data);
   }
 }

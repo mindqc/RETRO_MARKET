@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../models/product_image_model.dart';
@@ -24,12 +25,16 @@ class FullScreenZoomViewer extends StatefulWidget {
 class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
   late PageController _pageController;
   late int _currentIndex;
-  final TransformationController _transformController = TransformationController();
+  final TransformationController _transformController =
+      TransformationController();
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, widget.images.isNotEmpty ? widget.images.length - 1 : 0);
+    _currentIndex = widget.initialIndex.clamp(
+      0,
+      widget.images.isNotEmpty ? widget.images.length - 1 : 0,
+    );
     _pageController = PageController(initialPage: _currentIndex);
   }
 
@@ -54,7 +59,10 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(
-          child: Text('Không có hình ảnh để hiển thị.', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'Không có hình ảnh để hiển thị.',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
@@ -99,7 +107,11 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                       errorBuilder: (context, error, stackTrace) => Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                          Icon(
+                            Icons.broken_image_rounded,
+                            color: Colors.white54,
+                            size: 48,
+                          ),
                           SizedBox(height: 8),
                           Text(
                             'Không tải được hình ảnh',
@@ -119,11 +131,14 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withOpacity(0.8),
+                      Colors.black.withOpacity(0.85),
                       Colors.transparent,
                     ],
                     begin: Alignment.topCenter,
@@ -133,7 +148,11 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     const SizedBox(width: 8),
@@ -158,13 +177,17 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.restart_alt, color: Colors.white70),
+                      icon: const Icon(
+                        Icons.restart_alt_rounded,
+                        color: Colors.white70,
+                      ),
                       tooltip: 'Đặt lại phóng to',
                       onPressed: _resetZoom,
                     ),
@@ -179,7 +202,12 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.only(top: 16, bottom: 20, left: 16, right: 16),
+                padding: const EdgeInsets.only(
+                  top: 16,
+                  bottom: 20,
+                  left: 16,
+                  right: 16,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -196,28 +224,46 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Defect note badge
-                    if (currentImage.imageType == 'DEFECT_CLOSEUP' || currentImage.defectNote != null)
+                    if (currentImage.imageType == 'DEFECT_CLOSEUP' ||
+                        currentImage.defectNote != null)
                       Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2C2214),
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                          borderRadius: BorderRadius.circular(
+                            DesignTokens.radiusSm,
+                          ),
                           border: Border.all(color: const Color(0xFFB47800)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline, color: Color(0xFFFFB800), size: 18),
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: Color(0xFFFFB800),
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                currentImage.defectNote != null && currentImage.defectNote!.isNotEmpty
+                                currentImage.defectNote != null &&
+                                        currentImage.defectNote!.isNotEmpty
                                     ? currentImage.defectNote!
                                     : 'Ảnh chụp cận cảnh vết khuyết điểm hoặc sờn mòn tự nhiên.',
                                 style: const TextStyle(
                                   color: Color(0xFFFFE6A8),
                                   fontSize: 12,
-                                  height: 1.3,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -227,11 +273,12 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
 
                     // Horizontal Thumbnail Strip
                     SizedBox(
-                      height: 52,
+                      height: 56,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: widget.images.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 10),
                         itemBuilder: (context, idx) {
                           final thumb = widget.images[idx];
                           final isSelected = idx == _currentIndex;
@@ -245,24 +292,40 @@ class _FullScreenZoomViewerState extends State<FullScreenZoomViewer> {
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              width: 52,
-                              height: 52,
+                              width: 56,
+                              height: 56,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primaryTerracotta : Colors.white24,
+                                  color: isSelected
+                                      ? AppColors.primaryTerracotta
+                                      : Colors.white24,
                                   width: isSelected ? 2.5 : 1,
                                 ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primaryTerracotta
+                                              .withOpacity(0.4),
+                                          blurRadius: 6,
+                                        ),
+                                      ]
+                                    : null,
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(6),
                                 child: Image.network(
                                   thumb.imageUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: Colors.grey[800],
-                                    child: const Icon(Icons.broken_image, size: 16, color: Colors.white30),
-                                  ),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        color: Colors.grey[850],
+                                        child: const Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 18,
+                                          color: Colors.white30,
+                                        ),
+                                      ),
                                 ),
                               ),
                             ),

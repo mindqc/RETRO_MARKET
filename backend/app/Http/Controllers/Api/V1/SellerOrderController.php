@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Order\SellerCancelOrderRequest;
 use App\Http\Requests\Api\V1\Order\ShipOrderRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
+use App\Services\Order\OrderCancellationService;
 use App\Services\Order\OrderFulfillmentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +16,8 @@ use Illuminate\Http\Request;
 class SellerOrderController extends Controller
 {
     public function __construct(
-        protected OrderFulfillmentService $fulfillmentService
+        protected OrderFulfillmentService $fulfillmentService,
+        protected OrderCancellationService $cancellationService
     ) {}
 
     /**
@@ -43,6 +46,24 @@ class SellerOrderController extends Controller
         return ApiResponse::success(
             new OrderResource($updatedOrder),
             'Đã chuyển đơn hàng sang trạng thái chuẩn bị hàng.'
+        );
+    }
+
+    /**
+     * Seller directly cancels an order at PAID or PREPARING (P9-03).
+     */
+    public function cancel(SellerCancelOrderRequest $request, int $id): JsonResponse
+    {
+        $order = Order::findOrFail($id);
+        $updatedOrder = $this->cancellationService->sellerDirectCancel(
+            $request->user(),
+            $order,
+            $request->input('reason')
+        );
+
+        return ApiResponse::success(
+            new OrderResource($updatedOrder),
+            'Đã hủy đơn hàng thành công. Toàn bộ tiền hàng đã được hoàn lại cho người mua.'
         );
     }
 

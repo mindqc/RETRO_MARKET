@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
 import '../utils/vnd_formatter.dart';
 
-/// PriceBreakdownCard calculates and displays detailed order financial breakdown
-/// Enforces Decision DEC-04: Buyer Protection Fee = round(itemSubtotal * 6% + 7.000đ)
-/// Features 100% Escrow refund guarantee notice and optional seller net amount display.
+/// Price breakdown.
+///
+/// DEC-04:
+/// Buyer Protection Fee = round(itemSubtotal * 6% + 7.000đ)
+///
+/// When customBuyerProtectionFee is supplied, it is authoritative
+/// and must be used instead of the local fallback calculation.
+///
+/// When customGrandTotalAmount is supplied, it is authoritative
+/// for the displayed grand total.
 class PriceBreakdownCard extends StatelessWidget {
   final num itemSubtotal;
   final num shippingFee;
   final num? customBuyerProtectionFee;
+  final num? customGrandTotalAmount;
   final bool showSellerNetAmount;
 
   const PriceBreakdownCard({
@@ -18,10 +27,11 @@ class PriceBreakdownCard extends StatelessWidget {
     required this.itemSubtotal,
     this.shippingFee = 0,
     this.customBuyerProtectionFee,
+    this.customGrandTotalAmount,
     this.showSellerNetAmount = false,
   });
 
-  /// Computes Buyer Protection Fee per DEC-04
+  /// DEC-04 fallback calculation.
   static num calculateBuyerProtectionFee(num subtotal) {
     if (subtotal <= 0) return 0;
     return (subtotal * 0.06 + 7000).round();
@@ -30,61 +40,55 @@ class PriceBreakdownCard extends StatelessWidget {
   num get buyerProtectionFee =>
       customBuyerProtectionFee ?? calculateBuyerProtectionFee(itemSubtotal);
 
-  num get totalAmount => itemSubtotal + shippingFee + buyerProtectionFee;
+  num get totalAmount =>
+      customGrandTotalAmount ?? itemSubtotal + shippingFee + buyerProtectionFee;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: const EdgeInsets.all(DesignTokens.spaceMd),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        border: Border.all(color: AppColors.borderWarm, width: DesignTokens.borderThin),
+        border: Border.all(color: AppColors.borderWarm),
         boxShadow: DesignTokens.cardElevation,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.receipt_long_outlined, size: 20, color: AppColors.primaryTerracotta),
-              const SizedBox(width: DesignTokens.spaceSm),
-              Text(
-                'Chi tiết thanh toán',
-                style: AppTypography.headingSmall.copyWith(fontSize: 16),
-              ),
-            ],
-          ),
+          _buildHeader(),
           const SizedBox(height: DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderSubtle),
           const SizedBox(height: DesignTokens.spaceMd),
 
-          // 1. Tiền hàng
-          _buildRow('Tiền hàng', VndFormatter.format(itemSubtotal)),
-          const SizedBox(height: DesignTokens.spaceSm),
-
-          // 2. Phí vận chuyển
           _buildRow(
-            'Phí vận chuyển',
-            shippingFee == 0 ? 'Miễn phí' : VndFormatter.format(shippingFee),
-            valueColor: shippingFee == 0 ? AppColors.secondaryPineGreen : AppColors.textCharcoal,
+            label: 'Tiền hàng',
+            value: VndFormatter.format(itemSubtotal),
+            icon: Icons.shopping_bag_outlined,
           ),
-          const SizedBox(height: DesignTokens.spaceSm),
+          const SizedBox(height: 14),
 
-          // 3. Phí bảo vệ người mua (DEC-04)
           _buildRow(
-            'Phí bảo vệ người mua (DEC-04)',
-            VndFormatter.format(buyerProtectionFee),
-            tooltip: '6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow',
+            label: 'Phí vận chuyển',
+            value: shippingFee == 0
+                ? 'Miễn phí'
+                : VndFormatter.format(shippingFee),
+            valueColor: shippingFee == 0
+                ? AppColors.secondaryPineGreen
+                : AppColors.textCharcoal,
+            icon: Icons.local_shipping_outlined,
           ),
+          const SizedBox(height: 14),
+
+          _buildProtectionFeeRow(),
 
           if (showSellerNetAmount) ...[
-            const SizedBox(height: DesignTokens.spaceSm),
+            const SizedBox(height: 14),
             _buildRow(
-              'Thực nhận của người bán',
-              VndFormatter.format(itemSubtotal),
+              label: 'Thực nhận của người bán',
+              value: VndFormatter.format(itemSubtotal),
               valueColor: AppColors.secondaryPineGreen,
-              tooltip: '0% chiết khấu đơn bán – Người bán nhận trọn 100% tiền hàng sau khi đơn hoàn tất',
+              icon: Icons.account_balance_wallet_outlined,
             ),
           ],
 
@@ -92,45 +96,186 @@ class PriceBreakdownCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.borderWarm),
           const SizedBox(height: DesignTokens.spaceMd),
 
-          // Tổng thanh toán
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          _buildTotal(),
+
+          const SizedBox(height: DesignTokens.spaceMd),
+          _buildEscrowNotice(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6E5D9),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: const Icon(
+            Icons.receipt_long_rounded,
+            size: 21,
+            color: AppColors.primaryTerracotta,
+          ),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Tổng thanh toán', style: AppTypography.headingSmall),
               Text(
-                VndFormatter.format(totalAmount),
-                style: AppTypography.priceLarge,
+                'Chi tiết thanh toán',
+                style: AppTypography.headingSmall.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Minh bạch từng khoản phí',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
               ),
             ],
           ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F2E8),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.verified_user_outlined,
+                size: 13,
+                color: AppColors.secondaryPineGreen,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'An toàn',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.secondaryPineGreen,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-          const SizedBox(height: DesignTokens.spaceMd),
+  Widget _buildProtectionFeeRow() {
+    return _buildRow(
+      label: 'Phí bảo vệ người mua',
+      value: VndFormatter.format(buyerProtectionFee),
+      icon: Icons.shield_outlined,
+      tooltip: 'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.',
+    );
+  }
 
-          // Escrow protection guarantee box
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: DesignTokens.spaceMd,
-              vertical: DesignTokens.spaceSm,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEBF5EE),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-              border: Border.all(color: const Color(0xFFBCE3C6), width: 1),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, size: 18, color: AppColors.secondaryPineGreen),
-                const SizedBox(width: DesignTokens.spaceSm),
-                Expanded(
-                  child: Text(
-                    'Bảo vệ người mua 100% – Tiền được giữ an toàn tại tài khoản Ký quỹ Escrow cho đến khi bạn xác nhận hài lòng.',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.secondaryPineGreen,
-                      fontWeight: FontWeight.w500,
-                    ),
+  Widget _buildRow({
+    required String label,
+    required String value,
+    Color? valueColor,
+    IconData? icon,
+    String? tooltip,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 17, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+        ],
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              if (tooltip != null) ...[
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: tooltip,
+                  child: const Icon(
+                    Icons.info_outline_rounded,
+                    size: 15,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: AppTypography.bodyMedium.copyWith(
+              color: valueColor ?? AppColors.textCharcoal,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTotal() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4EC),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        border: Border.all(color: const Color(0xFFF0D4C1)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tổng thanh toán',
+                  style: AppTypography.headingSmall.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Đã bao gồm các khoản phí',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              VndFormatter.format(totalAmount),
+              textAlign: TextAlign.end,
+              style: AppTypography.priceLarge.copyWith(
+                color: AppColors.primaryTerracotta,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -138,35 +283,37 @@ class PriceBreakdownCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(
-    String label,
-    String value, {
-    Color? valueColor,
-    String? tooltip,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Text(label, style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted)),
-            if (tooltip != null) ...[
-              const SizedBox(width: 4),
-              Tooltip(
-                message: tooltip,
-                child: const Icon(Icons.info_outline, size: 14, color: AppColors.textMuted),
-              ),
-            ],
-          ],
-        ),
-        Text(
-          value,
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? AppColors.textCharcoal,
+  Widget _buildEscrowNotice() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F2E8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        border: Border.all(color: const Color(0xFFB9D9BE)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.shield_rounded,
+            size: 19,
+            color: AppColors.secondaryPineGreen,
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Tiền thanh toán được giữ trung gian tại '
+              'Escrow. Người bán chỉ nhận tiền sau khi '
+              'đơn hàng hoàn tất theo quy trình của ứng dụng.',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.secondaryPineGreen,
+                fontWeight: FontWeight.w500,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

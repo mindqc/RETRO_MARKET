@@ -18,7 +18,17 @@ class HomeCatalogRepository {
   /// GET /api/v1/home
   Future<HomeFeedModel> fetchHomeFeed() async {
     final response = await dioClient.get<Map<String, dynamic>>(ApiEndpoints.home);
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final rawData = response.data?['data'];
+
+    final Map<String, dynamic> data;
+    if (rawData is Map<String, dynamic>) {
+      data = rawData;
+    } else if (rawData is Map) {
+      data = Map<String, dynamic>.from(rawData);
+    } else {
+      data = <String, dynamic>{};
+    }
+
     return HomeFeedModel.fromJson(data);
   }
 

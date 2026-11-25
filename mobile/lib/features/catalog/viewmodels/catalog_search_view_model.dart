@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../core/router/app_routes.dart';
 import '../../../core/network/api_envelope.dart';
 import '../../../core/state/base_view_model.dart';
@@ -19,6 +20,8 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
   final Ref ref;
 
   TaxonomyModel? _taxonomy;
+  bool _isLoadingTaxonomy = false;
+  String? _taxonomyError;
   ProductFilterQuery _currentQuery = const ProductFilterQuery();
   PaginationMeta? _paginationMeta;
   bool _isLoadingMore = false;
@@ -28,18 +31,18 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
   static const int maxRecentKeywords = 10;
   List<String> _recentKeywords = [];
 
-  CatalogSearchViewModel({
-    required this.repository,
-    required this.ref,
-  });
+  CatalogSearchViewModel({required this.repository, required this.ref});
 
   TaxonomyModel? get taxonomy => _taxonomy;
+  bool get isLoadingTaxonomy => _isLoadingTaxonomy;
+  String? get taxonomyError => _taxonomyError;
   ProductFilterQuery get currentQuery => _currentQuery;
   List<ProductSummaryModel> get products => state.data ?? [];
   PaginationMeta? get paginationMeta => _paginationMeta;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMorePages =>
-      _paginationMeta != null && _paginationMeta!.currentPage < _paginationMeta!.lastPage;
+      _paginationMeta != null &&
+      _paginationMeta!.currentPage < _paginationMeta!.lastPage;
   String? get filterValidationError => _filterValidationError;
   List<String> get recentKeywords => List.unmodifiable(_recentKeywords);
 
@@ -57,7 +60,9 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
     final trimmed = keyword.trim();
     if (trimmed.isEmpty) return;
 
-    _recentKeywords.removeWhere((k) => k.toLowerCase() == trimmed.toLowerCase());
+    _recentKeywords.removeWhere(
+      (k) => k.toLowerCase() == trimmed.toLowerCase(),
+    );
     _recentKeywords.insert(0, trimmed);
     if (_recentKeywords.length > maxRecentKeywords) {
       _recentKeywords = _recentKeywords.sublist(0, maxRecentKeywords);
@@ -93,12 +98,27 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
   }
 
   /// Loads taxonomy directory (categories & brands)
-  Future<void> loadTaxonomy() async {
+  Future<void> loadTaxonomy({bool forceRefresh = false}) async {
+    // Prevent duplicate requests while one is already running.
+    if (_isLoadingTaxonomy) return;
+
+    // Reuse loaded taxonomy unless explicitly requested to refresh.
+    if (_taxonomy != null && !forceRefresh) return;
+
+    _isLoadingTaxonomy = true;
+    _taxonomyError = null;
+    notifyListeners();
+
     try {
       _taxonomy = await repository.fetchTaxonomy();
+    } catch (error) {
+      _taxonomyError = 'Không thể tải danh mục. Vui lòng thử lại.';
+
+      // Preserve any previously loaded taxonomy if refresh fails.
+      debugPrint('Taxonomy loading failed: $error');
+    } finally {
+      _isLoadingTaxonomy = false;
       notifyListeners();
-    } catch (_) {
-      // Keep existing taxonomy on error
     }
   }
 
@@ -212,7 +232,8 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
       final result = await repository.toggleFavorite(productId);
       if (result['favorite_count'] != null) {
         final serverCount = (result['favorite_count'] as num).toInt();
-        final serverFavorited = result['is_favorited'] as bool? ?? nextFavorited;
+        final serverFavorited =
+            result['is_favorited'] as bool? ?? nextFavorited;
         final synced = List<ProductSummaryModel>.from(products);
         final idx = synced.indexWhere((p) => p.id == productId);
         if (idx != -1) {
@@ -258,7 +279,10 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Để sau', style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              'Để sau',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -280,6 +304,6 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
 /// Riverpod provider for CatalogSearchViewModel
 final catalogSearchViewModelProvider =
     ChangeNotifierProvider<CatalogSearchViewModel>((ref) {
-  final repository = ref.watch(homeCatalogRepositoryProvider);
-  return CatalogSearchViewModel(repository: repository, ref: ref);
-});
+      final repository = ref.watch(homeCatalogRepositoryProvider);
+      return CatalogSearchViewModel(repository: repository, ref: ref);
+    });

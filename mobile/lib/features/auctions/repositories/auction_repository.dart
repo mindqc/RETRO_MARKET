@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_envelope.dart';
 import '../../../core/network/dio_client.dart';
@@ -14,6 +15,26 @@ class AuctionRepository {
 
   AuctionRepository({required this.dioClient});
 
+  Map<String, dynamic> _extractDataMap(dynamic rawData) {
+    if (rawData is! Map) return <String, dynamic>{};
+
+    final data = rawData['data'];
+
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    return <String, dynamic>{};
+  }
+
+  /// Visible for testing safe data extraction.
+  Map<String, dynamic> extractDataMap(dynamic rawData) =>
+      _extractDataMap(rawData);
+
   /// Lists auctions for Hub tabs: live, ending_soon, upcoming, completed (M-AC-01)
   /// GET /api/v1/auctions
   Future<PaginatedResponse<AuctionCardModel>> fetchHubAuctions({
@@ -24,11 +45,7 @@ class AuctionRepository {
   }) async {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.auctions,
-      queryParameters: {
-        'tab': tab,
-        'page': page,
-        'per_page': perPage,
-      },
+      queryParameters: {'tab': tab, 'page': page, 'per_page': perPage},
     );
 
     final data = response.data ?? {};
@@ -39,7 +56,10 @@ class AuctionRepository {
 
     return PaginatedResponse.fromJson(
       data,
-      (json) => AuctionCardModel.fromJson(json as Map<String, dynamic>, currentUserId: currentUserId),
+      (json) => AuctionCardModel.fromJson(
+        json as Map<String, dynamic>,
+        currentUserId: currentUserId,
+      ),
     );
   }
 
@@ -53,11 +73,7 @@ class AuctionRepository {
   }) async {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.myAuctions,
-      queryParameters: {
-        'tab': tab,
-        'page': page,
-        'per_page': perPage,
-      },
+      queryParameters: {'tab': tab, 'page': page, 'per_page': perPage},
     );
 
     final data = response.data ?? {};
@@ -68,19 +84,27 @@ class AuctionRepository {
 
     return PaginatedResponse.fromJson(
       data,
-      (json) => AuctionCardModel.fromJson(json as Map<String, dynamic>, currentUserId: currentUserId),
+      (json) => AuctionCardModel.fromJson(
+        json as Map<String, dynamic>,
+        currentUserId: currentUserId,
+      ),
     );
   }
 
   /// Retrieves full auction room detail (M-AC-03)
   /// GET /api/v1/auctions/{id}
-  Future<AuctionDetailModel> fetchAuctionDetail(int auctionId, {int? currentUserId}) async {
+  Future<AuctionDetailModel> fetchAuctionDetail(
+    int auctionId, {
+    int? currentUserId,
+  }) async {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.auctionDetail(auctionId),
     );
 
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
-    final serverTime = SafeJsonParser.toNullableDateTime(data['server_time'] ?? response.data?['server_time']);
+    final data = _extractDataMap(response.data);
+    final serverTime = SafeJsonParser.toNullableDateTime(
+      data['server_time'] ?? response.data?['server_time'],
+    );
     if (serverTime != null) {
       ServerTimeService.instance.syncWithServer(serverTime);
     }
@@ -98,16 +122,16 @@ class AuctionRepository {
   }) async {
     final response = await dioClient.get<Map<String, dynamic>>(
       ApiEndpoints.auctionBids(auctionId),
-      queryParameters: {
-        'page': page,
-        'per_page': perPage,
-      },
+      queryParameters: {'page': page, 'per_page': perPage},
     );
 
     final data = response.data ?? {};
     return PaginatedResponse.fromJson(
       data,
-      (json) => AuctionBidItemModel.fromJson(json as Map<String, dynamic>, currentUserId: currentUserId),
+      (json) => AuctionBidItemModel.fromJson(
+        json as Map<String, dynamic>,
+        currentUserId: currentUserId,
+      ),
     );
   }
 
@@ -120,19 +144,32 @@ class AuctionRepository {
   }) async {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.auctionBids(auctionId),
-      data: {
-        'bid_amount': bidAmount,
-      },
+      data: {'bid_amount': bidAmount},
     );
 
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
-    final auctionData = data['auction'] as Map<String, dynamic>? ?? {};
-    final bidData = data['bid'] as Map<String, dynamic>? ?? {};
-    final triggeredAntiSniping = SafeJsonParser.toBool(data['triggered_anti_sniping'], defaultValue: false);
+    final data = _extractDataMap(response.data);
+
+    final auctionData = data['auction'] is Map
+        ? Map<String, dynamic>.from(data['auction'] as Map)
+        : <String, dynamic>{};
+
+    final bidData = data['bid'] is Map
+        ? Map<String, dynamic>.from(data['bid'] as Map)
+        : <String, dynamic>{};
+    final triggeredAntiSniping = SafeJsonParser.toBool(
+      data['triggered_anti_sniping'],
+      defaultValue: false,
+    );
 
     return {
-      'auction': AuctionDetailModel.fromJson(auctionData, currentUserId: currentUserId),
-      'bid': AuctionBidItemModel.fromJson(bidData, currentUserId: currentUserId),
+      'auction': AuctionDetailModel.fromJson(
+        auctionData,
+        currentUserId: currentUserId,
+      ),
+      'bid': AuctionBidItemModel.fromJson(
+        bidData,
+        currentUserId: currentUserId,
+      ),
       'triggered_anti_sniping': triggeredAntiSniping,
     };
   }
@@ -144,21 +181,29 @@ class AuctionRepository {
       ApiEndpoints.auctionWatch(auctionId),
     );
 
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return SafeJsonParser.toBool(data['is_watching'], defaultValue: false);
   }
 
   /// Seller closes an auction early (M-AC-05 / BR-AU-05 / AF-06)
   /// POST /api/v1/auctions/{id}/close-early
-  Future<AuctionDetailModel> closeEarly(int auctionId, {int? currentUserId}) async {
+  Future<AuctionDetailModel> closeEarly(
+    int auctionId, {
+    int? currentUserId,
+  }) async {
     final response = await dioClient.post<Map<String, dynamic>>(
       ApiEndpoints.auctionCloseEarly(auctionId),
     );
 
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
-    final auctionData = data['auction'] as Map<String, dynamic>? ?? data;
+    final data = _extractDataMap(response.data);
+    final auctionData = data['auction'] is Map
+        ? Map<String, dynamic>.from(data['auction'] as Map)
+        : data;
 
-    return AuctionDetailModel.fromJson(auctionData, currentUserId: currentUserId);
+    return AuctionDetailModel.fromJson(
+      auctionData,
+      currentUserId: currentUserId,
+    );
   }
 
   /// Seller relists an unsold or defaulted auction product (M-AC-06 / DEC-02 / AF-09)
@@ -183,7 +228,7 @@ class AuctionRepository {
       },
     );
 
-    final data = response.data?['data'] as Map<String, dynamic>? ?? {};
+    final data = _extractDataMap(response.data);
     return AuctionDetailModel.fromJson(data, currentUserId: currentUserId);
   }
 }

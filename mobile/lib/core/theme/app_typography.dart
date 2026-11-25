@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
-/// Typography tokens for RETRO MARKET (izithrift)
-/// Follows typography hierarchy:
-/// - Brand / Editorial Headlines: Fraunces / Serif
-/// - Body / Controls / Interface: Be Vietnam Pro / Sans-Serif
-/// - Prices & Countdowns: Tabular numbers [FontFeature.tabularFigures()]
+/// Typography tokens for RETRO MARKET (izithrift).
+///
+/// Editorial headlines use Fraunces; interface text uses Be Vietnam Pro.
+/// Prices and timers use tabular figures to prevent numeral layout jitter.
 class AppTypography {
   AppTypography._();
 
@@ -15,14 +15,14 @@ class AppTypography {
   static const List<String> headingFallbacks = ['Georgia', 'serif'];
   static const List<String> bodyFallbacks = ['Roboto', 'Arial', 'sans-serif'];
 
-  // Display & Editorial Titles
+  // Display and editorial headings
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontHeading,
     fontFamilyFallback: headingFallbacks,
     fontSize: 32,
     fontWeight: FontWeight.w700,
     color: AppColors.textCharcoal,
-    height: 1.25,
+    height: 1.2,
     letterSpacing: -0.5,
   );
 
@@ -34,7 +34,7 @@ class AppTypography {
     fontSize: 24,
     fontWeight: FontWeight.w600,
     color: AppColors.textCharcoal,
-    height: 1.3,
+    height: 1.25,
     letterSpacing: -0.2,
   );
 
@@ -44,7 +44,7 @@ class AppTypography {
     fontSize: 20,
     fontWeight: FontWeight.w600,
     color: AppColors.textCharcoal,
-    height: 1.35,
+    height: 1.3,
   );
 
   static const TextStyle headingSmall = TextStyle(
@@ -53,10 +53,10 @@ class AppTypography {
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textCharcoal,
-    height: 1.4,
+    height: 1.35,
   );
 
-  // Body & Content
+  // Body and supporting content
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontBody,
     fontFamilyFallback: bodyFallbacks,
@@ -93,7 +93,7 @@ class AppTypography {
     height: 1.35,
   );
 
-  // Button & Label Styles
+  // Controls and labels
   static const TextStyle buttonLarge = TextStyle(
     fontFamily: fontBody,
     fontFamilyFallback: bodyFallbacks,
@@ -120,14 +120,14 @@ class AppTypography {
     color: AppColors.textCharcoal,
   );
 
-  // Tabular Numerals for Prices & Countdowns (Prevents layout jitter)
+  // Tabular numerals for prices and countdowns
   static const TextStyle priceLarge = TextStyle(
     fontFamily: fontBody,
     fontFamilyFallback: bodyFallbacks,
     fontFeatures: [FontFeature.tabularFigures()],
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    color: AppColors.primaryTerracotta,
+    color: AppColors.primaryForestGreen,
     height: 1.2,
   );
 
@@ -137,7 +137,7 @@ class AppTypography {
     fontFeatures: [FontFeature.tabularFigures()],
     fontSize: 16,
     fontWeight: FontWeight.w700,
-    color: AppColors.primaryTerracotta,
+    color: AppColors.primaryForestGreen,
     height: 1.25,
   );
 
@@ -147,7 +147,7 @@ class AppTypography {
     fontFeatures: [FontFeature.tabularFigures()],
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.primaryTerracotta,
+    color: AppColors.primaryForestGreen,
     height: 1.25,
   );
 
