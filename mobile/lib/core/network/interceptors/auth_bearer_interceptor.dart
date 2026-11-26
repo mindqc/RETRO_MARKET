@@ -36,9 +36,13 @@ class AuthBearerInterceptor extends Interceptor {
     );
 
     if (!isGuestAuthEndpoint) {
-      final token = await tokenStorage.getAccessToken();
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $token';
+      try {
+        final token = await tokenStorage.getAccessToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+      } catch (_) {
+        // Proceed without Authorization header if token storage read fails
       }
     }
 

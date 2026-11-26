@@ -23,6 +23,24 @@ class TestErrorInterceptorHandler extends ErrorInterceptorHandler {
   }
 }
 
+class TestRequestInterceptorHandler extends RequestInterceptorHandler {
+  RequestOptions? nextOptions;
+
+  @override
+  void next(RequestOptions requestOptions) {
+    nextOptions = requestOptions;
+  }
+}
+
+class _ThrowingTokenStorage extends SecureTokenStorage {
+  _ThrowingTokenStorage() : super.inMemory();
+
+  @override
+  Future<String?> getAccessToken() async {
+    throw Exception('WebCrypto OperationError');
+  }
+}
+
 class TestViewModel extends BaseViewModel<String> {
   Future<void> fetchSuccess() async {
     await runCatching(() async => 'Hello Retro Market');
@@ -113,6 +131,19 @@ void main() {
           reason: 'Guest auth endpoint $endpoint must NOT carry Bearer token',
         );
       }
+    });
+
+    test('Continues request via handler.next when tokenStorage.getAccessToken throws', () async {
+      final resilientInterceptor = AuthBearerInterceptor(
+        tokenStorage: _ThrowingTokenStorage(),
+      );
+      final options = RequestOptions(path: '/api/v1/home');
+      final handler = TestRequestInterceptorHandler();
+
+      await resilientInterceptor.onRequest(options, handler);
+
+      expect(handler.nextOptions, same(options));
+      expect(options.headers.containsKey('Authorization'), isFalse);
     });
   });
 
