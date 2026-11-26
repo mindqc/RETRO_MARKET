@@ -362,6 +362,38 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Tài khoản bị tạm khóa'), findsNothing);
     });
+
+    testWidgets('LoginScreen enforces email validation and does not render demo quick-fill', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Điền nhanh'), findsNothing);
+      expect(find.textContaining('Tài khoản trải nghiệm'), findsNothing);
+
+      final emailField = find.ancestor(
+        of: find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.keyboardType == TextInputType.emailAddress,
+        ),
+        matching: find.byType(TextFormField),
+      );
+      await tester.enterText(emailField, 'not-an-email');
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nhập mật khẩu của bạn'),
+        'secret123',
+      );
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Địa chỉ email không đúng định dạng.'), findsOneWidget);
+    });
   });
 
   group('P7-04: Register Unified Account (M-AU-04) Tests', () {

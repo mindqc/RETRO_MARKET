@@ -225,7 +225,7 @@ Future<void> showAuthLoginBottomSheet(
               ),
               const SizedBox(height: 14),
 
-              // Subtle Demo account callout
+              // Post-login continuation callout
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -247,7 +247,7 @@ Future<void> showAuthLoginBottomSheet(
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Sau khi đăng nhập, bạn sẽ tiếp tục ngay tại tính năng vừa chọn. (Demo: test1 / test1)',
+                        'Sau khi đăng nhập, bạn sẽ tiếp tục ngay tại tính năng vừa chọn.',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textCharcoal,
                           fontSize: 11.5,

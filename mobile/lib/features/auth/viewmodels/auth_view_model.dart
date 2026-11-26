@@ -88,66 +88,13 @@ class AuthViewModel extends BaseViewModel<UserModel?> {
     });
   }
 
-  static const String demoUsername = 'test1';
-  static const String demoPassword = 'test1';
-
-  static UserModel _buildDemoUser() {
-    return UserModel(
-      id: 999,
-      displayName: 'Minh Khôi (Demo)',
-      email: 'test1@izithrift.demo',
-      phone: '0909 123 456',
-      role: 'buyer_seller',
-      status: 'ACTIVE',
-      lastLoginAt: DateTime.now(),
-      profile: const UserProfileModel(
-        id: 999,
-        bio: 'Tín đồ đồ si & thời trang vintage Sài Gòn.',
-        seasonalDecorEnabled: true,
-      ),
-      sellerProfile: const SellerProfileModel(
-        id: 999,
-        shopSlug: 'minhkhoi-vintage',
-        trustScore: 98.0,
-        averageRating: 4.9,
-        reviewCount: 18,
-        completedOrdersCount: 24,
-        walletBalance: 1450000.0,
-        escrowHeldBalance: 389000.0,
-      ),
-      createdAt: DateTime(2025, 11, 15),
-    );
-  }
-
-  /// Authenticates user credentials and syncs seasonal decor (M-AU-03).
-  /// Supports the local presentation demo account (`test1` / `test1`) cleanly
-  /// without altering Laravel backend auth or production API contracts.
+  /// Authenticates user credentials via POST /api/v1/auth/login and syncs seasonal decor (M-AU-03).
   Future<void> login({
     required String email,
     required String password,
   }) async {
     _sessionSuspendedReason = null;
     await runCatching(() async {
-      final normalized = email.trim().toLowerCase();
-      if (normalized == demoUsername && password == demoPassword) {
-        final demoUser = _buildDemoUser();
-        try {
-          await tokenStorage.saveTokens(
-            accessToken: 'demo_sanctum_token_test1',
-            userId: demoUser.id,
-            role: demoUser.role,
-            email: demoUser.email,
-          );
-        } catch (_) {
-          // Tolerate test environments with stubbed secure storage
-        }
-        _currentUser = demoUser;
-        await seasonalDecorNotifier.setEnabled(
-          demoUser.profile?.seasonalDecorEnabled ?? true,
-        );
-        return demoUser;
-      }
-
       final user = await authRepository.login(email: email, password: password);
       _currentUser = user;
 

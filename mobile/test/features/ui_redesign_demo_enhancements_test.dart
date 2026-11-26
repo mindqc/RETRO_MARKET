@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:izithrift/core/constants/api_endpoints.dart';
 import 'package:izithrift/core/demo/retro_demo_marketplace_store.dart';
 import 'package:izithrift/core/network/api_envelope.dart';
 import 'package:izithrift/core/network/dio_client.dart';
@@ -24,6 +26,8 @@ import 'package:izithrift/features/home/screens/home_screen.dart';
 import 'package:izithrift/features/profile/repositories/profile_repository.dart';
 
 class _OfflineAuthRepository extends AuthRepository {
+  int loginCallCount = 0;
+
   _OfflineAuthRepository(SecureTokenStorage storage)
       : super(
           dioClient: DioClient(
@@ -38,7 +42,36 @@ class _OfflineAuthRepository extends AuthRepository {
     required String email,
     required String password,
   }) async {
-    throw Exception('Backend offline in demo test');
+    loginCallCount++;
+    throw Exception('Backend offline in test');
+  }
+}
+
+class _StubAuthDioClient extends DioClient {
+  final List<String> postedPaths = [];
+  final List<dynamic> postedPayloads = [];
+  final Map<String, dynamic> Function(String path, dynamic data) responder;
+
+  _StubAuthDioClient({
+    required super.tokenStorage,
+    required this.responder,
+  }) : super(serverTimeService: ServerTimeService.instance);
+
+  @override
+  Future<Response<T>> post<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    postedPaths.add(path);
+    postedPayloads.add(data);
+    return Response<T>(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 200,
+      data: responder(path, data) as T,
+    );
   }
 }
 
@@ -187,11 +220,12 @@ void main() {
     });
   });
 
-  group('UI-2 Demo Login (test1/test1), Redirect State & Chat Order Attachment', () {
-    test('AuthViewModel authenticates demo credentials test1/test1 locally', () async {
+  group('UI-2 Real API Auth, Redirect State & Chat Order Attachment', () {
+    test('AuthViewModel delegates login directly to AuthRepository without local demo bypass', () async {
       final storage = SecureTokenStorage.inMemory();
+      final offlineRepo = _OfflineAuthRepository(storage);
       final authVm = AuthViewModel(
-        authRepository: _OfflineAuthRepository(storage),
+        authRepository: offlineRepo,
         profileRepository: _OfflineProfileRepository(storage),
         tokenStorage: storage,
         seasonalDecorNotifier: SeasonalDecorNotifier(null, true),
@@ -199,11 +233,74 @@ void main() {
       addTearDown(authVm.dispose);
       expect(authVm.isAuthenticated, isFalse);
 
-      await authVm.login(email: 'test1', password: 'test1');
+      await authVm.login(email: 'buyer@retromarket.vn', password: 'password123');
 
-      expect(authVm.isAuthenticated, isTrue);
-      expect(authVm.currentUser, isNotNull);
-      expect(authVm.currentUser!.displayName, contains('Minh Khôi'));
+      expect(offlineRepo.loginCallCount, equals(1));
+      expect(authVm.isAuthenticated, isFalse);
+      expect(authVm.currentUser, isNull);
+      expect(authVm.state.isError, isTrue);
+      expect(await storage.hasToken(), isFalse);
+    });
+
+    test('AuthRepository login and register call real API endpoints and persist Sanctum token', () async {
+      final storage = SecureTokenStorage.inMemory();
+      final dioClient = _StubAuthDioClient(
+        tokenStorage: storage,
+        responder: (path, data) {
+          if (path == ApiEndpoints.login) {
+            return {
+              'success': true,
+              'message': 'Đăng nhập thành công.',
+              'data': {
+                'token': '1|real_sanctum_login_token',
+                'user': {
+                  'id': 42,
+                  'display_name': 'Minh Anh',
+                  'email': 'minhanh@retromarket.vn',
+                  'role': 'REGISTERED_USER',
+                  'status': 'ACTIVE',
+                },
+              },
+            };
+          }
+          return {
+            'success': true,
+            'message': 'Đăng ký tài khoản thành công.',
+            'data': {
+              'token': '2|real_sanctum_register_token',
+              'user': {
+                'id': 43,
+                'display_name': 'Tiệm Đồ Cũ',
+                'email': 'shopmoi@retromarket.vn',
+                'role': 'REGISTERED_USER',
+                'status': 'ACTIVE',
+              },
+            },
+          };
+        },
+      );
+
+      final repo = AuthRepository(dioClient: dioClient, tokenStorage: storage);
+
+      final loggedInUser = await repo.login(
+        email: 'minhanh@retromarket.vn',
+        password: 'Password123!',
+      );
+      expect(dioClient.postedPaths.first, equals(ApiEndpoints.login));
+      expect(loggedInUser.id, equals(42));
+      expect(await storage.getAccessToken(), equals('1|real_sanctum_login_token'));
+      expect(await storage.getUserEmail(), equals('minhanh@retromarket.vn'));
+
+      final registeredUser = await repo.register(
+        displayName: 'Tiệm Đồ Cũ',
+        email: 'shopmoi@retromarket.vn',
+        password: 'Password123!',
+        passwordConfirmation: 'Password123!',
+      );
+      expect(dioClient.postedPaths.last, equals(ApiEndpoints.register));
+      expect(registeredUser.id, equals(43));
+      expect(await storage.getAccessToken(), equals('2|real_sanctum_register_token'));
+      expect(await storage.getUserEmail(), equals('shopmoi@retromarket.vn'));
     });
 
     test('pendingAuthRedirectProvider preserves and clears intended navigation targets', () {
@@ -279,6 +376,7 @@ void main() {
       expect(find.text('Đăng nhập ngay'), findsOneWidget);
       expect(find.text('Để sau'), findsOneWidget);
       expect(find.byTooltip('Quay lại'), findsOneWidget);
+      expect(find.textContaining('Demo:'), findsNothing);
 
       await tester.tap(find.byTooltip('Quay lại'));
       await tester.pumpAndSettle();

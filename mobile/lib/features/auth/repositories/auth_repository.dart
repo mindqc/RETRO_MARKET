@@ -38,7 +38,7 @@ class AuthRepository {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-    final token = data['access_token']?.toString() ?? '';
+    final token = (data['token'] ?? data['access_token'])?.toString() ?? '';
     final userJson = data['user'] as Map<String, dynamic>;
     final user = UserModel.fromJson(userJson);
 
@@ -72,7 +72,7 @@ class AuthRepository {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-    final token = data['access_token']?.toString() ?? '';
+    final token = (data['token'] ?? data['access_token'])?.toString() ?? '';
     final userJson = data['user'] as Map<String, dynamic>;
     final user = UserModel.fromJson(userJson);
 

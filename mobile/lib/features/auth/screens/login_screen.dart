@@ -287,9 +287,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Email / Demo Account
+                        // Email
                         Text(
-                          'Email hoặc tài khoản',
+                          'Địa chỉ Email',
                           style: AppTypography.labelMedium,
                         ),
                         const SizedBox(height: DesignTokens.spaceXs),
@@ -297,7 +297,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: 'vidu@gmail.com hoặc test1',
+                            hintText: 'vidu@gmail.com',
                             prefixIcon:
                                 const Icon(Icons.email_outlined, size: 20),
                             errorText: emailError,
@@ -307,9 +307,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               return 'Vui lòng nhập địa chỉ email.';
                             }
                             final normalized = val.trim().toLowerCase();
-                            if (normalized == 'test1') {
-                              return null;
-                            }
                             if (!normalized.contains('@') ||
                                 !normalized.contains('.')) {
                               return 'Địa chỉ email không đúng định dạng.';
@@ -386,64 +383,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   )
                                 : const Text('Đăng nhập'),
-                          ),
-                        ),
-
-                        const SizedBox(height: DesignTokens.spaceMd),
-
-                        // Compact Demo Account Helper
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.canvasParchment,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.borderWarm),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.key_rounded,
-                                size: 17,
-                                color: AppColors.pineDeep,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Tài khoản trải nghiệm: test1 / test1',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.textCharcoal,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  foregroundColor: AppColors.pineDeep,
-                                ),
-                                onPressed: () {
-                                  _emailController.text = 'test1';
-                                  _passwordController.text = 'test1';
-                                  setState(() => _lastApiException = null);
-                                },
-                                child: const Text(
-                                  'Điền nhanh',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ],
