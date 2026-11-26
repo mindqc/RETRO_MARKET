@@ -15,11 +15,12 @@ class MessageModel {
   final String content;
   final int? attachedProductId;
   final ChatContextCardModel? attachedProduct;
+  final ChatContextCardModel? attachedOrder;
   final bool isMine;
   final bool isRead;
   final DateTime createdAt;
 
-  /// Media attachment support: `'TEXT'` | `'IMAGE'` | `'VIDEO'`.
+  /// Media attachment support: `'TEXT'` | `'IMAGE'` | `'VIDEO'` | `'ORDER'`.
   final String mediaType;
   final String? mediaPath;
   final Uint8List? mediaBytes;
@@ -36,6 +37,7 @@ class MessageModel {
     required this.content,
     this.attachedProductId,
     this.attachedProduct,
+    this.attachedOrder,
     this.isMine = false,
     this.isRead = false,
     required this.createdAt,
@@ -49,7 +51,9 @@ class MessageModel {
 
   bool get isImage => mediaType.toUpperCase() == 'IMAGE';
   bool get isVideo => mediaType.toUpperCase() == 'VIDEO';
-  bool get hasMedia => isImage || isVideo;
+  bool get isOrder =>
+      mediaType.toUpperCase() == 'ORDER' || attachedOrder != null;
+  bool get hasMedia => isImage || isVideo || isOrder;
 
   factory MessageModel.fromJson(
     Map<String, dynamic> json, {
@@ -79,9 +83,16 @@ class MessageModel {
       );
     }
 
+    ChatContextCardModel? attachedOrd;
+    if (json['attached_order'] is Map) {
+      attachedOrd = ChatContextCardModel.fromOrderJson(
+        Map<String, dynamic>.from(json['attached_order'] as Map),
+      );
+    }
+
     final mediaType = SafeJsonParser.toStringValue(
       json['media_type'],
-      defaultValue: 'TEXT',
+      defaultValue: attachedOrd != null ? 'ORDER' : 'TEXT',
     ).toUpperCase();
 
     return MessageModel(
@@ -97,6 +108,7 @@ class MessageModel {
         json['attached_product_id'],
       ),
       attachedProduct: attached,
+      attachedOrder: attachedOrd,
       isMine: isMine,
       isRead: SafeJsonParser.toBool(json['is_read'], defaultValue: false),
       createdAt:
@@ -130,6 +142,7 @@ class MessageModel {
       'message_text': content,
       'attached_product_id': attachedProductId,
       'attached_product': attachedProduct?.toJson(),
+      if (attachedOrder != null) 'attached_order': attachedOrder!.toJson(),
       'is_mine': isMine,
       'is_read': isRead,
       'created_at': createdAt.toIso8601String(),

@@ -7,6 +7,7 @@ import 'package:izithrift/core/network/api_envelope.dart';
 import 'package:izithrift/core/network/dio_client.dart';
 import 'package:izithrift/core/services/secure_token_storage.dart';
 import 'package:izithrift/core/services/server_time_service.dart';
+import 'package:izithrift/core/widgets/retro_auction_card.dart';
 import 'package:izithrift/features/auctions/models/auction_bid_item_model.dart';
 import 'package:izithrift/features/auctions/models/auction_card_model.dart';
 import 'package:izithrift/features/auctions/models/auction_detail_model.dart';
@@ -528,7 +529,13 @@ void main() {
         expect(find.text('⚡ Sắp kết thúc'), findsOneWidget);
         expect(find.text('⏰ Sắp mở'), findsOneWidget);
         expect(find.text('📦 Đã kết thúc'), findsOneWidget);
-        expect(find.text('Bàn ủi con gà cổ'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(RetroAuctionCard),
+            matching: find.text('Bàn ủi con gà cổ'),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('Quạt tai voi Liên Xô'), findsOneWidget);
       },
     );

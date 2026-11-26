@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/error/api_exception.dart';
 import '../../../core/error/error_code_enum.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
+import '../../../core/widgets/sell_action_bottom_sheet.dart';
 import '../viewmodels/auth_view_model.dart';
+import '../widgets/auth_login_bottom_sheet.dart';
 
 /// M-AU-03: Login Screen with Suspension Alert Dialog (BR-AC-04)
 class LoginScreen extends ConsumerStatefulWidget {
@@ -34,6 +37,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  void _navigateAfterLogin() {
+    final pending = ref.read(pendingAuthRedirectProvider);
+    ref.read(pendingAuthRedirectProvider.notifier).state = null;
+
+    if (pending == null) {
+      context.go(AppRoutes.home);
+      return;
+    }
+
+    if (pending.returnToCaller) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(pending.route, extra: pending.extra);
+      }
+      return;
+    }
+
+    if (pending.openSellSheet) {
+      context.go(AppRoutes.home);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navCtx = AppRouter.rootNavigatorKey.currentContext;
+        if (navCtx != null && navCtx.mounted) {
+          showSellActionBottomSheet(navCtx);
+        }
+      });
+      return;
+    }
+
+    if (pending.useGo) {
+      context.go(pending.route, extra: pending.extra);
+    } else {
+      context.pushReplacement(pending.route, extra: pending.extra);
+    }
+  }
+
   Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -53,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
 
       if (authVm.isAuthenticated) {
-        context.go(AppRoutes.home);
+        _navigateAfterLogin();
       } else if (authVm.state.isError && authVm.state.error != null) {
         _handleLoginError(authVm.state.error!);
       }
@@ -248,14 +287,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Email
-                        Text('Email', style: AppTypography.labelMedium),
+                        // Email / Demo Account
+                        Text(
+                          'Email hoặc tài khoản',
+                          style: AppTypography.labelMedium,
+                        ),
                         const SizedBox(height: DesignTokens.spaceXs),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: 'vidu@gmail.com',
+                            hintText: 'vidu@gmail.com hoặc test1',
                             prefixIcon:
                                 const Icon(Icons.email_outlined, size: 20),
                             errorText: emailError,
@@ -264,7 +306,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             if (val == null || val.trim().isEmpty) {
                               return 'Vui lòng nhập địa chỉ email.';
                             }
-                            if (!val.contains('@') || !val.contains('.')) {
+                            final normalized = val.trim().toLowerCase();
+                            if (normalized == 'test1') {
+                              return null;
+                            }
+                            if (!normalized.contains('@') ||
+                                !normalized.contains('.')) {
                               return 'Địa chỉ email không đúng định dạng.';
                             }
                             return null;
@@ -339,6 +386,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   )
                                 : const Text('Đăng nhập'),
+                          ),
+                        ),
+
+                        const SizedBox(height: DesignTokens.spaceMd),
+
+                        // Compact Demo Account Helper
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvasParchment,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderWarm),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.key_rounded,
+                                size: 17,
+                                color: AppColors.pineDeep,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Tài khoản trải nghiệm: test1 / test1',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textCharcoal,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  foregroundColor: AppColors.pineDeep,
+                                ),
+                                onPressed: () {
+                                  _emailController.text = 'test1';
+                                  _passwordController.text = 'test1';
+                                  setState(() => _lastApiException = null);
+                                },
+                                child: const Text(
+                                  'Điền nhanh',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

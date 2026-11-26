@@ -16,6 +16,7 @@ import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/verification_badge.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
+import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../../engagement/repositories/communication_engagement_repository.dart';
 import '../models/product_detail_model.dart';
 import '../models/product_image_model.dart';
@@ -103,7 +104,22 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             RetroHeaderIconButton(
               icon: Icons.shopping_bag_outlined,
               tooltip: 'Giỏ hàng',
-              onPressed: () => context.push(AppRoutes.cart),
+              onPressed: () {
+                final allowed = requireAuthOrPrompt(
+                  context,
+                  ref,
+                  featureTitle: 'Đăng nhập để mở Giỏ hàng',
+                  description:
+                      'Xem lại các món đồ si đã chọn, kiểm tra phí vận chuyển và tiến hành thanh toán an toàn.',
+                  intendedTarget: const PendingNavigationTarget(
+                    route: AppRoutes.cart,
+                  ),
+                  icon: Icons.shopping_bag_outlined,
+                );
+                if (allowed) {
+                  context.push(AppRoutes.cart);
+                }
+              },
             ),
             const SizedBox(width: 4),
           ],
@@ -795,7 +811,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           : () {
                               final authVM = ref.read(authViewModelProvider);
                               if (!authVM.isAuthenticated) {
-                                viewModel.showGuestLoginPrompt(context);
+                                viewModel.showGuestLoginPrompt(
+                                  context,
+                                  featureTitle: 'Đăng nhập để mua ngay',
+                                  description:
+                                      'Đăng nhập tài khoản izithrift để chọn số lượng, áp dụng bảo vệ người mua và thanh toán nhanh chóng.',
+                                  icon: Icons.shopping_cart_checkout_rounded,
+                                );
                                 return;
                               }
                               _showBuyNowQuantitySheet(
@@ -958,7 +980,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
     final authVM = ref.read(authViewModelProvider);
     if (!authVM.isAuthenticated) {
-      ref.read(productDetailViewModelProvider).showGuestLoginPrompt(context);
+      ref.read(productDetailViewModelProvider).showGuestLoginPrompt(
+        context,
+        featureTitle: 'Đăng nhập để nhắn tin chủ tiệm',
+        description:
+            'Hỏi thêm về số đo, tình trạng thực tế và đính kèm sản phẩm hoặc đơn hàng trực tiếp với ${seller.displayName}.',
+        icon: Icons.chat_bubble_outline_rounded,
+      );
       return;
     }
 

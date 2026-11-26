@@ -155,28 +155,28 @@ class ProductImageResolver {
   }) {
     final text = '${title ?? ''} ${categoryName ?? ''}'.toLowerCase();
 
-    if (_containsAny(text, ['máy ảnh', 'camera', 'canon', 'nikon', 'olympus', 'film', 'phim', 'điện tử'])) {
+    if (_containsAny(text, ['máy ảnh', 'camera', 'canon', 'nikon', 'olympus', 'minolta', 'film', 'phim', 'điện tử'])) {
       return assetFilmCamera;
     }
-    if (_containsAny(text, ['đồng hồ', 'watch', 'seiko', 'omega', 'citizen', 'casio', 'phụ kiện'])) {
+    if (_containsAny(text, ['đồng hồ', 'watch', 'watches', 'seiko', 'omega', 'citizen', 'casio', 'phụ kiện', 'accessories', 'kính', 'nhẫn', 'dây chuyền', 'khăn'])) {
       return assetMechanicalWatch;
     }
-    if (_containsAny(text, ['túi', 'ví', 'balo', 'cặp', 'bag', 'satchel', 'coach', 'đồ da'])) {
+    if (_containsAny(text, ['túi', 'ví', 'balo', 'cặp', 'bag', 'bags', 'leather bag', 'satchel', 'tote', 'coach', 'đồ da'])) {
       return assetLeatherBag;
     }
-    if (_containsAny(text, ['giày', 'sneaker', 'boot', 'dép', 'nike', 'adidas', 'converse', 'new balance'])) {
+    if (_containsAny(text, ['giày', 'sneaker', 'sneakers', 'boot', 'dép', 'nike', 'adidas', 'converse', 'new balance', 'vans', 'puma', 'asics'])) {
       return assetRetroSneakers;
     }
-    if (_containsAny(text, ['quần', 'jean', 'denim', 'levi', 'kaki', 'trouser', 'cargo'])) {
+    if (_containsAny(text, ['quần', 'jean', 'jeans', 'flare', 'trouser', 'trousers', 'levi', 'kaki', 'cargo', 'chinos', 'selvedge'])) {
       return assetDenimJeans;
     }
-    if (_containsAny(text, ['len', 'cardigan', 'sweater', 'nỉ', 'hoodie', 'dệt kim', 'mùa đông'])) {
+    if (_containsAny(text, ['len', 'cardigan', 'sweater', 'sweaters', 'nỉ', 'hoodie', 'knit', 'mohair', 'dệt kim', 'mùa đông'])) {
       return assetKnitCardigan;
     }
-    if (_containsAny(text, ['flannel', 'sơ mi', 'caro', 'shirt', 'polo', 'thun'])) {
+    if (_containsAny(text, ['flannel', 'sơ mi', 'caro', 'shirt', 'vintage shirt', 'american tee', 'boxy tee', 'tee', 'polo', 'thun'])) {
       return assetFlannelShirt;
     }
-    if (_containsAny(text, ['khoác', 'varsity', 'bomber', 'jacket', 'da', 'măng tô', 'dạ', 'blazer', 'áo'])) {
+    if (_containsAny(text, ['denim jacket', 'khoác', 'outerwear', 'varsity', 'bomber', 'jacket', 'workwear', 'carhartt', 'măng tô', 'dạ', 'blazer', 'trucker'])) {
       return assetVarsityJacket;
     }
 
@@ -217,6 +217,10 @@ class ProductImageResolver {
   static String conditionPercentLabel(String rawCondition) =>
       '${conditionPercent(rawCondition)}%';
 
+  /// Human-readable freshness format for product cards (e.g. "Độ mới: 95%").
+  static String conditionFreshnessLabel(String rawCondition) =>
+      'Độ mới: ${conditionPercent(rawCondition)}%';
+
   static String conditionDescription(String rawCondition) {
     switch (rawCondition.toUpperCase()) {
       case 'NEW_WITH_TAGS':
@@ -238,21 +242,47 @@ class ProductImageResolver {
   static String shortCategoryLabel(String? categoryName, {String? title}) {
     if (categoryName != null && categoryName.trim().isNotEmpty) {
       final cleaned = categoryName.trim();
-      if (cleaned.length <= 16) return cleaned;
+      if (cleaned.length <= 18) return cleaned;
       return cleaned.split('&').first.trim();
     }
     final text = (title ?? '').toLowerCase();
     if (_containsAny(text, ['máy ảnh', 'camera', 'canon', 'nikon', 'phim'])) {
       return 'Đồ cổ';
     }
-    if (_containsAny(text, ['đồng hồ', 'watch', 'seiko'])) return 'Phụ kiện';
-    if (_containsAny(text, ['túi', 'ví', 'balo', 'bag'])) return 'Túi';
-    if (_containsAny(text, ['giày', 'sneaker', 'boot'])) return 'Giày';
-    if (_containsAny(text, ['quần', 'jean', 'denim'])) return 'Quần';
-    if (_containsAny(text, ['khoác', 'varsity', 'bomber', 'jacket'])) {
-      return 'Áo khoác';
+    if (_containsAny(text, ['đồng hồ', 'watch', 'seiko', 'casio'])) {
+      return 'Watches';
     }
-    return 'Áo';
+    if (_containsAny(text, ['túi', 'ví', 'balo', 'bag', 'tote'])) {
+      return 'Leather Bags';
+    }
+    if (_containsAny(text, ['giày', 'sneaker', 'boot'])) {
+      return 'Sneakers';
+    }
+    if (_containsAny(text, ['flare', 'ống loe'])) {
+      return 'Flare Jeans';
+    }
+    if (_containsAny(text, ['denim jacket', 'trucker', 'khoác jean'])) {
+      return 'Denim Jacket';
+    }
+    if (_containsAny(text, ['boxy'])) {
+      return 'Boxy Tee';
+    }
+    if (_containsAny(text, ['american tee', 'thun mỹ', 'band tee'])) {
+      return 'American Tee';
+    }
+    if (_containsAny(text, ['quần âu', 'trouser', 'kaki', 'cargo'])) {
+      return 'Trousers';
+    }
+    if (_containsAny(text, ['len', 'sweater', 'cardigan'])) {
+      return 'Sweaters';
+    }
+    if (_containsAny(text, ['khoác', 'varsity', 'bomber', 'jacket', 'outerwear'])) {
+      return 'Outerwear';
+    }
+    if (_containsAny(text, ['sơ mi', 'flannel', 'shirt'])) {
+      return 'Vintage Shirt';
+    }
+    return 'Accessories';
   }
 
   /// Deterministic nearby distance (km) for demo display when GPS distance is absent.

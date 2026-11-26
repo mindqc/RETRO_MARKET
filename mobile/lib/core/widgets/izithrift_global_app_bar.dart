@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/widgets/auth_login_bottom_sheet.dart';
 import '../../features/cart/viewmodels/cart_view_model.dart';
 import '../../features/engagement/viewmodels/notification_view_model.dart';
 import '../router/app_routes.dart';
@@ -87,7 +88,21 @@ class IzithriftGlobalAppBar extends ConsumerWidget
           icon: Icons.shopping_cart_outlined,
           tooltip: 'Giỏ hàng',
           badgeCount: cartItemsCount,
-          onPressed: () => context.push(AppRoutes.cart),
+          onPressed: () {
+            final allowed = requireAuthOrPrompt(
+              context,
+              ref,
+              featureTitle: 'Đăng nhập để mở giỏ hàng',
+              description:
+                  'Xem các món đồ vintage bạn đã chọn và tiến hành thanh toán an toàn qua Escrow.',
+              icon: Icons.shopping_cart_outlined,
+              intendedTarget: const PendingNavigationTarget(
+                route: AppRoutes.cart,
+              ),
+            );
+            if (!allowed) return;
+            context.push(AppRoutes.cart);
+          },
         ),
         const SizedBox(width: 6),
       ],

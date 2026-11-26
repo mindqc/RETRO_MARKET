@@ -5,8 +5,8 @@ import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
+import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../models/product_detail_model.dart';
 import '../repositories/home_catalog_repository.dart';
 
@@ -198,47 +198,28 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
     }
   }
 
-  /// Guest authentication dialog per DEC-01
-  void showGuestLoginPrompt(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        ),
-        backgroundColor: AppColors.surfaceCard,
-        title: Row(
-          children: const [
-            Icon(Icons.lock_outline, color: AppColors.primaryTerracotta),
-            SizedBox(width: DesignTokens.spaceSm),
-            Text(
-              'Yêu cầu đăng nhập',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Vui lòng đăng nhập hoặc tạo tài khoản izithrift để lưu đồ yêu thích, mua sắm và kết nối với chủ tiệm.',
-          style: TextStyle(color: AppColors.textCharcoal),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Để sau', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
-              foregroundColor: AppColors.surfaceCard,
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.push(AppRoutes.login);
-            },
-            child: const Text('Đăng nhập ngay'),
-          ),
-        ],
-      ),
+  /// Guest authentication bottom sheet per DEC-01 with preserved return path
+  void showGuestLoginPrompt(
+    BuildContext context, {
+    String featureTitle = 'Đăng nhập để tiếp tục mua sắm',
+    String description =
+        'Đăng nhập hoặc tạo tài khoản izithrift để lưu đồ yêu thích, thêm vào giỏ hàng, mua ngay và trò chuyện cùng chủ tiệm.',
+    PendingNavigationTarget? intendedTarget,
+    IconData icon = Icons.shopping_bag_outlined,
+  }) {
+    final target = intendedTarget ??
+        PendingNavigationTarget(
+          route: AppRoutes.productDetailPath(state.data?.id ?? 0),
+          returnToCaller: true,
+        );
+    showAuthLoginBottomSheet(
+      context,
+      providerRef: ref,
+      featureTitle: featureTitle,
+      description: description,
+      intendedTarget: target,
+      icon: icon,
+      primaryButtonLabel: 'Đăng nhập ngay',
     );
   }
 }

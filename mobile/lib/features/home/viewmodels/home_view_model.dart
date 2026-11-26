@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
+import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../../catalog/models/product_summary_model.dart';
 import '../../catalog/repositories/home_catalog_repository.dart';
 import '../models/home_feed_model.dart';
@@ -161,35 +160,18 @@ class HomeViewModel extends BaseViewModel<HomeFeedModel> {
   }
 
   void _showGuestLoginPrompt(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        ),
-        title: const Text('Yêu cầu đăng nhập'),
-        content: const Text(
-          'Vui lòng đăng nhập vào tài khoản izithrift để lưu sản phẩm vào danh sách yêu thích và theo dõi cập nhật.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Để sau', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTerracotta,
-              foregroundColor: AppColors.surfaceCard,
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.push(AppRoutes.login);
-            },
-            child: const Text('Đăng nhập'),
-          ),
-        ],
+    showAuthLoginBottomSheet(
+      context,
+      providerRef: ref,
+      featureTitle: 'Đăng nhập để lưu đồ yêu thích',
+      description:
+          'Đăng nhập vào tài khoản izithrift để lưu sản phẩm yêu thích, nhận thông báo giảm giá và theo dõi các tiệm đồ si.',
+      intendedTarget: const PendingNavigationTarget(
+        route: AppRoutes.home,
+        returnToCaller: true,
       ),
+      icon: Icons.favorite_outline_rounded,
+      primaryButtonLabel: 'Đăng nhập',
     );
   }
 }

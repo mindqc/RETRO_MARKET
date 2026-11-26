@@ -50,15 +50,15 @@ class AuctionHubViewModel extends BaseViewModel<List<AuctionCardModel>> {
       );
 
       _items.clear();
-      if (_currentTab == 'all' && demoStore != null) {
-        final merged = <AuctionCardModel>[...res.items];
-        final ids = merged.map((e) => e.id).toSet();
-        for (final demo in demoStore!.demoAuctionCardsForTab('all')) {
-          if (!ids.contains(demo.id)) merged.add(demo);
+      _items.addAll(res.items);
+
+      if (demoStore != null && (_currentTab == 'all' || _items.length < 3)) {
+        final existingIds = _items.map((e) => e.id).toSet();
+        for (final demo in demoStore!.demoAuctionCardsForTab(_currentTab)) {
+          if (!existingIds.contains(demo.id)) {
+            _items.add(demo);
+          }
         }
-        _items.addAll(merged);
-      } else {
-        _items.addAll(res.items);
       }
       _paginationMeta = res.meta;
 

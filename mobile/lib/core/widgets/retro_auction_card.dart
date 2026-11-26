@@ -8,14 +8,11 @@ import 'retro_product_image.dart';
 import 'server_countdown_timer.dart';
 import 'status_pill_badge.dart';
 
-/// Visually distinctive auction card for horizontal carousels & Auction Hub grids.
+/// Visually distinctive auction card for Home carousels & Auction Hub grids.
 ///
-/// Clearly differentiated from fixed-price product cards via:
-/// - Deep pine top accent / live status ribbon (`Đang đấu giá`, `Sắp kết thúc`, `Sắp diễn ra`)
-/// - Real-time ticking countdown badge (`ServerCountdownTimer`)
-/// - Crimson current highest bid + starting price context
-/// - Participant / bid count indicator
-/// - Actionable CTA pill (`Đấu giá ngay` / `Giữ chỗ` / `Xem kết quả`)
+/// Clearly differentiates Ongoing (LIVE), Ending Soon (<= 15m), Upcoming (SCHEDULED),
+/// and Completed sessions with state-specific accent strips, countdowns, pricing
+/// hierarchy, bid/watch counts, and action CTAs.
 class RetroAuctionCard extends StatelessWidget {
   final int id;
   final String title;
@@ -59,33 +56,58 @@ class RetroAuctionCard extends StatelessWidget {
     final normalizedStatus = status.toUpperCase();
     final isScheduled = normalizedStatus == 'SCHEDULED';
     final isLive = normalizedStatus == 'LIVE';
+    final remaining = endsAt.difference(DateTime.now());
     final isEndingSoon =
-        isLive &&
-        endsAt.difference(DateTime.now()).inSeconds > 0 &&
-        endsAt.difference(DateTime.now()).inMinutes <= 10;
+        isLive && remaining.inSeconds > 0 && remaining.inMinutes <= 15;
     final countdownTarget =
         isScheduled && startsAt != null ? startsAt! : endsAt;
 
     if (compactCarousel) {
       return _buildCompactCarouselCard(
         isScheduled: isScheduled,
+        isLive: isLive,
         isEndingSoon: isEndingSoon,
         countdownTarget: countdownTarget,
       );
     }
 
+    final Color topAccentColor;
+    final Color cardBorderColor;
+    final Color footerTint;
+    final Color priceColor;
     final String ctaLabel;
     final Color ctaBg;
     final Color ctaFg;
-    if (isScheduled) {
-      ctaLabel = 'Giữ chỗ';
-      ctaBg = AppColors.creamBadgeBg;
-      ctaFg = AppColors.creamBadgeText;
+
+    if (isEndingSoon) {
+      topAccentColor = AppColors.priceCrimson;
+      cardBorderColor = AppColors.priceCrimsonBorder;
+      footerTint = AppColors.priceCrimsonSoft.withValues(alpha: 0.45);
+      priceColor = AppColors.priceCrimson;
+      ctaLabel = 'Đặt giá gấp';
+      ctaBg = AppColors.priceCrimson;
+      ctaFg = Colors.white;
     } else if (isLive) {
+      topAccentColor = AppColors.pineDeep;
+      cardBorderColor = AppColors.borderWarm;
+      footerTint = AppColors.surfaceCard;
+      priceColor = AppColors.priceCrimson;
       ctaLabel = 'Đấu giá ngay';
       ctaBg = AppColors.ctaTerracotta;
       ctaFg = Colors.white;
+    } else if (isScheduled) {
+      topAccentColor = AppColors.starGold;
+      cardBorderColor = AppColors.creamBadgeBorder;
+      footerTint = AppColors.creamBadgeSoft.withValues(alpha: 0.45);
+      priceColor = AppColors.pineDeep;
+      ctaLabel = 'Giữ chỗ';
+      ctaBg = AppColors.creamBadgeBg;
+      ctaFg = AppColors.creamBadgeText;
     } else {
+      topAccentColor = AppColors.textMuted;
+      cardBorderColor = AppColors.borderWarm;
+      footerTint = AppColors.surfaceWarm.withValues(alpha: 0.5);
+      priceColor = AppColors.textCharcoal;
       ctaLabel = 'Xem kết quả';
       ctaBg = AppColors.surfaceWarm;
       ctaFg = AppColors.textCharcoal;
@@ -100,19 +122,20 @@ class RetroAuctionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
+            color: footerTint,
             borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             border: Border.all(
-              color: isEndingSoon
-                  ? AppColors.priceCrimsonBorder
-                  : AppColors.borderWarm,
-              width: isEndingSoon ? 1.3 : DesignTokens.borderThin,
+              color: cardBorderColor,
+              width: isEndingSoon ? 1.4 : DesignTokens.borderThin,
             ),
             boxShadow: DesignTokens.cardElevation,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Distinct top state accent bar
+              Container(height: 3.5, width: double.infinity, color: topAccentColor),
+
               // ── Photo Frame with Status & Live Countdown ──────────────────
               Expanded(
                 child: Padding(
@@ -129,12 +152,12 @@ class RetroAuctionCard extends StatelessWidget {
                           productId: id,
                           fit: BoxFit.cover,
                         ),
-                        // Subtle bottom vignette so timer stays crisp on any photo
+                        // Subtle bottom vignette for countdown readability
                         Positioned(
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          height: 44,
+                          height: 46,
                           child: IgnorePointer(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
@@ -143,21 +166,21 @@ class RetroAuctionCard extends StatelessWidget {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.42),
+                                    Colors.black.withValues(alpha: 0.46),
                                   ],
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        // Top-left status badge (Live / Ending Soon / Upcoming)
+                        // Top-left state pill (Ending Soon / Upcoming / Live / Completed)
                         Positioned(
-                          top: 7,
-                          left: 7,
+                          top: 6,
+                          left: 6,
                           child: isEndingSoon
                               ? Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
+                                    horizontal: 7.5,
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
@@ -178,22 +201,59 @@ class RetroAuctionCard extends StatelessWidget {
                                         style: TextStyle(
                                           fontFamily: AppTypography.fontBody,
                                           color: Colors.white,
-                                          fontSize: 10,
+                                          fontSize: 9.8,
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                     ],
                                   ),
                                 )
-                              : StatusPillBadge(
-                                  status: status,
-                                  isCompact: true,
-                                ),
+                              : isScheduled
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7.5,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.creamBadgeBg,
+                                        borderRadius:
+                                            DesignTokens.borderRadiusFull,
+                                        border: Border.all(
+                                          color: AppColors.starGold,
+                                          width: 0.9,
+                                        ),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.schedule_rounded,
+                                            size: 10.5,
+                                            color: AppColors.creamBadgeText,
+                                          ),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            'Sắp mở phiên',
+                                            style: TextStyle(
+                                              fontFamily:
+                                                  AppTypography.fontBody,
+                                              color: AppColors.creamBadgeText,
+                                              fontSize: 9.6,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : StatusPillBadge(
+                                      status: status,
+                                      isCompact: true,
+                                    ),
                         ),
                         // Bottom-left real ticking countdown
                         Positioned(
-                          bottom: isOwner ? 28 : 7,
-                          left: 7,
+                          bottom: isOwner ? 26 : 6,
+                          left: 6,
                           child: ServerCountdownTimer(
                             endsAt: countdownTarget,
                             extendedCount: extendedCount,
@@ -208,7 +268,7 @@ class RetroAuctionCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: DesignTokens.spaceSm,
-                                vertical: DesignTokens.spaceXs,
+                                vertical: 3,
                               ),
                               color: AppColors.pineDeep.withValues(alpha: 0.92),
                               child: Text(
@@ -218,7 +278,7 @@ class RetroAuctionCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.textLight,
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -230,9 +290,9 @@ class RetroAuctionCard extends StatelessWidget {
                 ),
               ),
 
-              // ── Auction Title, Price & Action CTA ─────────────────────────
+              // ── Auction Title, Pricing Context & Action CTA ───────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                padding: const EdgeInsets.fromLTRB(9, 7, 9, 9),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -241,27 +301,31 @@ class RetroAuctionCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMedium.copyWith(
-                        fontSize: 13,
+                        fontSize: 12.6,
                         fontWeight: FontWeight.w700,
-                        height: 1.25,
+                        color: AppColors.textCharcoal,
+                        height: 1.22,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.gavel_rounded,
+                        Icon(
+                          isScheduled
+                              ? Icons.sell_outlined
+                              : Icons.gavel_rounded,
                           size: 11,
                           color: AppColors.textMuted,
                         ),
                         const SizedBox(width: 3),
                         Expanded(
                           child: Text(
-                            isScheduled ? 'Giá khởi điểm' : 'Giá cao nhất',
+                            isScheduled ? 'Giá khởi điểm' : 'Giá hiện tại',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.caption.copyWith(
-                              fontSize: 10.5,
+                              fontSize: 10,
+                              color: AppColors.textMuted,
                             ),
                           ),
                         ),
@@ -272,33 +336,38 @@ class RetroAuctionCard extends StatelessWidget {
                           Text(
                             'KĐ ${VndFormatter.format(startingPrice!)}',
                             style: AppTypography.caption.copyWith(
-                              fontSize: 9.5,
+                              fontSize: 9.2,
                               color: AppColors.textMuted,
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1.5),
                     Text(
                       VndFormatter.format(currentBid),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.priceMedium.copyWith(
-                        fontSize: 15.5,
-                        color: AppColors.priceCrimson,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: priceColor,
                       ),
                     ),
-                    const SizedBox(height: 7),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(
                           isScheduled
                               ? Icons.people_alt_outlined
-                              : Icons.local_fire_department_rounded,
-                          size: 13,
+                              : (isEndingSoon
+                                    ? Icons.whatshot_rounded
+                                    : Icons.local_fire_department_rounded),
+                          size: 12.5,
                           color: isScheduled
                               ? AppColors.pineDeep
-                              : AppColors.ctaTerracotta,
+                              : (isEndingSoon
+                                    ? AppColors.priceCrimson
+                                    : AppColors.ctaTerracotta),
                         ),
                         const SizedBox(width: 3),
                         Expanded(
@@ -310,16 +379,16 @@ class RetroAuctionCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.caption.copyWith(
                               color: AppColors.textMuted,
-                              fontSize: 10.5,
+                              fontSize: 10.2,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         if (showCtaButton) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
+                              horizontal: 8.5,
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
@@ -336,7 +405,7 @@ class RetroAuctionCard extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: AppTypography.fontBody,
                                 color: ctaFg,
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -354,15 +423,15 @@ class RetroAuctionCard extends StatelessWidget {
     );
   }
 
-  /// Compact horizontal auction card layout for Home "Đấu giá nổi bật" carousel:
-  /// - Rounded image with bottom-left live ticking countdown pill
-  /// - Crisp 1-line title, prominent Terracotta bid price, and participant count row
+  /// Compact horizontal auction card layout for Home "Đấu giá nổi bật" carousel.
   Widget _buildCompactCarouselCard({
     required bool isScheduled,
+    required bool isLive,
     required bool isEndingSoon,
     required DateTime countdownTarget,
   }) {
-    final participants = watchCount > 0 ? watchCount : (bidCount > 0 ? bidCount + 12 : 18);
+    final participants =
+        watchCount > 0 ? watchCount : (bidCount > 0 ? bidCount + 12 : 18);
 
     return Material(
       color: AppColors.surfaceCard,
@@ -377,9 +446,11 @@ class RetroAuctionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             border: Border.all(
               color: isEndingSoon
-                  ? AppColors.ctaTerracotta.withValues(alpha: 0.45)
-                  : AppColors.borderWarm,
-              width: isEndingSoon ? 1.2 : DesignTokens.borderThin,
+                  ? AppColors.priceCrimsonBorder
+                  : (isScheduled
+                        ? AppColors.creamBadgeBorder
+                        : AppColors.borderWarm),
+              width: isEndingSoon ? 1.3 : DesignTokens.borderThin,
             ),
             boxShadow: DesignTokens.cardElevation,
           ),
@@ -397,12 +468,11 @@ class RetroAuctionCard extends StatelessWidget {
                       productId: id,
                       fit: BoxFit.cover,
                     ),
-                    // Subtle bottom gradient for countdown legibility
                     Positioned(
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      height: 38,
+                      height: 40,
                       child: IgnorePointer(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
@@ -411,44 +481,57 @@ class RetroAuctionCard extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                Colors.black.withValues(alpha: 0.45),
+                                Colors.black.withValues(alpha: 0.48),
                               ],
                             ),
                           ),
                         ),
                       ),
                     ),
-                    // Optional compact top-left badge for upcoming/ending-soon
-                    if (isEndingSoon || isScheduled)
-                      Positioned(
-                        top: 7,
-                        left: 7,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isEndingSoon
-                                ? AppColors.ctaTerracotta
-                                : AppColors.pineDeep,
-                            borderRadius: DesignTokens.borderRadiusFull,
-                          ),
-                          child: Text(
-                            isEndingSoon ? 'Sắp hết giờ' : 'Sắp mở',
-                            style: const TextStyle(
-                              fontFamily: AppTypography.fontBody,
-                              color: Colors.white,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w700,
-                            ),
+                    // Top-left state badge
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isEndingSoon
+                              ? AppColors.priceCrimson
+                              : (isScheduled
+                                    ? AppColors.creamBadgeBg
+                                    : AppColors.pineDeep),
+                          borderRadius: DesignTokens.borderRadiusFull,
+                          border: isScheduled
+                              ? Border.all(
+                                  color: AppColors.starGold,
+                                  width: 0.8,
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          isEndingSoon
+                              ? '⚡ Sắp hết giờ'
+                              : (isScheduled
+                                    ? '⏰ Sắp mở'
+                                    : (isLive ? '● LIVE' : 'Đã xong')),
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontBody,
+                            color: isScheduled
+                                ? AppColors.creamBadgeText
+                                : Colors.white,
+                            fontSize: 9.2,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                    // Bottom-left ticking countdown pill (exact reference placement)
+                    ),
+                    // Bottom-left ticking countdown pill
                     Positioned(
-                      bottom: 7,
-                      left: 7,
+                      bottom: 6,
+                      left: 6,
                       child: ServerCountdownTimer(
                         endsAt: countdownTarget,
                         extendedCount: extendedCount,
@@ -459,7 +542,7 @@ class RetroAuctionCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
+                padding: const EdgeInsets.fromLTRB(9, 7, 9, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -468,41 +551,53 @@ class RetroAuctionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMedium.copyWith(
-                        fontSize: 12.5,
+                        fontSize: 12.2,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textCharcoal,
-                        height: 1.25,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      VndFormatter.format(currentBid),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.priceMedium.copyWith(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ctaTerracotta,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2.5),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.group_rounded,
-                          size: 13,
+                        Expanded(
+                          child: Text(
+                            VndFormatter.format(currentBid),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.priceMedium.copyWith(
+                              fontSize: 14.2,
+                              fontWeight: FontWeight.w800,
+                              color: isScheduled
+                                  ? AppColors.pineDeep
+                                  : AppColors.priceCrimson,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3.5),
+                    Row(
+                      children: [
+                        Icon(
+                          isScheduled
+                              ? Icons.notifications_active_outlined
+                              : Icons.gavel_rounded,
+                          size: 12,
                           color: AppColors.textMuted,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            '$participants người tham gia',
+                            isScheduled
+                                ? '$participants giữ chỗ'
+                                : '$bidCount lượt • $participants xem',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.caption.copyWith(
-                              fontSize: 10.5,
+                              fontSize: 10.2,
                               color: AppColors.textMuted,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),

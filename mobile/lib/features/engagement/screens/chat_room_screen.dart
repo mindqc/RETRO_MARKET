@@ -6,12 +6,16 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/demo/retro_demo_marketplace_store.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/utils/product_image_resolver.dart';
 import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
+import '../../orders/models/order_model.dart';
+import '../../orders/repositories/order_fulfillment_repository.dart';
+import '../models/chat_context_card_model.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 import '../viewmodels/chat_view_model.dart';
@@ -194,7 +198,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Thiết bị không hỗ trợ chọn ảnh trực tiếp. Bạn có thể chọn ảnh mẫu từ thư viện demo.',
+            'Không thể truy cập ảnh từ thiết bị. Vui lòng kiểm tra quyền Thư viện hoặc Máy ảnh.',
           ),
         ),
       );
@@ -236,7 +240,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Không thể truy cập video thiết bị. Bạn có thể dùng video demo mẫu để trải nghiệm.',
+            'Không thể truy cập video từ thư viện thiết bị. Vui lòng kiểm tra quyền truy cập.',
           ),
         ),
       );
@@ -259,34 +263,35 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       builder: (sheetCtx) => SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 22),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Đính kèm hình ảnh & video',
+                'Đính kèm trong cuộc trò chuyện',
                 style: AppTypography.headingSmall.copyWith(fontSize: 16.5),
               ),
               const SizedBox(height: 4),
               Text(
-                'Gửi ảnh chi tiết tình trạng món đồ hoặc clip ngắn (tối đa 25MB).',
+                'Chọn ảnh, video từ thiết bị hoặc đính kèm đơn hàng để trao đổi nhanh với chủ tiệm.',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textMuted,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Row(
                 children: [
                   Expanded(
                     child: _AttachmentActionTile(
                       icon: Icons.photo_library_outlined,
-                      label: 'Ảnh thư viện',
+                      label: 'Thư viện',
+                      subtitle: 'Ảnh & Video',
                       color: AppColors.pineDeep,
                       bg: AppColors.primaryForestGreenLight,
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
-                        _pickImage(ImageSource.gallery);
+                        _openGalleryTypeSheet();
                       },
                     ),
                   ),
@@ -294,7 +299,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   Expanded(
                     child: _AttachmentActionTile(
                       icon: Icons.camera_alt_outlined,
-                      label: 'Chụp ảnh',
+                      label: 'Máy ảnh',
+                      subtitle: 'Chụp ngay',
                       color: AppColors.ctaTerracotta,
                       bg: AppColors.ctaTerracottaSoft,
                       onTap: () {
@@ -306,74 +312,388 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _AttachmentActionTile(
-                      icon: Icons.videocam_outlined,
-                      label: 'Video clip',
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Đơn hàng',
+                      subtitle: 'Gửi mã đơn',
                       color: const Color(0xFF9A6B16),
                       bg: AppColors.creamBadgeSoft,
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
-                        _pickVideo();
+                        _openOrderAttachmentSheet();
                       },
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              const Divider(height: 1, color: AppColors.borderWarm),
-              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openGalleryTypeSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DesignTokens.radiusXl),
+        ),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                'Tùy chọn nhanh (Chế độ Demo)',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
-                ),
+                'Chọn từ Thư viện',
+                style: AppTypography.headingSmall.copyWith(fontSize: 16),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ActionChip(
-                    avatar: const Icon(
-                      Icons.image_outlined,
-                      size: 16,
-                      color: AppColors.pineDeep,
-                    ),
-                    label: const Text('Ảnh cận chất vải'),
-                    onPressed: () {
-                      Navigator.of(sheetCtx).pop();
-                      setState(() {
-                        _pendingAttachment = const _PendingAttachment(
-                          mediaType: 'IMAGE',
-                          mediaPath: ProductImageResolver.assetDenimJeans,
-                          fileName: 'can_canh_chat_denim.jpg',
-                        );
-                      });
-                    },
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryForestGreenLight,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  ActionChip(
-                    avatar: const Icon(
-                      Icons.play_circle_outline_rounded,
-                      size: 16,
-                      color: AppColors.ctaTerracotta,
-                    ),
-                    label: const Text('Video quay 360° (0:14)'),
-                    onPressed: () {
-                      Navigator.of(sheetCtx).pop();
-                      setState(() {
-                        _pendingAttachment = const _PendingAttachment(
-                          mediaType: 'VIDEO',
-                          mediaPath: 'demo://clip_vintage_360.mp4',
-                          fileName: 'quay_chi_tiet_san_pham_360.mp4',
-                          durationLabel: '0:14',
-                          fileSizeBytes: 4200000,
-                        );
-                      });
-                    },
+                  child: const Icon(
+                    Icons.image_outlined,
+                    color: AppColors.pineDeep,
                   ),
-                ],
+                ),
+                title: const Text(
+                  'Chọn hình ảnh',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Gửi ảnh cận chất vải, số đo hoặc khuyết điểm thực tế',
+                  style: TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              const Divider(height: 1, color: AppColors.borderWarm),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.ctaTerracottaSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.videocam_outlined,
+                    color: AppColors.ctaTerracotta,
+                  ),
+                ),
+                title: const Text(
+                  'Chọn video',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Hỗ trợ MP4, MOV, WEBM (tối đa 25MB, 60 giây)',
+                  style: TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _pickVideo();
+                },
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<List<OrderModel>> _loadAttachableOrders(int? partnerId) async {
+    final merged = <OrderModel>[];
+    final seenIds = <int>{};
+
+    try {
+      final repo = ref.read(orderFulfillmentRepositoryProvider);
+      final res = await repo.fetchMyPurchases(perPage: 20);
+      for (final order in res.items) {
+        if (seenIds.add(order.id)) merged.add(order);
+      }
+    } catch (_) {
+      // Offline or demo mode falls back smoothly to demoBuyerOrders below
+    }
+
+    final demoOrders = ref.read(retroDemoStoreProvider).demoBuyerOrders;
+    for (final order in demoOrders) {
+      if (seenIds.add(order.id)) merged.add(order);
+    }
+
+    // Prioritize orders from the current chat conversation's shop/seller
+    if (partnerId != null && partnerId > 0) {
+      merged.sort((a, b) {
+        final aMatch = a.sellerId == partnerId ? 0 : 1;
+        final bMatch = b.sellerId == partnerId ? 0 : 1;
+        if (aMatch != bMatch) return aMatch.compareTo(bMatch);
+        return b.id.compareTo(a.id);
+      });
+    }
+    return merged;
+  }
+
+  String _orderStatusLabel(String rawStatus) {
+    switch (rawStatus.toUpperCase()) {
+      case 'PENDING_PAYMENT':
+        return 'Chờ thanh toán';
+      case 'PAID':
+        return 'Đã thanh toán';
+      case 'PREPARING':
+        return 'Đang chuẩn bị';
+      case 'SHIPPED':
+        return 'Đang giao hàng';
+      case 'DELIVERED':
+        return 'Đã giao hàng';
+      case 'COMPLETED':
+        return 'Hoàn tất';
+      case 'CANCELLED':
+        return 'Đã hủy';
+      default:
+        return rawStatus;
+    }
+  }
+
+  void _openOrderAttachmentSheet() {
+    final chatVm = ref.read(chatViewModelProvider);
+    final partnerId = chatVm.currentConversation?.partnerId;
+    final ordersFuture = _loadAttachableOrders(partnerId);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      isScrollControlled: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DesignTokens.radiusXl),
+        ),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chọn đơn hàng để đính kèm',
+                  style: AppTypography.headingSmall.copyWith(fontSize: 16.5),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Đơn hàng thuộc tiệm này được ưu tiên hiển thị lên đầu.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: FutureBuilder<List<OrderModel>>(
+                    future: ordersFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox(
+                          height: 140,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.pineDeep,
+                            ),
+                          ),
+                        );
+                      }
+
+                      final orders = snapshot.data ?? const <OrderModel>[];
+                      if (orders.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 28),
+                          child: Center(
+                            child: Text(
+                              'Bạn chưa có đơn hàng nào để đính kèm.',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: orders.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final order = orders[index];
+                          final firstItem =
+                              order.items.isNotEmpty ? order.items.first : null;
+                          final isSameShop =
+                              partnerId != null && order.sellerId == partnerId;
+
+                          return Material(
+                            color: AppColors.canvasParchment,
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () async {
+                                Navigator.of(sheetCtx).pop();
+                                final ok = await ref
+                                    .read(chatViewModelProvider)
+                                    .sendOrderAttachment(order: order);
+                                if (ok) {
+                                  _scrollToBottom();
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(11),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isSameShop
+                                        ? AppColors.pineDeep.withValues(
+                                            alpha: 0.45,
+                                          )
+                                        : AppColors.borderWarm,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: RetroProductImage(
+                                        imageUrl: firstItem?.primaryImageUrl,
+                                        title: firstItem?.productTitle ??
+                                            order.orderCode,
+                                        width: 54,
+                                        height: 54,
+                                        useStaticPlaceholder: true,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 11),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                '#${order.orderCode}',
+                                                style: AppTypography.caption
+                                                    .copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppColors.pineDeep,
+                                                ),
+                                              ),
+                                              if (isSameShop) ...[
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 1.5,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors
+                                                        .primaryForestGreenLight,
+                                                    borderRadius: DesignTokens
+                                                        .borderRadiusFull,
+                                                  ),
+                                                  child: const Text(
+                                                    'Cùng tiệm này',
+                                                    style: TextStyle(
+                                                      fontSize: 9.5,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: AppColors.pineDeep,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            firstItem?.productTitle ??
+                                                order.shopName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTypography.bodySmall
+                                                .copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textCharcoal,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                _currencyFormat.format(
+                                                  order.totalAmount,
+                                                ),
+                                                style: AppTypography.caption
+                                                    .copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  color:
+                                                      AppColors.priceCrimson,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  '• ${_orderStatusLabel(order.orderStatus)}',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: AppTypography.caption
+                                                      .copyWith(
+                                                    color: AppColors.textMuted,
+                                                    fontSize: 10.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      Icons.send_rounded,
+                                      size: 18,
+                                      color: AppColors.ctaTerracotta,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -485,7 +805,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Xem trước video cục bộ (Demo): video đã được kiểm tra định dạng & dung lượng trên thiết bị. Phát video trực tuyến sẽ kết nối ngay khi server bật upload media cho tin nhắn.',
+              'Video đã được xác thực định dạng và dung lượng (tối đa 25MB) trên thiết bị của bạn.',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textMuted,
                 height: 1.4,
@@ -1091,6 +1411,16 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               if (message.content.isNotEmpty) const SizedBox(height: 6),
             ],
 
+            // Interactive Order Card Bubble Content
+            if (message.isOrder && message.attachedOrder != null) ...[
+              _buildOrderCardBubble(
+                context,
+                message.attachedOrder!,
+                isMe: isMe,
+              ),
+              if (message.content.isNotEmpty) const SizedBox(height: 6),
+            ],
+
             // Text / Emoji Content
             if (message.content.isNotEmpty)
               Padding(
@@ -1135,6 +1465,139 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   ],
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderCardBubble(
+    BuildContext context,
+    ChatContextCardModel order, {
+    required bool isMe,
+  }) {
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.orderDetailPath(order.referenceId)),
+      child: Container(
+        width: 238,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isMe
+                ? AppColors.starGold.withValues(alpha: 0.45)
+                : AppColors.borderWarm,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.receipt_long_rounded,
+                  size: 14,
+                  color: AppColors.pineDeep,
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'Đơn hàng #${order.orderCode}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.pineDeep,
+                    ),
+                  ),
+                ),
+                if (order.orderStatus.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.creamBadgeSoft,
+                      borderRadius: DesignTokens.borderRadiusFull,
+                      border: Border.all(color: AppColors.creamBadgeBorder),
+                    ),
+                    child: Text(
+                      _orderStatusLabel(order.orderStatus),
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.creamBadgeText,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: RetroProductImage(
+                    imageUrl: order.thumbnailUrl,
+                    title: order.title,
+                    width: 46,
+                    height: 46,
+                    useStaticPlaceholder: true,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textCharcoal,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _currencyFormat.format(order.totalAmount),
+                        style: AppTypography.priceDisplay.copyWith(
+                          fontSize: 13,
+                          color: AppColors.priceCrimson,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: AppColors.borderWarm),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Xem chi tiết đơn hàng',
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ctaTerracotta,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 13,
+                  color: AppColors.ctaTerracotta,
+                ),
+              ],
             ),
           ],
         ),
@@ -1260,12 +1723,12 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         child: Row(
           children: [
             IconButton(
-              tooltip: 'Đính kèm ảnh hoặc video',
+              tooltip: 'Đính kèm ảnh, video hoặc đơn hàng',
               onPressed: _openAttachmentPickerSheet,
               icon: const Icon(
-                Icons.add_photo_alternate_outlined,
+                Icons.add_circle_outline_rounded,
                 color: AppColors.pineDeep,
-                size: 24,
+                size: 25,
               ),
             ),
             IconButton(
@@ -1419,6 +1882,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 class _AttachmentActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final Color color;
   final Color bg;
   final VoidCallback onTap;
@@ -1426,6 +1890,7 @@ class _AttachmentActionTile extends StatelessWidget {
   const _AttachmentActionTile({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.color,
     required this.bg,
     required this.onTap,
@@ -1440,7 +1905,7 @@ class _AttachmentActionTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
           child: Column(
             children: [
               Icon(icon, color: color, size: 26),
@@ -1451,9 +1916,22 @@ class _AttachmentActionTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption.copyWith(
                   color: color,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
                 ),
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

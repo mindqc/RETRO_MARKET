@@ -14,6 +14,7 @@ import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/server_countdown_timer.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/status_pill_badge.dart';
+import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../../engagement/repositories/communication_engagement_repository.dart';
 import '../models/auction_detail_model.dart';
 import '../viewmodels/live_auction_view_model.dart';
@@ -47,6 +48,22 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
     LiveAuctionViewModel vm,
     bool isScheduled,
   ) async {
+    final allowed = requireAuthOrPrompt(
+      context,
+      ref,
+      featureTitle: isScheduled
+          ? 'Đăng nhập để giữ chỗ đấu giá'
+          : 'Đăng nhập để theo dõi phiên đấu giá',
+      description:
+          'Nhận thông báo khi phiên sắp bắt đầu, sắp kết thúc hoặc có người vượt giá.',
+      intendedTarget: PendingNavigationTarget(
+        route: AppRoutes.auctionRoomPath(widget.auctionId),
+        returnToCaller: true,
+      ),
+      icon: Icons.notifications_active_outlined,
+    );
+    if (!allowed) return;
+
     final nowWatching = await vm.toggleWatch();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -70,6 +87,20 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
     LiveAuctionViewModel vm,
     double amount,
   ) async {
+    final allowed = requireAuthOrPrompt(
+      context,
+      ref,
+      featureTitle: 'Đăng nhập để đặt giá thầu',
+      description:
+          'Xác thực tài khoản izithrift để đặt giá nhanh và bảo vệ quyền thắng thầu của bạn.',
+      intendedTarget: PendingNavigationTarget(
+        route: AppRoutes.auctionRoomPath(widget.auctionId),
+        returnToCaller: true,
+      ),
+      icon: Icons.gavel_rounded,
+    );
+    if (!allowed) return;
+
     final success = await vm.placeBid(amount);
     if (!context.mounted) return;
 
@@ -98,6 +129,20 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
     BuildContext context,
     AuctionDetailModel auction,
   ) async {
+    final allowed = requireAuthOrPrompt(
+      context,
+      ref,
+      featureTitle: 'Đăng nhập để nhắn tin chủ phiên',
+      description:
+          'Trao đổi trực tiếp với chủ tiệm về tình trạng món đồ và lịch sử kiểm định.',
+      intendedTarget: PendingNavigationTarget(
+        route: AppRoutes.auctionRoomPath(widget.auctionId),
+        returnToCaller: true,
+      ),
+      icon: Icons.chat_bubble_outline_rounded,
+    );
+    if (!allowed) return;
+
     try {
       final repo = ref.read(communicationEngagementRepositoryProvider);
       final conv = await repo.startOrGetConversation(
@@ -1440,7 +1485,23 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: auction.isLive && !vm.isSubmittingBid
-                      ? () => BidPlacementBottomSheet.show(context, auction.id)
+                      ? () {
+                          final allowed = requireAuthOrPrompt(
+                            context,
+                            ref,
+                            featureTitle: 'Đăng nhập để đặt giá thầu',
+                            description:
+                                'Đăng nhập tài khoản izithrift để tham gia đấu giá trực tiếp và giữ vị trí dẫn đầu.',
+                            intendedTarget: PendingNavigationTarget(
+                              route: AppRoutes.auctionRoomPath(auction.id),
+                              returnToCaller: true,
+                            ),
+                            icon: Icons.gavel_rounded,
+                          );
+                          if (allowed) {
+                            BidPlacementBottomSheet.show(context, auction.id);
+                          }
+                        }
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.ctaTerracotta,

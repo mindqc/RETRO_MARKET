@@ -333,8 +333,20 @@ void main() {
       );
 
       // Fill in credentials
-      await tester.enterText(find.widgetWithText(TextFormField, 'vidu@gmail.com'), 'suspended@example.com');
-      await tester.enterText(find.widgetWithText(TextFormField, 'Nhập mật khẩu của bạn'), 'secret123');
+      final emailField = find.ancestor(
+        of: find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.keyboardType == TextInputType.emailAddress,
+        ),
+        matching: find.byType(TextFormField),
+      );
+      expect(emailField, findsOneWidget);
+      await tester.enterText(emailField, 'suspended@example.com');
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Nhập mật khẩu của bạn'),
+        'secret123',
+      );
 
       // Click login
       await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));

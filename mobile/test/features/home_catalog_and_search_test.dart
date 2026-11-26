@@ -525,18 +525,18 @@ void main() {
         expect(find.text('Hàng mới lên kệ'), findsOneWidget);
 
         await tester.scrollUntilVisible(
-          find.text('Tiệm đồ si được yêu thích gần bạn'),
+          find.text('Tiệm đồ si ở gần bạn'),
           200,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text('Tiệm đồ si được yêu thích gần bạn'), findsOneWidget);
+        expect(find.text('Tiệm đồ si ở gần bạn'), findsOneWidget);
 
         await tester.scrollUntilVisible(
-          find.text('Pass đồ 2hand'),
+          find.text('Bạn có thể đang tìm kiếm'),
           200,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text('Pass đồ 2hand'), findsOneWidget);
+        expect(find.text('Bạn có thể đang tìm kiếm'), findsOneWidget);
       },
     );
 

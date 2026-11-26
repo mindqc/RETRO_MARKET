@@ -7,6 +7,7 @@ import '../../../core/services/lifecycle_polling_controller.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/utils/product_image_resolver.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
+import '../../orders/models/order_model.dart';
 import '../models/chat_context_card_model.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
@@ -370,6 +371,70 @@ class ChatViewModel extends BaseViewModel<List<ConversationModel>> {
     _isSendingMessage = false;
     notifyListeners();
     return null;
+  }
+
+  /// Sends a structured Order Card attachment in the active chat room so buyer
+  /// and seller can discuss order status, shipping, or support seamlessly.
+  Future<bool> sendOrderAttachment({
+    required OrderModel order,
+    String? caption,
+  }) async {
+    if (_currentConversation == null || _isBlocked) return false;
+
+    _isSendingMessage = true;
+    notifyListeners();
+
+    final primaryItem = order.items.isNotEmpty ? order.items.first : null;
+    final cleanCaption = (caption ?? '').trim();
+    final orderCard = ChatContextCardModel(
+      contextType: 'ORDER',
+      referenceId: order.id,
+      referenceCode: order.orderCode,
+      title: primaryItem != null && primaryItem.productTitle.isNotEmpty
+          ? primaryItem.productTitle
+          : 'Đơn hàng #${order.orderCode}',
+      thumbnailUrl: primaryItem?.primaryImageUrl,
+      priceOrTotal: order.totalAmount,
+      status: order.orderStatus,
+    );
+
+    final msg = MessageModel(
+      id: ++_localMessageSeq,
+      conversationId: _currentConversation!.id,
+      senderId: currentUserId ?? 1,
+      senderName: 'Bạn',
+      content: cleanCaption,
+      attachedOrder: orderCard,
+      isMine: true,
+      isRead: true,
+      createdAt: DateTime.now(),
+      mediaType: 'ORDER',
+      isLocalDemoAttachment: true,
+    );
+
+    _appendLocalMessage(
+      msg,
+      previewText: '📦 Đã gửi đơn hàng #${order.orderCode}',
+    );
+
+    // Best-effort sync of a companion reference note when backend is online
+    if (!_isUsingDemoMode) {
+      try {
+        await repository.sendMessage(
+          _currentConversation!.id,
+          content: cleanCaption.isNotEmpty
+              ? '[Đơn hàng #${order.orderCode}] $cleanCaption'
+              : 'Mình vừa đính kèm đơn hàng #${order.orderCode} để trao đổi thêm.',
+          currentUserId: currentUserId,
+        );
+      } catch (_) {
+        // Keep local interactive order card visible smoothly
+      }
+    }
+
+    _isSendingMessage = false;
+    notifyListeners();
+    return true;
   }
 
   void _appendLocalMessage(MessageModel msg, {required String previewText}) {

@@ -9,8 +9,14 @@ import 'package:izithrift/core/network/api_envelope.dart';
 import 'package:izithrift/core/network/dio_client.dart';
 import 'package:izithrift/core/services/secure_token_storage.dart';
 import 'package:izithrift/core/services/server_time_service.dart';
+import 'package:izithrift/core/theme/seasonal_decor_provider.dart';
 import 'package:izithrift/core/widgets/price_breakdown_card.dart';
 import 'package:izithrift/core/widgets/seasonal_decor_overlay.dart';
+import 'package:izithrift/features/auth/models/user_model.dart';
+import 'package:izithrift/features/auth/repositories/auth_repository.dart';
+import 'package:izithrift/features/auth/viewmodels/auth_view_model.dart';
+import 'package:izithrift/features/profile/models/profile_summary_model.dart';
+import 'package:izithrift/features/profile/repositories/profile_repository.dart';
 import 'package:izithrift/features/catalog/models/product_filter_query.dart';
 import 'package:izithrift/features/catalog/models/product_summary_model.dart';
 import 'package:izithrift/features/catalog/models/review_item_model.dart';
@@ -331,6 +337,23 @@ class MockEngagementRepositoryForE2E extends CommunicationEngagementRepository {
   }
 }
 
+class MockProfileRepositoryForE2E extends ProfileRepository {
+  MockProfileRepositoryForE2E(SecureTokenStorage storage, this.user)
+      : super(
+          dioClient: DioClient(
+            tokenStorage: storage,
+            serverTimeService: ServerTimeService.instance,
+          ),
+        );
+
+  final UserModel user;
+
+  @override
+  Future<ProfileSummaryModel> fetchMyProfile() async {
+    return ProfileSummaryModel(user: user);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -353,9 +376,49 @@ void main() {
     // SCENARIO 1: 5-Tab Navigation Shell Integration & Seasonal Decor
     // -------------------------------------------------------------
     testWidgets('Scenario 1: 5-Tab Navigation Shell switches all branches seamlessly with SeasonalDecorOverlay', (tester) async {
+      final tokenStorage = SecureTokenStorage.inMemory();
+      await tokenStorage.saveTokens(
+        accessToken: 'e2e_test_token',
+        userId: 1,
+        role: 'buyer_seller',
+        email: 'e2e@izithrift.vn',
+      );
+      const testUser = UserModel(
+        id: 1,
+        displayName: 'Tiệm Đồ Cũ Test',
+        email: 'e2e@izithrift.vn',
+        role: 'buyer_seller',
+        status: 'ACTIVE',
+        profile: UserProfileModel(seasonalDecorEnabled: true),
+        sellerProfile: SellerProfileModel(
+          shopSlug: 'tiem-do-cu-test',
+          trustScore: 98.0,
+          walletBalance: 1250000.0,
+          escrowHeldBalance: 500000.0,
+        ),
+      );
+      final mockProfileRepo = MockProfileRepositoryForE2E(tokenStorage, testUser);
+
       await tester.pumpWidget(
-        const ProviderScope(
-          child: IzithriftApp(),
+        ProviderScope(
+          overrides: [
+            secureTokenStorageProvider.overrideWithValue(tokenStorage),
+            seasonalDecorProvider.overrideWith(
+              (ref) => SeasonalDecorNotifier(null, true),
+            ),
+            profileRepositoryProvider.overrideWithValue(mockProfileRepo),
+            authViewModelProvider.overrideWith((ref) {
+              final vm = AuthViewModel(
+                authRepository: ref.watch(authRepositoryProvider),
+                profileRepository: mockProfileRepo,
+                tokenStorage: tokenStorage,
+                seasonalDecorNotifier: ref.watch(seasonalDecorProvider.notifier),
+              );
+              vm.updateCurrentUser(testUser);
+              return vm;
+            }),
+          ],
+          child: const IzithriftApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -397,7 +460,8 @@ void main() {
       await tester.tap(find.text('Cá nhân').last);
       await tester.pumpAndSettle();
       expect(find.text('izithrift'), findsWidgets);
-      expect(find.text('Tham gia cộng đồng izithrift'), findsOneWidget);
+      expect(find.text('Tiệm Đồ Cũ Test'), findsOneWidget);
+      expect(find.text('Kênh Người bán izithrift'), findsOneWidget);
 
       // Switch back to Tab 1: Trang chủ
       await tester.tap(find.text('Trang chủ').last);
