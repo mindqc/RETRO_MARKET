@@ -35,11 +35,11 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(catalogSearchViewModelProvider).loadRecentKeywords();
+      final searchVM = ref.read(catalogSearchViewModelProvider);
+      searchVM.loadRecentKeywords();
+      searchVM.loadTaxonomy();
       if (widget.initialKeyword != null && widget.initialKeyword!.isNotEmpty) {
-        ref
-            .read(catalogSearchViewModelProvider)
-            .setKeyword(widget.initialKeyword);
+        searchVM.setKeyword(widget.initialKeyword);
       }
     });
   }

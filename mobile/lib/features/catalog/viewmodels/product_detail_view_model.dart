@@ -90,6 +90,12 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
       favoriteCount: newCount,
     ));
 
+    final demoStore = ref.read(retroDemoStoreProvider);
+    if (demoStore.getDemoProductDetail(currentProduct.id) != null) {
+      demoStore.toggleLocalFavorite(currentProduct.id);
+      return demoStore.isProductFavorited(currentProduct.id);
+    }
+
     try {
       final res = await repository.toggleFavorite(currentProduct.id);
       final bool serverFav = res['is_favorited'] as bool? ?? newFavoriteStatus;

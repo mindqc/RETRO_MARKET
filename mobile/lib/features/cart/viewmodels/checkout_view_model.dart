@@ -13,6 +13,7 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
   UserAddressModel? selectedAddress;
   String? orderNote;
   bool isSubmittingOrder = false;
+  String? _submitErrorMessage;
 
   // Stored parameters for reloading preview if address changes
   String _source = 'CART';
@@ -21,6 +22,9 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
   int? _quantity;
 
   CheckoutViewModel({required this.repository});
+
+  @override
+  String? get errorMessage => _submitErrorMessage ?? super.errorMessage;
 
   /// Checks whether the checkout preview has valid order groups, items, and grand total.
   bool get isCheckoutValid {
@@ -41,6 +45,7 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
     int? quantity,
     int? addressId,
   }) async {
+    _submitErrorMessage = null;
     _source = source;
     _cartItemIds = cartItemIds;
     _productId = productId;
@@ -85,23 +90,27 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
 
   /// Places the order and returns the Payment session (M-PM-01)
   Future<PaymentSessionModel?> placeOrder() async {
+    _submitErrorMessage = null;
     final preview = state.data;
 
     if (preview == null ||
         preview.orderGroups.isEmpty ||
         preview.itemsCount <= 0 ||
         preview.orderGroups.every((group) => group.items.isEmpty)) {
-      setError('Không có sản phẩm hợp lệ để đặt hàng.');
+      _submitErrorMessage = 'Không có sản phẩm hợp lệ để đặt hàng.';
+      notifyListeners();
       return null;
     }
 
     if (preview.grandTotalAmount <= 0) {
-      setError('Tổng thanh toán không hợp lệ.');
+      _submitErrorMessage = 'Tổng thanh toán không hợp lệ.';
+      notifyListeners();
       return null;
     }
 
     if (selectedAddress == null) {
-      setError('Vui lòng chọn hoặc thêm địa chỉ nhận hàng.');
+      _submitErrorMessage = 'Vui lòng chọn hoặc thêm địa chỉ nhận hàng.';
+      notifyListeners();
       return null;
     }
 
@@ -123,7 +132,8 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
       return paymentSession;
     } catch (e) {
       isSubmittingOrder = false;
-      setError('Lỗi khi đặt hàng: $e');
+      _submitErrorMessage = 'Lỗi khi đặt hàng: $e';
+      notifyListeners();
       return null;
     }
   }

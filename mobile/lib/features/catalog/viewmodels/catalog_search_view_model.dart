@@ -177,19 +177,27 @@ class CatalogSearchViewModel extends BaseViewModel<List<ProductSummaryModel>> {
 
   /// Update search keyword and search immediately
   Future<bool> setKeyword(String? keyword) {
-    if (keyword != null && keyword.trim().isNotEmpty) {
-      addRecentKeyword(keyword.trim());
+    final trimmed = keyword?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      addRecentKeyword(trimmed);
+      return search(_currentQuery.copyWith(q: trimmed));
     }
-    return search(_currentQuery.copyWith(q: keyword));
+    return search(_currentQuery.copyWith(clearQ: true));
   }
 
   /// Set category filter
   Future<bool> setCategory(int? categoryId) {
+    if (categoryId == null) {
+      return search(_currentQuery.copyWith(clearCategory: true));
+    }
     return search(_currentQuery.copyWith(categoryId: categoryId));
   }
 
   /// Set brand filter
   Future<bool> setBrand(int? brandId) {
+    if (brandId == null) {
+      return search(_currentQuery.copyWith(clearBrand: true));
+    }
     return search(_currentQuery.copyWith(brandId: brandId));
   }
 

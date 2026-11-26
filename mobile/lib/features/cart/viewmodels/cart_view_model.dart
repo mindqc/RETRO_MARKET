@@ -122,10 +122,12 @@ class CartViewModel extends BaseViewModel<CartModel> {
 
     _ensureInitialized(current);
 
-    final matchGroup = current.sellerGroups.firstWhere(
+    final groupIndex = current.sellerGroups.indexWhere(
       (g) => g.sellerId == sellerId,
-      orElse: () => current.sellerGroups.first,
     );
+    if (groupIndex == -1) return;
+
+    final matchGroup = current.sellerGroups[groupIndex];
     final targetSelection = !matchGroup.isAllSelected;
 
     final updatedGroups = current.sellerGroups.map((group) {

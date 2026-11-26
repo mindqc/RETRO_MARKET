@@ -861,7 +861,7 @@ class _PurchaseOrderDetailScreenState
   void _confirmDeliveryDialog(OrderModel order, BuyerOrderViewModel vm) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
           borderRadius: DesignTokens.borderRadiusBanner,
@@ -876,7 +876,7 @@ class _PurchaseOrderDetailScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Đóng'),
           ),
           ElevatedButton(
@@ -886,7 +886,7 @@ class _PurchaseOrderDetailScreenState
               foregroundColor: AppColors.textLight,
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               final res = await vm.confirmDelivery(order.id);
               if (res != null && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

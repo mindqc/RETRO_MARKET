@@ -78,13 +78,15 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
     });
 
     final addressVm = ref.read(addressViewModelProvider);
+    final normalizedPhone =
+        _phoneController.text.trim().replaceAll(' ', '').replaceAll('.', '');
 
     try {
       if (_isEditMode) {
         await addressVm.updateAddress(
           id: widget.addressToEdit!.id,
           recipientName: _nameController.text.trim(),
-          recipientPhone: _phoneController.text.trim(),
+          recipientPhone: normalizedPhone,
           provinceCity: _provinceController.text.trim(),
           districtWard: _districtController.text.trim(),
           streetAddress: _streetController.text.trim(),
@@ -93,7 +95,7 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
       } else {
         await addressVm.createAddress(
           recipientName: _nameController.text.trim(),
-          recipientPhone: _phoneController.text.trim(),
+          recipientPhone: normalizedPhone,
           provinceCity: _provinceController.text.trim(),
           districtWard: _districtController.text.trim(),
           streetAddress: _streetController.text.trim(),
@@ -115,8 +117,16 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
+      if (!mounted) return;
       if (e is ApiException) {
         setState(() => _lastApiException = e);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.priceCrimson,
+            content: Text('Không thể lưu địa chỉ: $e'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

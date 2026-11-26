@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -10,6 +9,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/cart_item_model.dart';
 import '../models/cart_model.dart';
@@ -421,53 +421,67 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             ),
             onChanged: (_) => vm.toggleSellerGroupSelection(group.sellerId),
           ),
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              gradient: const RadialGradient(
-                colors: [
-                  AppColors.categoryCircleStart,
-                  AppColors.categoryCircleEnd,
-                ],
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.creamBadgeBorder),
-            ),
-            child: const Icon(
-              Icons.storefront_rounded,
-              size: 17,
-              color: AppColors.pineDeep,
-            ),
-          ),
-          const SizedBox(width: 9),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  group.shopName,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.pineDeep,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            child: InkWell(
+              onTap: () =>
+                  context.push(AppRoutes.sellerStorefrontPath(group.sellerId)),
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        gradient: const RadialGradient(
+                          colors: [
+                            AppColors.categoryCircleStart,
+                            AppColors.categoryCircleEnd,
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.creamBadgeBorder),
+                      ),
+                      child: const Icon(
+                        Icons.storefront_rounded,
+                        size: 17,
+                        color: AppColors.pineDeep,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            group.shopName,
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.pineDeep,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '${group.items.length} món đồ',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
+                  ],
                 ),
-                Text(
-                  '${group.items.length} món đồ',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 10.5,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.textMuted,
-            size: 20,
           ),
         ],
       ),
@@ -505,30 +519,18 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
         ClipRRect(
           borderRadius: DesignTokens.borderRadiusMd,
           child: Container(
-            width: 90,
-            height: 108,
-            color: AppColors.surfaceWarm,
-            child: item.primaryImageUrl != null &&
-                    item.primaryImageUrl!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: item.primaryImageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (_, _) => const Center(
-                      child: Icon(
-                        Icons.checkroom_outlined,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    errorWidget: (_, _, _) => const Icon(
-                      Icons.image_not_supported_outlined,
-                      color: AppColors.textMuted,
-                    ),
-                  )
-                : const Icon(
-                    Icons.checkroom_outlined,
-                    color: AppColors.primaryVintageBrown,
-                    size: 32,
-                  ),
+              width: 90,
+              height: 108,
+              color: AppColors.surfaceWarm,
+              child: RetroProductImage(
+              imageUrl: item.primaryImageUrl,
+              title: item.title,
+              productId: item.productId,
+              width: 90,
+              height: 108,
+              fit: BoxFit.cover,
+              useStaticPlaceholder: true,
+            ),
           ),
         ),
         if (!item.isAvailable)
@@ -864,7 +866,9 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                           return;
                         }
 
-                        final selectedIds = cart.selectedCartItemIds;
+                        final latestCart = vm.state.data ?? cart;
+                        final selectedIds = latestCart.selectedCartItemIds;
+                        if (selectedIds.isEmpty) return;
 
                         if (mounted) {
                           context.push(

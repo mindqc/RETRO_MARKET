@@ -85,9 +85,7 @@ class NotificationViewModel extends BaseViewModel<List<NotificationItemModel>> {
   Future<void> fetchNotifications({bool refresh = false}) async {
     setLoading();
     try {
-      final res = await repository.fetchNotifications(
-        category: _selectedTab.categoryQueryParam,
-      );
+      final res = await repository.fetchNotifications();
       final items = res['items'] as List<NotificationItemModel>;
       _unreadCount = res['unread_count'] as int? ?? 0;
 

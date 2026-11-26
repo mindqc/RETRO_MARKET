@@ -767,18 +767,25 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.categoryCircleEnd,
-                    backgroundImage: auction.sellerAvatarUrl != null
-                        ? NetworkImage(auction.sellerAvatarUrl!)
-                        : null,
-                    child: auction.sellerAvatarUrl == null
-                        ? const Icon(
-                            Icons.storefront_rounded,
-                            color: AppColors.pineDeep,
-                          )
-                        : null,
+                  Builder(
+                    builder: (_) {
+                      final avatarUrl = auction.sellerAvatarUrl?.trim();
+                      final hasValidAvatar = avatarUrl != null &&
+                          (avatarUrl.startsWith('http://') ||
+                              avatarUrl.startsWith('https://'));
+                      return CircleAvatar(
+                        radius: 22,
+                        backgroundColor: AppColors.categoryCircleEnd,
+                        backgroundImage:
+                            hasValidAvatar ? NetworkImage(avatarUrl) : null,
+                        child: !hasValidAvatar
+                            ? const Icon(
+                                Icons.storefront_rounded,
+                                color: AppColors.pineDeep,
+                              )
+                            : null,
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   Expanded(

@@ -234,23 +234,29 @@ class _SavedFavoritesAndShopsScreenState
                   border:
                       Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
                 ),
-                child: CircleAvatar(
-                  radius: 26,
-                  backgroundColor: AppColors.categoryCircleStart,
-                  backgroundImage:
-                      (shop.avatarUrl != null && shop.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(shop.avatarUrl!)
+                child: Builder(
+                  builder: (_) {
+                    final avatarUrl = shop.avatarUrl?.trim();
+                    final hasValidAvatar = avatarUrl != null &&
+                        (avatarUrl.startsWith('http://') ||
+                            avatarUrl.startsWith('https://'));
+                    return CircleAvatar(
+                      radius: 26,
+                      backgroundColor: AppColors.categoryCircleStart,
+                      backgroundImage:
+                          hasValidAvatar ? NetworkImage(avatarUrl) : null,
+                      child: !hasValidAvatar
+                          ? Text(
+                              shop.shopName.isNotEmpty
+                                  ? shop.shopName.substring(0, 1).toUpperCase()
+                                  : 'S',
+                              style: AppTypography.headingSmall.copyWith(
+                                color: AppColors.pineDeep,
+                              ),
+                            )
                           : null,
-                  child: (shop.avatarUrl == null || shop.avatarUrl!.isEmpty)
-                      ? Text(
-                          shop.shopName.isNotEmpty
-                              ? shop.shopName.substring(0, 1).toUpperCase()
-                              : 'S',
-                          style: AppTypography.headingSmall.copyWith(
-                            color: AppColors.pineDeep,
-                          ),
-                        )
-                      : null,
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),

@@ -15,6 +15,7 @@ import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/seasonal_animations.dart';
 import '../../../core/widgets/state_feedback_views.dart';
+import '../../catalog/models/product_filter_query.dart';
 import '../../catalog/models/product_summary_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
 import '../models/auction_summary_model.dart';
@@ -541,14 +542,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 if (item.isMore) {
                   context.push(AppRoutes.discover);
                 } else {
+                  final searchVM = ref.read(catalogSearchViewModelProvider);
                   if (item.id != null) {
-                    ref
-                        .read(catalogSearchViewModelProvider)
-                        .setCategory(item.id);
+                    searchVM.search(ProductFilterQuery(categoryId: item.id));
                   } else {
-                    ref
-                        .read(catalogSearchViewModelProvider)
-                        .setKeyword(item.label);
+                    searchVM.addRecentKeyword(item.label);
+                    searchVM.search(ProductFilterQuery(q: item.label));
                   }
                   context.push(AppRoutes.search);
                 }
@@ -816,15 +815,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         separatorBuilder: (context, index) => const SizedBox(width: 9),
         itemBuilder: (context, index) {
           final seller = sellers[index];
+          final targetSellerId = seller.userId > 0 ? seller.userId : seller.id;
           final distance = ProductImageResolver.nearbyDistanceLabel(
-            sellerId: seller.id,
+            sellerId: targetSellerId,
           );
           return Material(
             color: AppColors.surfaceCard,
             borderRadius: DesignTokens.borderRadiusFull,
             child: InkWell(
               onTap: () =>
-                  context.push(AppRoutes.sellerStorefrontPath(seller.id)),
+                  context.push(AppRoutes.sellerStorefrontPath(targetSellerId)),
               borderRadius: DesignTokens.borderRadiusFull,
               child: Ink(
                 padding: const EdgeInsets.fromLTRB(7, 6, 13, 6),

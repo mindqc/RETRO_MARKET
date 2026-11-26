@@ -170,19 +170,27 @@ class _PublicSellerStorefrontScreenState
                                   width: 2,
                                 ),
                               ),
-                              child: CircleAvatar(
-                                radius: 32,
-                                backgroundColor: AppColors.categoryCircleEnd,
-                                backgroundImage: seller.avatarUrl != null
-                                    ? NetworkImage(seller.avatarUrl!)
-                                    : null,
-                                child: seller.avatarUrl == null
-                                    ? const Icon(
-                                        Icons.storefront_rounded,
-                                        color: AppColors.pineDeep,
-                                        size: 30,
-                                      )
-                                    : null,
+                              child: Builder(
+                                builder: (_) {
+                                  final avatarUrl = seller.avatarUrl?.trim();
+                                  final hasValidAvatar = avatarUrl != null &&
+                                      (avatarUrl.startsWith('http://') ||
+                                          avatarUrl.startsWith('https://'));
+                                  return CircleAvatar(
+                                    radius: 32,
+                                    backgroundColor: AppColors.categoryCircleEnd,
+                                    backgroundImage: hasValidAvatar
+                                        ? NetworkImage(avatarUrl)
+                                        : null,
+                                    child: !hasValidAvatar
+                                        ? const Icon(
+                                            Icons.storefront_rounded,
+                                            color: AppColors.pineDeep,
+                                            size: 30,
+                                          )
+                                        : null,
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -525,19 +533,26 @@ class _PublicSellerStorefrontScreenState
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.categoryCircleEnd,
-                backgroundImage: review.reviewerAvatarUrl != null
-                    ? NetworkImage(review.reviewerAvatarUrl!)
-                    : null,
-                child: review.reviewerAvatarUrl == null
-                    ? const Icon(
-                        Icons.person_outline_rounded,
-                        color: AppColors.pineDeep,
-                        size: 18,
-                      )
-                    : null,
+              Builder(
+                builder: (_) {
+                  final reviewerAvatar = review.reviewerAvatarUrl?.trim();
+                  final hasValidAvatar = reviewerAvatar != null &&
+                      (reviewerAvatar.startsWith('http://') ||
+                          reviewerAvatar.startsWith('https://'));
+                  return CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.categoryCircleEnd,
+                    backgroundImage:
+                        hasValidAvatar ? NetworkImage(reviewerAvatar) : null,
+                    child: !hasValidAvatar
+                        ? const Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.pineDeep,
+                            size: 18,
+                          )
+                        : null,
+                  );
+                },
               ),
               const SizedBox(width: 10),
               Expanded(

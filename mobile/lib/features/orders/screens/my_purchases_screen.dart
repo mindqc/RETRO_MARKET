@@ -542,7 +542,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
   void _showConfirmDeliveryDialog(OrderModel order, BuyerOrderViewModel vm) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
           borderRadius: DesignTokens.borderRadiusBanner,
@@ -559,7 +559,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Xem lại'),
           ),
           ElevatedButton(
@@ -568,7 +568,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
               foregroundColor: AppColors.textLight,
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               await vm.confirmDelivery(order.id);
             },
             child: const Text('Xác nhận & Giải ngân'),

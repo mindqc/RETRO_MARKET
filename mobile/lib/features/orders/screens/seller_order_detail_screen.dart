@@ -529,7 +529,7 @@ class _SellerOrderDetailScreenState
   void _showApproveCancelDialog(OrderModel order, SellerOrderViewModel vm) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
           borderRadius: DesignTokens.borderRadiusBanner,
@@ -543,7 +543,7 @@ class _SellerOrderDetailScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Đóng'),
           ),
           ElevatedButton(
@@ -552,7 +552,7 @@ class _SellerOrderDetailScreenState
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               await vm.respondCancelRequest(order.id, action: 'APPROVE');
             },
             child: const Text('Đồng ý hủy'),
@@ -566,7 +566,7 @@ class _SellerOrderDetailScreenState
     final noteController = TextEditingController();
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
         shape: RoundedRectangleBorder(
           borderRadius: DesignTokens.borderRadiusBanner,
@@ -591,7 +591,7 @@ class _SellerOrderDetailScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
@@ -600,17 +600,18 @@ class _SellerOrderDetailScreenState
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
+              final reason = noteController.text.trim();
+              Navigator.of(dialogContext).pop();
               await vm.respondCancelRequest(
                 order.id,
                 action: 'REJECT',
-                reason: noteController.text.trim(),
+                reason: reason,
               );
             },
             child: const Text('Từ chối & Tiếp tục đơn'),
           ),
         ],
       ),
-    );
+    ).whenComplete(noteController.dispose);
   }
 }

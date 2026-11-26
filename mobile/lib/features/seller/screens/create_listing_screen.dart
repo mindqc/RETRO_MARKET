@@ -870,7 +870,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           ),
         ],
       ),
-    );
+    ).whenComplete(urlController.dispose);
   }
 
   Widget _buildBasicInfoSection(

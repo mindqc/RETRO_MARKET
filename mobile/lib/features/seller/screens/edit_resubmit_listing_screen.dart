@@ -9,6 +9,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../catalog/models/category_model.dart';
 import '../../catalog/viewmodels/catalog_search_view_model.dart';
@@ -538,6 +539,7 @@ class _EditResubmitListingScreenState
       children: [
         Container(
           width: 90,
+          height: 90,
           decoration: BoxDecoration(
             color: AppColors.surfaceWarm,
             borderRadius: DesignTokens.borderRadiusMd,
@@ -547,7 +549,15 @@ class _EditResubmitListingScreenState
                   : AppColors.borderWarm,
               width: isPrimary ? 2 : 1,
             ),
-            image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd - 1),
+            child: RetroProductImage(
+              imageUrl: url,
+              title: vm.title,
+              productId: widget.productId,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         if (isPrimary)
@@ -635,7 +645,7 @@ class _EditResubmitListingScreenState
           ),
         ],
       ),
-    );
+    ).whenComplete(urlController.dispose);
   }
 
   Widget _buildBasicInfoSection(

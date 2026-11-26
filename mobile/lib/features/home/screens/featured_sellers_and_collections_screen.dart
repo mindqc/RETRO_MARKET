@@ -617,8 +617,11 @@ class _FeaturedSellersAndCollectionsScreenState
                 shape: const StadiumBorder(),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: () =>
-                  context.push(AppRoutes.sellerStorefrontPath(seller.id)),
+              onPressed: () {
+                final targetSellerId =
+                    seller.userId > 0 ? seller.userId : seller.id;
+                context.push(AppRoutes.sellerStorefrontPath(targetSellerId));
+              },
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

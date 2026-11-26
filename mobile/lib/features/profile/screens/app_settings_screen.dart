@@ -47,29 +47,28 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
           passwordConfirmation: _confirmNewPasswordController.text,
         );
 
+    if (!mounted) return;
     setState(() => _isChangingPassword = false);
 
-    if (mounted) {
-      if (success) {
-        _currentPasswordController.clear();
-        _newPasswordController.clear();
-        _confirmNewPasswordController.clear();
-        setState(() => _showChangePasswordForm = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: AppColors.pineDeep,
-            content: Text('Đổi mật khẩu thành công!'),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: AppColors.priceCrimson,
-            content:
-                Text('Mật khẩu hiện tại không chính xác hoặc không hợp lệ.'),
-          ),
-        );
-      }
+    if (success) {
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmNewPasswordController.clear();
+      setState(() => _showChangePasswordForm = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.pineDeep,
+          content: Text('Đổi mật khẩu thành công!'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.priceCrimson,
+          content:
+              Text('Mật khẩu hiện tại không chính xác hoặc không hợp lệ.'),
+        ),
+      );
     }
   }
 

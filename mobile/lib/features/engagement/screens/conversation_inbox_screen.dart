@@ -265,28 +265,31 @@ class _ConversationInboxScreenState
                         width: 1.5,
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: AppColors.primaryForestGreenLight,
-                      backgroundImage:
-                          (otherUser.avatarUrl != null &&
-                              otherUser.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(otherUser.avatarUrl!)
-                          : null,
-                      child:
-                          (otherUser.avatarUrl == null ||
-                              otherUser.avatarUrl!.isEmpty)
-                          ? Text(
-                              otherUser.displayName.isNotEmpty
-                                  ? otherUser.displayName
-                                        .substring(0, 1)
-                                        .toUpperCase()
-                                  : 'U',
-                              style: AppTypography.headingSmall.copyWith(
-                                color: AppColors.pineDeep,
-                              ),
-                            )
-                          : null,
+                    child: Builder(
+                      builder: (_) {
+                        final avatarUrl = otherUser.avatarUrl?.trim();
+                        final hasValidAvatar = avatarUrl != null &&
+                            (avatarUrl.startsWith('http://') ||
+                                avatarUrl.startsWith('https://'));
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.primaryForestGreenLight,
+                          backgroundImage:
+                              hasValidAvatar ? NetworkImage(avatarUrl) : null,
+                          child: !hasValidAvatar
+                              ? Text(
+                                  otherUser.displayName.isNotEmpty
+                                      ? otherUser.displayName
+                                            .substring(0, 1)
+                                            .toUpperCase()
+                                      : 'U',
+                                  style: AppTypography.headingSmall.copyWith(
+                                    color: AppColors.pineDeep,
+                                  ),
+                                )
+                              : null,
+                        );
+                      },
                     ),
                   ),
                   if (item.isBlocked)

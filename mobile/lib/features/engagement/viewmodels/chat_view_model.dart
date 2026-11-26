@@ -547,25 +547,16 @@ class ChatViewModel extends BaseViewModel<List<ConversationModel>> {
     try {
       final success = await repository.submitReport(payload);
       if (success && payload.blockConversation) {
-        _isBlocked = true;
-        _pollingController?.pause();
-        if (_currentConversation != null) {
-          _currentConversation = _currentConversation!.copyWith(
-            isBlocked: true,
-          );
-        }
+        _markCurrentConversationBlocked();
       }
 
       _isReporting = false;
       notifyListeners();
       return success;
     } catch (_) {
-      if (_isUsingDemoMode && payload.blockConversation) {
-        _isBlocked = true;
-        if (_currentConversation != null) {
-          _currentConversation = _currentConversation!.copyWith(
-            isBlocked: true,
-          );
+      if (_isUsingDemoMode) {
+        if (payload.blockConversation) {
+          _markCurrentConversationBlocked();
         }
         _isReporting = false;
         notifyListeners();
@@ -574,6 +565,19 @@ class ChatViewModel extends BaseViewModel<List<ConversationModel>> {
       _isReporting = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  void _markCurrentConversationBlocked() {
+    _isBlocked = true;
+    _pollingController?.pause();
+    if (_currentConversation != null) {
+      final updated = _currentConversation!.copyWith(isBlocked: true);
+      _currentConversation = updated;
+      final idx = _conversations.indexWhere((c) => c.id == updated.id);
+      if (idx != -1) {
+        _conversations[idx] = _conversations[idx].copyWith(isBlocked: true);
+      }
     }
   }
 
@@ -621,6 +625,5 @@ final chatViewModelProvider =
         currentUserId: authVm.currentUser?.id,
         enableDemoFallback: true,
       );
-      vm.loadInbox();
       return vm;
     });

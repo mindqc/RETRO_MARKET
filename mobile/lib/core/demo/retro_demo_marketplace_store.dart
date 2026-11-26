@@ -8,6 +8,7 @@ import '../../features/catalog/models/category_model.dart';
 import '../../features/catalog/models/product_detail_model.dart';
 import '../../features/catalog/models/product_image_model.dart';
 import '../../features/catalog/models/product_summary_model.dart';
+import '../../features/catalog/models/seller_public_profile_model.dart';
 import '../../features/home/models/auction_summary_model.dart';
 import '../../features/home/models/featured_seller_model.dart';
 import '../../features/seller/models/seller_product_item_model.dart';
@@ -27,6 +28,7 @@ class RetroDemoMarketplaceStore extends ChangeNotifier {
   final Map<int, AuctionDetailModel> _demoAuctionsById = {};
   final Set<int> _registeredAuctionIds = <int>{};
   final Set<int> _favoritedProductIds = <int>{};
+  final Set<int> _followedSellerIds = <int>{};
   int _nextDemoId = 9500;
 
   RetroDemoMarketplaceStore() {
@@ -43,6 +45,22 @@ class RetroDemoMarketplaceStore extends ChangeNotifier {
 
   bool isProductFavorited(int productId) =>
       _favoritedProductIds.contains(productId);
+
+  bool isSellerFollowed(int sellerId) =>
+      _followedSellerIds.contains(sellerId);
+
+  bool toggleLocalFollowSeller(int sellerId) {
+    final bool nowFollowing;
+    if (_followedSellerIds.contains(sellerId)) {
+      _followedSellerIds.remove(sellerId);
+      nowFollowing = false;
+    } else {
+      _followedSellerIds.add(sellerId);
+      nowFollowing = true;
+    }
+    notifyListeners();
+    return nowFollowing;
+  }
 
   void toggleLocalFavorite(int productId) {
     if (_favoritedProductIds.contains(productId)) {
@@ -626,67 +644,278 @@ class RetroDemoMarketplaceStore extends ChangeNotifier {
     ];
   }
 
-  /// Resolves a rich ProductDetailModel when tapping a demo-fallback product card.
+  /// Resolves a rich ProductDetailModel when tapping a demo-fallback product card,
+  /// a pinned demo auction item (9101..9105), or a demo sold profile item (9401..9402).
   ProductDetailModel? getDemoProductDetail(int productId) {
     final match = demoCatalogProducts.where((p) => p.id == productId).firstOrNull;
-    if (match == null) return null;
+    if (match != null) {
+      final fee = (match.price * 0.06 + 7000).roundToDouble();
+      final primaryUrl = match.primaryImageUrl ??
+          ProductImageResolver.fallbackAssetFor(
+            title: match.title,
+            categoryName: match.categoryName,
+            id: match.id,
+          );
 
-    final fee = (match.price * 0.06 + 7000).roundToDouble();
-    final primaryUrl = match.primaryImageUrl ??
-        ProductImageResolver.fallbackAssetFor(
-          title: match.title,
-          categoryName: match.categoryName,
-          id: match.id,
-        );
-
-    return ProductDetailModel(
-      id: match.id,
-      productCode: match.productCode,
-      title: match.title,
-      slug: match.slug,
-      description:
-          'Sản phẩm secondhand tuyển chọn thủ công, đã giặt hấp sạch sẽ và kiểm tra đường may kỹ lưỡng trước khi lên kệ Retro Market. Phong cách vintage dễ phối đồ hằng ngày.',
-      listingType: match.listingType,
-      condition: match.condition,
-      defectInfo:
-          'Có dấu vết sử dụng rất nhẹ đúng chuẩn đồ si tuyển (${ProductImageResolver.conditionPercentLabel(match.condition)}), không rách thủng, khóa và nút hoạt động mượt.',
-      verificationLevel: 'MODERATOR_REVIEWED',
-      price: match.price,
-      buyerProtectionFee: fee,
-      totalBuyerPayable: match.price + fee,
-      totalQuantity: 1,
-      availableQuantity: 1,
-      status: match.status,
-      favoriteCount: 24,
-      isFavorited: _favoritedProductIds.contains(match.id),
-      isOwner: false,
-      primaryImageUrl: primaryUrl,
-      category: ProductCategoryBrief(
-        id: match.categoryId ?? 1,
-        name: match.categoryName ?? 'Vintage',
-      ),
-      brand: match.brandName != null
-          ? ProductBrandBrief(id: match.id, name: match.brandName!)
-          : null,
-      seller: ProductSellerInfo(
-        id: match.sellerId ?? 501,
-        displayName: match.sellerDisplayName ?? 'Retro Closet',
-        trustScore: match.sellerTrustScore ?? 98,
-        averageRating: 4.9,
-        completedOrdersCount: 142,
-      ),
-      images: [
-        ProductImageModel(
-          id: match.id * 10 + 1,
-          imageUrl: primaryUrl,
-          imageType: 'GALLERY',
-          isPrimary: true,
+      return ProductDetailModel(
+        id: match.id,
+        productCode: match.productCode,
+        title: match.title,
+        slug: match.slug,
+        description:
+            'Sản phẩm secondhand tuyển chọn thủ công, đã giặt hấp sạch sẽ và kiểm tra đường may kỹ lưỡng trước khi lên kệ Retro Market. Phong cách vintage dễ phối đồ hằng ngày.',
+        listingType: match.listingType,
+        condition: match.condition,
+        defectInfo:
+            'Có dấu vết sử dụng rất nhẹ đúng chuẩn đồ si tuyển (${ProductImageResolver.conditionPercentLabel(match.condition)}), không rách thủng, khóa và nút hoạt động mượt.',
+        verificationLevel: 'MODERATOR_REVIEWED',
+        price: match.price,
+        buyerProtectionFee: fee,
+        totalBuyerPayable: match.price + fee,
+        totalQuantity: 1,
+        availableQuantity: 1,
+        status: match.status,
+        favoriteCount: 24,
+        isFavorited: _favoritedProductIds.contains(match.id),
+        isOwner: false,
+        primaryImageUrl: primaryUrl,
+        category: ProductCategoryBrief(
+          id: match.categoryId ?? 1,
+          name: match.categoryName ?? 'Vintage',
         ),
-      ],
-      relatedProducts: demoCatalogProducts
-          .where((p) => p.id != match.id)
-          .take(4)
-          .toList(),
+        brand: match.brandName != null
+            ? ProductBrandBrief(id: match.id, name: match.brandName!)
+            : null,
+        seller: ProductSellerInfo(
+          id: match.sellerId ?? 501,
+          displayName: match.sellerDisplayName ?? 'Retro Closet',
+          trustScore: match.sellerTrustScore ?? 98,
+          averageRating: 4.9,
+          completedOrdersCount: 142,
+        ),
+        images: [
+          ProductImageModel(
+            id: match.id * 10 + 1,
+            imageUrl: primaryUrl,
+            imageType: 'GALLERY',
+            isPrimary: true,
+          ),
+        ],
+        relatedProducts: demoCatalogProducts
+            .where((p) => p.id != match.id)
+            .take(4)
+            .toList(),
+      );
+    }
+
+    final auctionMatch = _demoAuctionsById.values
+        .where((a) => a.productId == productId)
+        .firstOrNull;
+    if (auctionMatch != null) {
+      final price = auctionMatch.currentHighestBid;
+      final fee = (price * 0.06 + 7000).roundToDouble();
+      final primaryUrl = auctionMatch.primaryImageUrl ??
+          ProductImageResolver.fallbackAssetFor(
+            title: auctionMatch.productTitle,
+            categoryName: auctionMatch.categoryName,
+            id: auctionMatch.productId,
+          );
+
+      final resolvedCondition = auctionMatch.condition ?? 'GOOD';
+
+      return ProductDetailModel(
+        id: auctionMatch.productId,
+        productCode: auctionMatch.auctionCode,
+        title: auctionMatch.productTitle,
+        slug: auctionMatch.productSlug ?? 'auction-${auctionMatch.productId}',
+        description: auctionMatch.productDescription ??
+            'Sản phẩm đấu giá tuyển chọn trên izithrift Retro Market.',
+        listingType: 'AUCTION',
+        condition: resolvedCondition,
+        defectInfo:
+            'Đã kiểm tra thực tế trước khi mở phiên đấu giá (${ProductImageResolver.conditionPercentLabel(resolvedCondition)}).',
+        verificationLevel:
+            auctionMatch.authenticityGuarantee ? 'MODERATOR_REVIEWED' : 'SELF_DECLARED',
+        price: price,
+        buyerProtectionFee: fee,
+        totalBuyerPayable: price + fee,
+        totalQuantity: 1,
+        availableQuantity: auctionMatch.isCompleted ? 0 : 1,
+        status: auctionMatch.isCompleted ? 'SOLD' : 'APPROVED',
+        favoriteCount: auctionMatch.watchCount,
+        isFavorited: _favoritedProductIds.contains(auctionMatch.productId),
+        isOwner: auctionMatch.isOwner,
+        primaryImageUrl: primaryUrl,
+        category: ProductCategoryBrief(
+          id: 1,
+          name: auctionMatch.categoryName ?? 'Đấu giá vintage',
+        ),
+        seller: ProductSellerInfo(
+          id: auctionMatch.sellerId,
+          displayName: auctionMatch.sellerDisplayName ?? 'Chủ tiệm Retro',
+          shopSlug: auctionMatch.sellerShopSlug,
+          avatarUrl: auctionMatch.sellerAvatarUrl,
+          trustScore: auctionMatch.sellerTrustScore,
+          averageRating: 4.9,
+          completedOrdersCount: 142,
+        ),
+        images: [
+          ProductImageModel(
+            id: auctionMatch.productId * 10 + 1,
+            imageUrl: primaryUrl,
+            imageType: 'GALLERY',
+            isPrimary: true,
+          ),
+        ],
+        relatedProducts: demoCatalogProducts.take(4).toList(),
+      );
+    }
+
+    if (productId == 9401 || productId == 9402) {
+      final isSweater = productId == 9401;
+      final price = isSweater ? 290000.0 : 850000.0;
+      final fee = (price * 0.06 + 7000).roundToDouble();
+      final primaryUrl = isSweater
+          ? ProductImageResolver.assetKnitCardigan
+          : ProductImageResolver.assetMechanicalWatch;
+
+      return ProductDetailModel(
+        id: productId,
+        productCode: isSweater ? 'PRD-SOLD-9401' : 'PRD-SOLD-9402',
+        title: isSweater
+            ? 'Áo Len Cổ Lọ Vintage Wool Đỏ Đô'
+            : 'Đồng Hồ Cơ Vintage Dây Da Nâu Nhật Bản',
+        slug: isSweater ? 'ao-len-co-lo-vintage' : 'dong-ho-co-vintage',
+        description: isSweater
+            ? 'Áo len ấm mùa đông đã giao thành công cho người mua.'
+            : 'Đồng hồ cơ lên cót tay hoạt động chuẩn xác, đã giao hoàn tất cho người thắng phiên.',
+        listingType: isSweater ? 'FIXED_PRICE' : 'AUCTION',
+        condition: isSweater ? 'LIKE_NEW' : 'GOOD',
+        defectInfo: 'Sản phẩm đã bán và hoàn tất giao dịch.',
+        verificationLevel: 'MODERATOR_REVIEWED',
+        price: price,
+        buyerProtectionFee: fee,
+        totalBuyerPayable: price + fee,
+        totalQuantity: 1,
+        availableQuantity: 0,
+        status: 'SOLD',
+        favoriteCount: isSweater ? 18 : 31,
+        isFavorited: _favoritedProductIds.contains(productId),
+        isOwner: true,
+        primaryImageUrl: primaryUrl,
+        category: ProductCategoryBrief(
+          id: isSweater ? 2 : 6,
+          name: isSweater ? 'Áo' : 'Phụ kiện',
+        ),
+        seller: const ProductSellerInfo(
+          id: 502,
+          displayName: 'Retro Closet Quận 1',
+          shopSlug: 'retro-closet-quan-1',
+          trustScore: 98,
+          averageRating: 4.9,
+          completedOrdersCount: 328,
+        ),
+        images: [
+          ProductImageModel(
+            id: productId * 10 + 1,
+            imageUrl: primaryUrl,
+            imageType: 'GALLERY',
+            isPrimary: true,
+          ),
+        ],
+        relatedProducts: demoCatalogProducts.take(4).toList(),
+      );
+    }
+
+    return null;
+  }
+
+  /// Resolves a demo seller storefront when backend is offline for demo seller IDs.
+  SellerPublicProfileModel? getDemoSellerStorefront(int sellerId) {
+    final Map<int, ({String name, String slug, String bio, double trust, double rating, int orders, int followers})> demoShops = {
+      501: (
+        name: 'Tiệm Phim & Đồ Cổ Chú Bảy',
+        slug: 'tiem-phim-chu-bay',
+        bio: 'Chuyên máy ảnh phim SLR cổ, ống kính MF và đồng hồ cơ Nhật Bản nguyên bản.',
+        trust: 98.0,
+        rating: 4.9,
+        orders: 264,
+        followers: 412,
+      ),
+      502: (
+        name: 'Retro Closet Quận 1',
+        slug: 'retro-closet-quan-1',
+        bio: 'Tuyển chọn áo khoác varsity, flannel và đồ si 90s đã giặt hấp sạch sẽ.',
+        trust: 98.0,
+        rating: 4.9,
+        orders: 328,
+        followers: 589,
+      ),
+      503: (
+        name: 'Vintage House Quận 3',
+        slug: 'vintage-house-quan-3',
+        bio: 'Len cardigan, knitwear và thời trang hoài cổ tuyển chọn thủ công mỗi tuần.',
+        trust: 97.0,
+        rating: 4.8,
+        orders: 210,
+        followers: 346,
+      ),
+      504: (
+        name: 'Thrift Corner Bình Thạnh',
+        slug: 'thrift-corner-binh-thanh',
+        bio: 'Denim selvedge, quần jean vintage và túi da thật lên màu patina tự nhiên.',
+        trust: 95.0,
+        rating: 4.7,
+        orders: 180,
+        followers: 274,
+      ),
+      505: (
+        name: 'Tiệm Giày Si Phú Nhuận',
+        slug: 'tiem-giay-si-phu-nhuan',
+        bio: 'Sneaker da lộn retro, giày classic kiểm định đế và form kỹ lưỡng.',
+        trust: 96.0,
+        rating: 4.8,
+        orders: 156,
+        followers: 229,
+      ),
+      506: (
+        name: 'Xưởng Đồ Da Cũ Thủ Đức',
+        slug: 'xuong-do-da-cu-thu-duc',
+        bio: 'Túi đeo chéo da bò sáp, thắt lưng khóa đồng cổ điển bền bỉ theo năm tháng.',
+        trust: 99.0,
+        rating: 4.9,
+        orders: 198,
+        followers: 305,
+      ),
+    };
+
+    final meta = demoShops[sellerId];
+    if (meta == null) return null;
+
+    final activeListings = demoCatalogProducts
+        .where((p) => p.sellerId == sellerId)
+        .toList();
+    final auctions = demoHomeAuctionSummaries
+        .where((a) => _demoAuctionsById[a.id]?.sellerId == sellerId)
+        .toList();
+    final isFollowing = _followedSellerIds.contains(sellerId);
+
+    return SellerPublicProfileModel(
+      userId: sellerId,
+      displayName: meta.name,
+      shopSlug: meta.slug,
+      bio: meta.bio,
+      trustScore: meta.trust,
+      averageRating: meta.rating,
+      reviewCount: (meta.orders / 4).round(),
+      completedOrdersCount: meta.orders,
+      followersCount: meta.followers + (isFollowing ? 1 : 0),
+      isFollowing: isFollowing,
+      isOwner: false,
+      activeListings: activeListings.isNotEmpty
+          ? activeListings
+          : demoCatalogProducts.take(3).toList(),
+      auctions: auctions,
     );
   }
 

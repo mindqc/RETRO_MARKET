@@ -15,6 +15,8 @@ import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/verification_badge.dart';
+import '../../auth/viewmodels/auth_view_model.dart';
+import '../../engagement/repositories/communication_engagement_repository.dart';
 import '../models/product_detail_model.dart';
 import '../models/product_image_model.dart';
 import '../viewmodels/product_detail_view_model.dart';
@@ -547,18 +549,25 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     width: 1.5,
                   ),
                 ),
-                child: CircleAvatar(
-                  radius: 26,
-                  backgroundColor: AppColors.categoryCircleEnd,
-                  backgroundImage: seller.avatarUrl != null
-                      ? NetworkImage(seller.avatarUrl!)
-                      : null,
-                  child: seller.avatarUrl == null
-                      ? const Icon(
-                          Icons.storefront_rounded,
-                          color: AppColors.pineDeep,
-                        )
-                      : null,
+                child: Builder(
+                  builder: (_) {
+                    final avatarUrl = seller.avatarUrl?.trim();
+                    final hasValidAvatar = avatarUrl != null &&
+                        (avatarUrl.startsWith('http://') ||
+                            avatarUrl.startsWith('https://'));
+                    return CircleAvatar(
+                      radius: 26,
+                      backgroundColor: AppColors.categoryCircleEnd,
+                      backgroundImage:
+                          hasValidAvatar ? NetworkImage(avatarUrl) : null,
+                      child: !hasValidAvatar
+                          ? const Icon(
+                              Icons.storefront_rounded,
+                              color: AppColors.pineDeep,
+                            )
+                          : null,
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -644,16 +653,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     shape: const StadiumBorder(),
                     padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Mở cuộc trò chuyện với tiệm ${seller.displayName} về sản phẩm này.',
-                        ),
-                        backgroundColor: AppColors.pineDeep,
-                      ),
-                    );
-                  },
+                  onPressed: () => _openChatWithSeller(context, seller, product),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                   label: const Text(
                     'Nhắn tin',
@@ -792,11 +792,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ),
                       onPressed: product.availableQuantity <= 0
                           ? null
-                          : () => _showBuyNowQuantitySheet(
+                          : () {
+                              final authVM = ref.read(authViewModelProvider);
+                              if (!authVM.isAuthenticated) {
+                                viewModel.showGuestLoginPrompt(context);
+                                return;
+                              }
+                              _showBuyNowQuantitySheet(
                                 context,
                                 product,
                                 viewModel,
-                              ),
+                              );
+                            },
                       child: Text(
                         product.availableQuantity > 0 ? 'Mua ngay' : 'Hết hàng',
                         style: const TextStyle(
@@ -932,5 +939,43 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         );
       },
     );
+  }
+
+  Future<void> _openChatWithSeller(
+    BuildContext context,
+    ProductSellerInfo seller,
+    ProductDetailModel product,
+  ) async {
+    if (product.isOwner) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đây là gian hàng của bạn, không thể tự nhắn tin (BR-AC-02).'),
+          backgroundColor: AppColors.statusDanger,
+        ),
+      );
+      return;
+    }
+
+    final authVM = ref.read(authViewModelProvider);
+    if (!authVM.isAuthenticated) {
+      ref.read(productDetailViewModelProvider).showGuestLoginPrompt(context);
+      return;
+    }
+
+    try {
+      final repo = ref.read(communicationEngagementRepositoryProvider);
+      final conv = await repo.startOrGetConversation(
+        recipientId: seller.id,
+        contextProductId: product.id,
+      );
+      if (context.mounted) {
+        context.push(AppRoutes.chatRoomPath(conv.id));
+      }
+    } catch (_) {
+      // Demo-compatible fallback when backend is offline
+      if (context.mounted) {
+        context.push(AppRoutes.chatRoomPath(101));
+      }
+    }
   }
 }

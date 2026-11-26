@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/demo/retro_demo_marketplace_store.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../../core/theme/app_colors.dart';
@@ -40,7 +41,16 @@ class SellerStorefrontViewModel extends BaseViewModel<SellerPublicProfileModel> 
     _selectedTabIndex = 0;
     _reviews = [];
     await runCatching(
-      () => repository.fetchSellerStorefront(sellerId),
+      () async {
+        try {
+          return await repository.fetchSellerStorefront(sellerId);
+        } catch (_) {
+          final fallback =
+              ref.read(retroDemoStoreProvider).getDemoSellerStorefront(sellerId);
+          if (fallback != null) return fallback;
+          rethrow;
+        }
+      },
       emptyMessage: 'Không tìm thấy gian hàng này hoặc người bán đã tạm ngưng hoạt động.',
     );
   }
@@ -109,6 +119,12 @@ class SellerStorefrontViewModel extends BaseViewModel<SellerPublicProfileModel> 
       }
       return serverFollowing;
     } catch (e) {
+      final demoStore = ref.read(retroDemoStoreProvider);
+      if (demoStore.getDemoSellerStorefront(currentSeller.userId) != null) {
+        demoStore.toggleLocalFollowSeller(currentSeller.userId);
+        return newFollowing;
+      }
+
       // Revert optimistic update
       setSuccess(currentSeller);
       if (context.mounted) {

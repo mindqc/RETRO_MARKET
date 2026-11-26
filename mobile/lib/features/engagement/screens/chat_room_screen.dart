@@ -563,29 +563,32 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.borderWarm),
                 ),
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.primaryForestGreenLight,
-                  backgroundImage:
-                      (otherUser?.avatarUrl != null &&
-                          otherUser!.avatarUrl!.isNotEmpty)
-                      ? NetworkImage(otherUser.avatarUrl!)
-                      : null,
-                  child:
-                      (otherUser?.avatarUrl == null ||
-                          otherUser!.avatarUrl!.isEmpty)
-                      ? Text(
-                          otherUser?.displayName.isNotEmpty == true
-                              ? otherUser!.displayName
-                                    .substring(0, 1)
-                                    .toUpperCase()
-                              : '?',
-                          style: AppTypography.bodySmall.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.pineDeep,
-                          ),
-                        )
-                      : null,
+                child: Builder(
+                  builder: (_) {
+                    final avatarUrl = otherUser?.avatarUrl?.trim();
+                    final hasValidAvatar = avatarUrl != null &&
+                        (avatarUrl.startsWith('http://') ||
+                            avatarUrl.startsWith('https://'));
+                    return CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primaryForestGreenLight,
+                      backgroundImage:
+                          hasValidAvatar ? NetworkImage(avatarUrl) : null,
+                      child: !hasValidAvatar
+                          ? Text(
+                              otherUser?.displayName.isNotEmpty == true
+                                  ? otherUser!.displayName
+                                        .substring(0, 1)
+                                        .toUpperCase()
+                                  : '?',
+                              style: AppTypography.bodySmall.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.pineDeep,
+                              ),
+                            )
+                          : null,
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 10),
