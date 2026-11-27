@@ -14,6 +14,8 @@ class PriceBreakdownCard extends StatelessWidget {
   final num? customBuyerProtectionFee;
   final num? customGrandTotalAmount;
   final bool showSellerNetAmount;
+  final bool showEscrowNotice;
+  final bool isCompact;
 
   const PriceBreakdownCard({
     super.key,
@@ -22,6 +24,8 @@ class PriceBreakdownCard extends StatelessWidget {
     this.customBuyerProtectionFee,
     this.customGrandTotalAmount,
     this.showSellerNetAmount = false,
+    this.showEscrowNotice = true,
+    this.isCompact = false,
   });
 
   /// DEC-04 fallback calculation.
@@ -38,8 +42,12 @@ class PriceBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rowGap = isCompact ? 9.0 : 12.0;
+
     return Container(
-      padding: const EdgeInsets.all(DesignTokens.spaceLg),
+      padding: EdgeInsets.all(
+        isCompact ? DesignTokens.spaceMd + 2 : DesignTokens.spaceLg,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
@@ -50,15 +58,15 @@ class PriceBreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: DesignTokens.spaceMd),
+          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderSubtle),
-          const SizedBox(height: DesignTokens.spaceMd),
+          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
           _buildRow(
             label: 'Tiền hàng',
             value: VndFormatter.format(itemSubtotal),
             icon: Icons.shopping_bag_outlined,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: rowGap),
           _buildRow(
             label: 'Phí vận chuyển',
             value: shippingFee == 0
@@ -69,10 +77,10 @@ class PriceBreakdownCard extends StatelessWidget {
                 : AppColors.textCharcoal,
             icon: Icons.local_shipping_outlined,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: rowGap),
           _buildProtectionFeeRow(),
           if (showSellerNetAmount) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: rowGap),
             _buildRow(
               label: 'Thực nhận của người bán',
               value: VndFormatter.format(itemSubtotal),
@@ -80,18 +88,40 @@ class PriceBreakdownCard extends StatelessWidget {
               icon: Icons.account_balance_wallet_outlined,
             ),
           ],
-          const SizedBox(height: DesignTokens.spaceMd),
+          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderWarm),
-          const SizedBox(height: DesignTokens.spaceMd),
+          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
           _buildTotal(),
-          const SizedBox(height: DesignTokens.spaceMd),
-          _buildEscrowNotice(),
+          if (showEscrowNotice) ...[
+            const SizedBox(height: DesignTokens.spaceMd),
+            _buildEscrowNotice(),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildHeader() {
+    if (isCompact) {
+      return Row(
+        children: [
+          const Icon(
+            Icons.receipt_long_rounded,
+            size: 18,
+            color: AppColors.pineDeep,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Tóm tắt chi phí',
+            style: AppTypography.headingSmall.copyWith(
+              fontSize: 15,
+              color: AppColors.textCharcoal,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       children: [
         Container(
@@ -161,8 +191,9 @@ class PriceBreakdownCard extends StatelessWidget {
       label: 'Phí bảo vệ người mua',
       value: VndFormatter.format(buyerProtectionFee),
       icon: Icons.shield_outlined,
-      tooltip:
-          'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.',
+      tooltip: showEscrowNotice
+          ? 'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.'
+          : '6% giá trị hàng + 7.000đ phí bảo vệ quyền lợi người mua.',
     );
   }
 
@@ -223,7 +254,10 @@ class PriceBreakdownCard extends StatelessWidget {
 
   Widget _buildTotal() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: isCompact ? 11 : 14,
+      ),
       decoration: BoxDecoration(
         color: AppColors.creamBadgeSoft,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
@@ -237,18 +271,21 @@ class PriceBreakdownCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tổng thanh toán',
+                  isCompact ? 'Tổng dự kiến' : 'Tổng thanh toán',
                   style: AppTypography.headingSmall.copyWith(
+                    fontSize: isCompact ? 15 : 16,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Đã bao gồm các khoản phí',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textMuted,
+                if (!isCompact) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Đã bao gồm các khoản phí',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -258,6 +295,7 @@ class PriceBreakdownCard extends StatelessWidget {
               VndFormatter.format(totalAmount),
               textAlign: TextAlign.end,
               style: AppTypography.priceLarge.copyWith(
+                fontSize: isCompact ? 20 : 22,
                 color: AppColors.priceCrimson,
                 fontWeight: FontWeight.w900,
               ),

@@ -5,8 +5,6 @@ import '../theme/app_typography.dart';
 import '../theme/design_tokens.dart';
 import '../utils/product_image_resolver.dart';
 import '../utils/vnd_formatter.dart';
-import 'condition_badge.dart';
-import 'retro_design_primitives.dart';
 import 'retro_product_image.dart';
 import 'verification_badge.dart';
 
@@ -53,6 +51,8 @@ class RetroProductCard extends StatelessWidget {
       title: title,
     );
     final freshnessText = ProductImageResolver.conditionFreshnessLabel(condition);
+    final hasDistance = distanceLabel != null && distanceLabel!.trim().isNotEmpty;
+    final hasSeller = sellerName != null && sellerName!.trim().isNotEmpty;
 
     return Material(
       color: AppColors.surfaceCard,
@@ -74,13 +74,13 @@ class RetroProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Compact Product Photo Frame with Crisp Overlay Badges ─────
+              // ── Compact Product Photo Frame (no corner condition badge) ───
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: AspectRatio(
-                    aspectRatio: 1.08,
+                    aspectRatio: 1.14,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -92,7 +92,8 @@ class RetroProductCard extends StatelessWidget {
                           fit: BoxFit.cover,
                         ),
                         // Top-left category tag or verification emblem
-                        if (categoryName != null || showConditionPercent)
+                        if (categoryName != null &&
+                            categoryName!.trim().isNotEmpty)
                           Positioned(
                             top: 5,
                             left: 5,
@@ -177,53 +178,6 @@ class RetroProductCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        // Bottom-left freshness pill ("Độ mới: 95%") or ConditionBadge
-                        Positioned(
-                          bottom: isOwner ? 24 : 5,
-                          left: 5,
-                          child: showConditionPercent
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6.5,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.creamBadgeBg.withValues(
-                                      alpha: 0.96,
-                                    ),
-                                    borderRadius: DesignTokens.borderRadiusFull,
-                                    border: Border.all(
-                                      color: AppColors.creamBadgeBorder,
-                                      width: 0.85,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.auto_awesome_rounded,
-                                        size: 9,
-                                        color: AppColors.ctaTerracotta,
-                                      ),
-                                      const SizedBox(width: 2.5),
-                                      Text(
-                                        freshnessText,
-                                        style: const TextStyle(
-                                          fontFamily: AppTypography.fontBody,
-                                          color: AppColors.creamBadgeText,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 9.5,
-                                          height: 1.1,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : ConditionBadge(
-                                  condition: condition,
-                                  isCompact: true,
-                                ),
-                        ),
                         if (isOwner)
                           Positioned(
                             bottom: 0,
@@ -254,13 +208,13 @@ class RetroProductCard extends StatelessWidget {
                 ),
               ),
 
-              // ── Compact Copy, Strong Price Hierarchy & Tight Metadata Cluster
+              // ── Compact Copy, Strong Price Hierarchy & Single Meta Row ────
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(7, 5, 7, 5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         title,
@@ -270,7 +224,7 @@ class RetroProductCard extends StatelessWidget {
                           fontSize: 11.8,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textCharcoal,
-                          height: 1.18,
+                          height: 1.16,
                         ),
                       ),
                       const SizedBox(height: 2.5),
@@ -286,97 +240,108 @@ class RetroProductCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 3.5),
-                      // Distance + Condition Freshness + Verified Shop tightly grouped
-                      if (distanceLabel != null) ...[
-                        Row(
-                          children: [
+                      // Single compact row: Distance + Freshness ("Độ mới: ...") + "Uy tín" badge
+                      Row(
+                        children: [
+                          if (hasDistance) ...[
                             const Icon(
                               Icons.location_on_rounded,
-                              size: 11,
+                              size: 10,
                               color: AppColors.ctaTerracotta,
                             ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: 1.5),
                             Text(
-                              distanceLabel!,
+                              distanceLabel!.trim(),
                               style: AppTypography.caption.copyWith(
-                                fontSize: 10,
+                                fontSize: 9.4,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textCharcoal,
                                 height: 1.1,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 3),
                             Container(
-                              width: 2.5,
-                              height: 2.5,
+                              width: 2.2,
+                              height: 2.2,
                               decoration: const BoxDecoration(
                                 color: AppColors.borderWarm,
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 3),
+                          ],
+                          Expanded(
+                            child: Text(
+                              freshnessText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 9.4,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.verifiedLeaf,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.verifiedLeafBg,
+                              borderRadius: DesignTokens.borderRadiusFull,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  size: 9.5,
+                                  color: AppColors.verifiedLeaf,
+                                ),
+                                const SizedBox(width: 1.5),
+                                Text(
+                                  'Uy tín',
+                                  style: AppTypography.caption.copyWith(
+                                    fontSize: 8.6,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.verifiedLeaf,
+                                    height: 1.05,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (hasSeller) ...[
+                        const SizedBox(height: 2.5),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.storefront_rounded,
+                              size: 10.5,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 3),
                             Expanded(
                               child: Text(
-                                freshnessText,
+                                sellerName!.trim(),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption.copyWith(
                                   fontSize: 9.8,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.verifiedLeaf,
-                                  height: 1.1,
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.12,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
                       ],
-                      if (sellerName != null && sellerName!.isNotEmpty)
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 11.5,
-                              color: AppColors.verifiedLeaf,
-                            ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                sellerName!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.caption.copyWith(
-                                  fontSize: 10,
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4.5,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.verifiedLeafBg,
-                                borderRadius: DesignTokens.borderRadiusFull,
-                              ),
-                              child: Text(
-                                'Uy tín',
-                                style: AppTypography.caption.copyWith(
-                                  fontSize: 8.8,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.verifiedLeaf,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        const RetroVerifiedShopChip(fontSize: 9.8),
                     ],
                   ),
                 ),

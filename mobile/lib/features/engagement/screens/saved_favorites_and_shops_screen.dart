@@ -145,20 +145,22 @@ class _SavedFavoritesAndShopsScreenState
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.62,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.70,
         ),
         itemCount: products.length,
         itemBuilder: (context, index) {
           final item = products[index];
           return RetroProductCard(
             id: item.id,
-            title: item.title,
+            title: item.displayTitle,
             price: item.price,
             primaryImageUrl: item.primaryImageUrl,
             condition: item.condition,
-            sellerName: item.sellerName,
+            categoryName: item.categoryName,
+            showConditionPercent: true,
+            sellerName: item.displaySellerName,
             isLiked: true,
             onTap: () => context.push('/products/${item.id}'),
             onLikeToggle: () => engVm.toggleFavoriteProduct(item.id),

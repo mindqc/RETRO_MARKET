@@ -77,9 +77,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
       appBar: IzithriftGlobalAppBar.subPage(
-        titleWidget: const RetroBrandWordmark(
-          titleText: 'izithrift • Khám phá',
-        ),
+        showBrandMark: true,
         activeDestination: IzithriftUpperNavDestination.discover,
         showNotificationsAction: true,
         showCartAction: true,

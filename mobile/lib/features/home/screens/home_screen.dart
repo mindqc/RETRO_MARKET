@@ -1251,7 +1251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: DesignTokens.spaceMd),
         SizedBox(
-          height: 244,
+          height: 230,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
             scrollDirection: Axis.horizontal,
@@ -1264,13 +1264,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: cardWidth,
                 child: RetroProductCard(
                   id: product.id,
-                  title: product.title,
+                  title: product.displayTitle,
                   price: product.price,
                   primaryImageUrl: product.primaryImageUrl,
                   condition: product.condition,
                   categoryName: product.categoryName,
                   showConditionPercent: true,
-                  sellerName: product.sellerDisplayName,
+                  sellerName: product.displaySellerName,
                   isOwner: product.isOwner,
                   isLiked: product.isFavorited,
                   onTap: () => context.push(
@@ -1873,7 +1873,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemCount: visibleItems.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.67,
+              childAspectRatio: 0.70,
               crossAxisSpacing: 9,
               mainAxisSpacing: 10,
             ),
@@ -1885,14 +1885,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
               return RetroProductCard(
                 id: product.id,
-                title: product.title,
+                title: product.displayTitle,
                 price: product.price,
                 primaryImageUrl: product.primaryImageUrl,
                 condition: product.condition,
                 categoryName: product.categoryName,
                 distanceLabel: distance,
                 showConditionPercent: true,
-                sellerName: product.sellerDisplayName,
+                sellerName: product.displaySellerName,
                 isOwner: product.isOwner,
                 isLiked: product.isFavorited,
                 onTap: () => context.push(

@@ -17,6 +17,7 @@ class ProductSummaryModel {
   final String? primaryImageUrl;
   final String? primaryThumbnailUrl;
   final int? sellerId;
+  final String? sellerShopName;
   final String? sellerDisplayName;
   final String? sellerAvatarUrl;
   final String? sellerShopSlug;
@@ -43,6 +44,7 @@ class ProductSummaryModel {
     this.primaryImageUrl,
     this.primaryThumbnailUrl,
     this.sellerId,
+    this.sellerShopName,
     this.sellerDisplayName,
     this.sellerAvatarUrl,
     this.sellerShopSlug,
@@ -56,31 +58,178 @@ class ProductSummaryModel {
 
   bool get isAuction => listingType.toUpperCase() == 'AUCTION';
   bool get isFixedPrice => listingType.toUpperCase() == 'FIXED_PRICE';
-  String? get sellerName => sellerDisplayName;
+
+  /// True when a string looks like a raw technical identifier or username slug
+  /// (e.g. `prd_d95a1879`, `PRD-2026-0001`, `seller_a1b2c3`, `usr_99`).
+  static bool isTechnicalIdentifier(String? raw) {
+    if (raw == null) return true;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return true;
+    final techPattern = RegExp(
+      r'^(prd|prod|item|seller|usr|user|shop)[_-][a-z0-9_-]+$',
+      caseSensitive: false,
+    );
+    if (techPattern.hasMatch(trimmed)) return true;
+    // Also catch code-like tokens with no spaces and underscores + hex/digits (e.g. `d95a1879_test`)
+    if (!trimmed.contains(' ') &&
+        trimmed.contains('_') &&
+        RegExp(r'^[a-z0-9_.-]+$', caseSensitive: false).hasMatch(trimmed)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Human-readable product title for UI cards (falls back cleanly if raw code).
+  String get displayTitle {
+    final trimmed = title.trim();
+    if (trimmed.isNotEmpty && !isTechnicalIdentifier(trimmed)) {
+      return trimmed;
+    }
+    final cleanBrand = brandName?.trim() ?? '';
+    final cleanCat = categoryName?.trim() ?? '';
+    if (cleanCat.isNotEmpty && cleanBrand.isNotEmpty) {
+      return '$cleanCat $cleanBrand';
+    }
+    if (cleanCat.isNotEmpty) {
+      return 'Đồ si $cleanCat';
+    }
+    return 'Sản phẩm vintage tuyển chọn';
+  }
+
+  /// Prioritizes real shop name (`shop_name` / `seller_profile.shop_name`) then
+  /// `display_name`, avoiding raw technical usernames/slugs (`seller_...`).
+  String? get displaySellerName {
+    final shop = sellerShopName?.trim();
+    if (shop != null && shop.isNotEmpty && !isTechnicalIdentifier(shop)) {
+      return shop;
+    }
+    final display = sellerDisplayName?.trim();
+    if (display != null &&
+        display.isNotEmpty &&
+        !isTechnicalIdentifier(display)) {
+      return display;
+    }
+    final slug = sellerShopSlug?.trim();
+    if (slug != null && slug.isNotEmpty && !isTechnicalIdentifier(slug)) {
+      final words = slug
+          .split(RegExp(r'[-_]+'))
+          .where((w) => w.isNotEmpty)
+          .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+          .join(' ');
+      if (words.isNotEmpty) return words;
+    }
+    final hasAnySellerRef = sellerId != null ||
+        (shop != null && shop.isNotEmpty) ||
+        (display != null && display.isNotEmpty) ||
+        (slug != null && slug.isNotEmpty);
+    return hasAnySellerRef ? 'Tiệm đồ si uy tín' : null;
+  }
+
+  String? get sellerName => displaySellerName;
+
+  static String? _extractImageUrlFromDynamic(dynamic raw) {
+    if (raw is String) {
+      final trimmed = raw.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+    if (raw is Map) {
+      return SafeJsonParser.toNullableString(
+        raw['image_url'] ?? raw['url'] ?? raw['path'] ?? raw['thumbnail_url'],
+      );
+    }
+    return null;
+  }
 
   factory ProductSummaryModel.fromJson(Map<String, dynamic> json) {
-    // Primary image parsing
+    // Primary image parsing: primary_image (Map or String) -> primary_image_url -> images.first
     String? primaryImg;
     String? thumbImg;
-    if (json['primary_image'] is Map) {
-      final imgMap = json['primary_image'] as Map;
-      primaryImg = SafeJsonParser.toNullableString(imgMap['image_url']);
-      thumbImg = SafeJsonParser.toNullableString(imgMap['thumbnail_url']) ?? primaryImg;
+    final rawPrimary = json['primary_image'];
+    if (rawPrimary is Map) {
+      primaryImg = SafeJsonParser.toNullableString(
+        rawPrimary['image_url'] ?? rawPrimary['url'] ?? rawPrimary['path'],
+      );
+      thumbImg = SafeJsonParser.toNullableString(rawPrimary['thumbnail_url']) ??
+          primaryImg;
+    } else if (rawPrimary is String && rawPrimary.trim().isNotEmpty) {
+      primaryImg = rawPrimary.trim();
+      thumbImg = primaryImg;
     }
 
-    // Seller parsing
+    primaryImg ??= SafeJsonParser.toNullableString(
+      json['primary_image_url'] ?? json['image_url'],
+    );
+    thumbImg ??= SafeJsonParser.toNullableString(json['thumbnail_url']) ??
+        primaryImg;
+
+    if ((primaryImg == null || primaryImg.trim().isEmpty) &&
+        json['images'] is List) {
+      final rawImages = json['images'] as List;
+      Map? chosenMap;
+      String? chosenUrl;
+      for (final item in rawImages) {
+        if (item is Map &&
+            SafeJsonParser.toBool(item['is_primary'], defaultValue: false)) {
+          final candidate = _extractImageUrlFromDynamic(item);
+          if (candidate != null) {
+            chosenMap = item;
+            chosenUrl = candidate;
+            break;
+          }
+        }
+      }
+      if (chosenUrl == null) {
+        for (final item in rawImages) {
+          final candidate = _extractImageUrlFromDynamic(item);
+          if (candidate != null) {
+            if (item is Map) chosenMap = item;
+            chosenUrl = candidate;
+            break;
+          }
+        }
+      }
+      if (chosenUrl != null) {
+        primaryImg = chosenUrl;
+        thumbImg = chosenMap != null
+            ? (SafeJsonParser.toNullableString(chosenMap['thumbnail_url']) ??
+                chosenUrl)
+            : chosenUrl;
+      }
+    }
+
+    // Seller parsing (prioritizing shop_name / seller_profile.shop_name -> display_name)
     int? sId;
+    String? sShopName;
     String? sName;
     String? sAvatar;
     String? sShopSlug;
     double? sTrust;
     if (json['seller'] is Map) {
       final sMap = json['seller'] as Map;
+      final sellerProfile = sMap['seller_profile'] is Map
+          ? sMap['seller_profile'] as Map
+          : null;
+      final userProfile =
+          sMap['profile'] is Map ? sMap['profile'] as Map : null;
+
       sId = SafeJsonParser.toNullableInt(sMap['id']);
-      sName = SafeJsonParser.toNullableString(sMap['display_name']);
-      sAvatar = SafeJsonParser.toNullableString(sMap['avatar_url']);
-      sShopSlug = SafeJsonParser.toNullableString(sMap['shop_slug']);
-      sTrust = SafeJsonParser.toNullableDouble(sMap['trust_score']);
+      sShopName = SafeJsonParser.toNullableString(
+        sMap['shop_name'] ??
+            sellerProfile?['shop_name'] ??
+            userProfile?['shop_name'],
+      );
+      sName = SafeJsonParser.toNullableString(
+        sMap['display_name'] ?? sMap['full_name'] ?? sMap['name'],
+      );
+      sAvatar = SafeJsonParser.toNullableString(
+        sMap['avatar_url'] ?? userProfile?['avatar_url'],
+      );
+      sShopSlug = SafeJsonParser.toNullableString(
+        sMap['shop_slug'] ?? sellerProfile?['shop_slug'],
+      );
+      sTrust = SafeJsonParser.toNullableDouble(
+        sMap['trust_score'] ?? sellerProfile?['trust_score'],
+      );
     }
 
     // Category parsing
@@ -106,17 +255,36 @@ class ProductSummaryModel {
       productCode: SafeJsonParser.toStringValue(json['product_code']),
       title: SafeJsonParser.toStringValue(json['title']),
       slug: SafeJsonParser.toStringValue(json['slug']),
-      listingType: SafeJsonParser.toStringValue(json['listing_type'], defaultValue: 'FIXED_PRICE'),
-      condition: SafeJsonParser.toStringValue(json['condition'], defaultValue: 'GOOD'),
+      listingType: SafeJsonParser.toStringValue(
+        json['listing_type'],
+        defaultValue: 'FIXED_PRICE',
+      ),
+      condition: SafeJsonParser.toStringValue(
+        json['condition'],
+        defaultValue: 'GOOD',
+      ),
       price: SafeJsonParser.toDouble(json['price']),
-      availableQuantity: SafeJsonParser.toInt(json['available_quantity'], defaultValue: 1),
-      favoriteCount: SafeJsonParser.toInt(json['favorite_count'], defaultValue: 0),
-      status: SafeJsonParser.toStringValue(json['status'], defaultValue: 'APPROVED'),
-      isFavorited: SafeJsonParser.toBool(json['is_favorited'], defaultValue: false),
+      availableQuantity: SafeJsonParser.toInt(
+        json['available_quantity'],
+        defaultValue: 1,
+      ),
+      favoriteCount: SafeJsonParser.toInt(
+        json['favorite_count'],
+        defaultValue: 0,
+      ),
+      status: SafeJsonParser.toStringValue(
+        json['status'],
+        defaultValue: 'APPROVED',
+      ),
+      isFavorited: SafeJsonParser.toBool(
+        json['is_favorited'],
+        defaultValue: false,
+      ),
       isOwner: SafeJsonParser.toBool(json['is_owner'], defaultValue: false),
       primaryImageUrl: primaryImg,
       primaryThumbnailUrl: thumbImg,
       sellerId: sId,
+      sellerShopName: sShopName,
       sellerDisplayName: sName,
       sellerAvatarUrl: sAvatar,
       sellerShopSlug: sShopSlug,
@@ -145,6 +313,7 @@ class ProductSummaryModel {
     String? primaryImageUrl,
     String? primaryThumbnailUrl,
     int? sellerId,
+    String? sellerShopName,
     String? sellerDisplayName,
     String? sellerAvatarUrl,
     String? sellerShopSlug,
@@ -171,6 +340,7 @@ class ProductSummaryModel {
       primaryImageUrl: primaryImageUrl ?? this.primaryImageUrl,
       primaryThumbnailUrl: primaryThumbnailUrl ?? this.primaryThumbnailUrl,
       sellerId: sellerId ?? this.sellerId,
+      sellerShopName: sellerShopName ?? this.sellerShopName,
       sellerDisplayName: sellerDisplayName ?? this.sellerDisplayName,
       sellerAvatarUrl: sellerAvatarUrl ?? this.sellerAvatarUrl,
       sellerShopSlug: sellerShopSlug ?? this.sellerShopSlug,
@@ -206,6 +376,7 @@ class ProductSummaryModel {
       'seller': sellerId != null
           ? {
               'id': sellerId,
+              'shop_name': sellerShopName,
               'display_name': sellerDisplayName,
               'avatar_url': sellerAvatarUrl,
               'shop_slug': sellerShopSlug,

@@ -6,6 +6,7 @@ import 'product_summary_model.dart';
 class ProductSellerInfo {
   final int id;
   final String displayName;
+  final String? shopName;
   final String? avatarUrl;
   final String? shopSlug;
   final double trustScore;
@@ -15,6 +16,7 @@ class ProductSellerInfo {
   const ProductSellerInfo({
     required this.id,
     required this.displayName,
+    this.shopName,
     this.avatarUrl,
     this.shopSlug,
     this.trustScore = 100.0,
@@ -22,15 +24,68 @@ class ProductSellerInfo {
     this.completedOrdersCount = 0,
   });
 
+  /// Prioritizes real shop name (`shop_name` / `seller_profile.shop_name`) over
+  /// `display_name`, avoiding raw technical usernames/slugs (`seller_...`).
+  String get displayShopName {
+    final shop = shopName?.trim();
+    if (shop != null &&
+        shop.isNotEmpty &&
+        !ProductSummaryModel.isTechnicalIdentifier(shop)) {
+      return shop;
+    }
+    final display = displayName.trim();
+    if (display.isNotEmpty &&
+        !ProductSummaryModel.isTechnicalIdentifier(display)) {
+      return display;
+    }
+    final slug = shopSlug?.trim();
+    if (slug != null &&
+        slug.isNotEmpty &&
+        !ProductSummaryModel.isTechnicalIdentifier(slug)) {
+      final words = slug
+          .split(RegExp(r'[-_]+'))
+          .where((w) => w.isNotEmpty)
+          .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+          .join(' ');
+      if (words.isNotEmpty) return words;
+    }
+    return 'Tiệm đồ si uy tín';
+  }
+
   factory ProductSellerInfo.fromJson(Map<String, dynamic> json) {
+    final sellerProfile =
+        json['seller_profile'] is Map ? json['seller_profile'] as Map : null;
+    final userProfile = json['profile'] is Map ? json['profile'] as Map : null;
+
     return ProductSellerInfo(
       id: SafeJsonParser.toInt(json['id']),
-      displayName: SafeJsonParser.toStringValue(json['display_name'], defaultValue: 'Vintage Collector'),
-      avatarUrl: SafeJsonParser.toNullableString(json['avatar_url']),
-      shopSlug: SafeJsonParser.toNullableString(json['shop_slug']),
-      trustScore: SafeJsonParser.toDouble(json['trust_score'], defaultValue: 100.0),
-      averageRating: SafeJsonParser.toDouble(json['average_rating'], defaultValue: 5.0),
-      completedOrdersCount: SafeJsonParser.toInt(json['completed_orders_count']),
+      displayName: SafeJsonParser.toStringValue(
+        json['display_name'] ?? json['full_name'] ?? json['name'],
+        defaultValue: 'Tiệm đồ si uy tín',
+      ),
+      shopName: SafeJsonParser.toNullableString(
+        json['shop_name'] ??
+            sellerProfile?['shop_name'] ??
+            userProfile?['shop_name'],
+      ),
+      avatarUrl: SafeJsonParser.toNullableString(
+        json['avatar_url'] ?? userProfile?['avatar_url'],
+      ),
+      shopSlug: SafeJsonParser.toNullableString(
+        json['shop_slug'] ?? sellerProfile?['shop_slug'],
+      ),
+      trustScore: SafeJsonParser.toDouble(
+        json['trust_score'] ?? sellerProfile?['trust_score'],
+        defaultValue: 100.0,
+      ),
+      averageRating: SafeJsonParser.toDouble(
+        json['average_rating'] ?? sellerProfile?['average_rating'],
+        defaultValue: 5.0,
+      ),
+      completedOrdersCount: SafeJsonParser.toInt(
+        json['completed_orders_count'] ??
+            sellerProfile?['completed_orders_count'],
+      ),
     );
   }
 
@@ -38,6 +93,7 @@ class ProductSellerInfo {
     return {
       'id': id,
       'display_name': displayName,
+      'shop_name': shopName,
       'avatar_url': avatarUrl,
       'shop_slug': shopSlug,
       'trust_score': trustScore,
@@ -198,6 +254,24 @@ class ProductDetailModel {
     this.relatedProducts = const [],
   });
 
+  /// Human-readable product title avoiding raw technical codes like `prd_...`.
+  String get displayTitle {
+    final trimmed = title.trim();
+    if (trimmed.isNotEmpty &&
+        !ProductSummaryModel.isTechnicalIdentifier(trimmed)) {
+      return trimmed;
+    }
+    final cleanBrand = brand?.name.trim() ?? '';
+    final cleanCat = category?.name.trim() ?? '';
+    if (cleanCat.isNotEmpty && cleanBrand.isNotEmpty) {
+      return '$cleanCat $cleanBrand';
+    }
+    if (cleanCat.isNotEmpty) {
+      return 'Đồ si $cleanCat';
+    }
+    return 'Sản phẩm vintage tuyển chọn';
+  }
+
   /// Factory parser supporting both top-level envelopes and raw product maps.
   factory ProductDetailModel.fromJson(Map<String, dynamic> rawJson) {
     final Map<String, dynamic> data = (rawJson['product'] is Map<String, dynamic>)
@@ -220,23 +294,35 @@ class ProductDetailModel {
       for (final img in (data['images'] as List)) {
         if (img is Map<String, dynamic>) {
           parsedImages.add(ProductImageModel.fromJson(img));
+        } else if (img is Map) {
+          parsedImages.add(
+            ProductImageModel.fromJson(Map<String, dynamic>.from(img)),
+          );
         }
       }
     }
 
-    // Determine primary image
-    String primaryUrl = SafeJsonParser.toStringValue(
-      data['primary_image_url'] ?? data['image_url'],
-    );
+    // Determine primary image (primary_image -> primary_image_url/image_url -> images.first)
+    String primaryUrl = '';
+    final rawPrimary = data['primary_image'];
+    if (rawPrimary is Map) {
+      primaryUrl = SafeJsonParser.toStringValue(
+        rawPrimary['image_url'] ?? rawPrimary['url'] ?? rawPrimary['path'],
+      );
+    } else if (rawPrimary is String) {
+      primaryUrl = rawPrimary.trim();
+    }
+    if (primaryUrl.isEmpty) {
+      primaryUrl = SafeJsonParser.toStringValue(
+        data['primary_image_url'] ?? data['image_url'],
+      );
+    }
     if (primaryUrl.isEmpty && parsedImages.isNotEmpty) {
       final primary = parsedImages.firstWhere(
         (img) => img.isPrimary,
         orElse: () => parsedImages.first,
       );
       primaryUrl = primary.imageUrl;
-    }
-    if (primaryUrl.isEmpty) {
-      primaryUrl = 'https://images.unsplash.com/photo-1550614000-4895a10e1bfd?auto=format&fit=crop&w=800&q=80';
     }
 
     // Related products if present in envelope

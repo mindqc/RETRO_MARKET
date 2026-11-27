@@ -82,7 +82,6 @@ class _PublicSellerStorefrontScreenState
         empty: (msg) => Scaffold(
           backgroundColor: AppColors.canvasParchment,
           appBar: const IzithriftGlobalAppBar.subPage(
-            title: 'Cửa hàng đồ si',
             showBrandMark: true,
           ),
           body: RetroEmptyStateView(
@@ -96,7 +95,6 @@ class _PublicSellerStorefrontScreenState
         error: (msg, error) => Scaffold(
           backgroundColor: AppColors.canvasParchment,
           appBar: const IzithriftGlobalAppBar.subPage(
-            title: 'Cửa hàng đồ si',
             showBrandMark: true,
           ),
           body: RetroErrorRetryView(
@@ -406,7 +404,7 @@ class _PublicSellerStorefrontScreenState
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.67,
+        childAspectRatio: 0.70,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
@@ -415,13 +413,14 @@ class _PublicSellerStorefrontScreenState
         final prod = seller.activeListings[idx];
         return RetroProductCard(
           id: prod.id,
-          title: prod.title,
+          title: prod.displayTitle,
           price: prod.price,
           condition: prod.condition,
+          categoryName: prod.categoryName,
           primaryImageUrl: prod.primaryImageUrl,
           isLiked: prod.isFavorited,
           isOwner: prod.isOwner,
-          sellerName: prod.sellerDisplayName,
+          sellerName: prod.displaySellerName,
           onTap: () => context.push(AppRoutes.productDetailPath(prod.id)),
         );
       },
@@ -475,9 +474,9 @@ class _PublicSellerStorefrontScreenState
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.60,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: 0.70,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: seller.soldListings.length,
       itemBuilder: (context, idx) {
@@ -486,13 +485,14 @@ class _PublicSellerStorefrontScreenState
           opacity: 0.72,
           child: RetroProductCard(
             id: prod.id,
-            title: prod.title,
+            title: prod.displayTitle,
             price: prod.price,
             condition: prod.condition,
+            categoryName: prod.categoryName,
             primaryImageUrl: prod.primaryImageUrl,
             isLiked: prod.isFavorited,
             isOwner: prod.isOwner,
-            sellerName: prod.sellerDisplayName,
+            sellerName: prod.displaySellerName,
             onTap: () => context.push(AppRoutes.productDetailPath(prod.id)),
           ),
         );

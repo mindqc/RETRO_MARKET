@@ -348,10 +348,10 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                 ? 3
                 : 2;
         final cardAspectRatio = crossAxisCount == 4
-            ? 0.69
+            ? 0.72
             : crossAxisCount == 3
-                ? 0.70
-                : 0.67;
+                ? 0.72
+                : 0.70;
 
         return RefreshIndicator(
           onRefresh: () => searchVM.search(),
@@ -381,11 +381,13 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
               final product = productList[index];
               return RetroProductCard(
                 id: product.id,
-                title: product.title,
+                title: product.displayTitle,
                 price: product.price,
                 primaryImageUrl: product.primaryImageUrl,
                 condition: product.condition,
-                sellerName: product.sellerDisplayName,
+                categoryName: product.categoryName,
+                showConditionPercent: true,
+                sellerName: product.displaySellerName,
                 isOwner: product.isOwner,
                 isLiked: product.isFavorited,
                 onTap: () =>

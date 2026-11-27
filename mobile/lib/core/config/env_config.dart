@@ -29,4 +29,14 @@ class EnvConfig {
     // iOS Simulator, macOS, Windows desktop, Linux
     return 'http://127.0.0.1:8000/api/v1';
   }
+
+  /// Server origin used to resolve relative backend upload paths like `/storage/...`.
+  static String get mediaBaseUrl {
+    final base = apiBaseUrl.trim();
+    final stripped = base
+        .replaceFirst(RegExp(r'/api/v\d+/?$'), '')
+        .replaceFirst(RegExp(r'/api/?$'), '')
+        .replaceFirst(RegExp(r'/$'), '');
+    return stripped.isNotEmpty ? stripped : 'http://127.0.0.1:8000';
+  }
 }

@@ -366,7 +366,7 @@ void main() {
     // -------------------------------------------------------------------------
     // Test 2: ProductDetailScreen (M-PD-01) displays price breakdown and seller card
     // -------------------------------------------------------------------------
-    testWidgets('2. ProductDetailScreen displays product title, code, PriceBreakdownCard DEC-04, seller card and defect inspection when isOwner is false', (tester) async {
+    testWidgets('2. ProductDetailScreen hides PRD code, BR-PR-03 defect box and Escrow notice while displaying streamlined layout', (tester) async {
       final mockRepo = MockHomeCatalogRepository();
       final fakeAuth = FakeAuthViewModel(fakeAuthenticated: true);
 
@@ -389,24 +389,34 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Verify product code and title
-      expect(find.text('PRD-201'), findsOneWidget);
+      // AppBar hides technical PRD-... code and keeps action icons
+      expect(find.text('PRD-201'), findsNothing);
+      expect(find.byTooltip('Quay lại'), findsOneWidget);
+      expect(find.byTooltip('Yêu thích'), findsOneWidget);
+      expect(find.byTooltip('Chia sẻ'), findsOneWidget);
+      expect(find.byTooltip('Giỏ hàng'), findsOneWidget);
+
+      // Main Info Block: title & 1-row tags
       expect(find.text('Áo khoác da cừu Vintage Bomber 1980s'), findsOneWidget);
 
-      // Verify PriceBreakdownCard (DEC-04)
-      expect(find.byType(PriceBreakdownCard), findsOneWidget);
-      expect(find.text('Chi tiết thanh toán'), findsOneWidget);
-      expect(find.text('Phí bảo vệ người mua'), findsOneWidget);
+      // Redundant BR-PR-03 defect box & Escrow notice are removed
+      expect(find.textContaining('BR-PR-03'), findsNothing);
+      expect(find.text('Kiểm định khuyết điểm đồ si'), findsNothing);
+      expect(find.textContaining('Escrow'), findsNothing);
 
-      // Verify Seller Micro-Card
+      // Seller Block: shop name, Uy tín badge, Xem shop / Nhắn tin
       expect(find.text('Tiệm Đồ Si Chú Bảy'), findsOneWidget);
-      expect(find.text('Xem Tiệm'), findsOneWidget);
+      expect(find.text('Uy tín'), findsOneWidget);
+      expect(find.text('Xem shop'), findsOneWidget);
+      expect(find.text('Nhắn tin'), findsOneWidget);
 
-      // Verify Defect Inspection Trigger
-      expect(find.text('Kiểm định khuyết điểm đồ si'), findsOneWidget);
-      expect(find.text('Xem phiếu kiểm định →'), findsOneWidget);
+      // Description & Compact Cost Summary above CTA
+      expect(find.text('Mô tả sản phẩm'), findsOneWidget);
+      expect(find.byType(PriceBreakdownCard), findsOneWidget);
+      expect(find.text('Tóm tắt chi phí'), findsOneWidget);
+      expect(find.text('Tổng dự kiến'), findsOneWidget);
 
-      // Verify Buyer buttons are active (isOwner == false)
+      // Buyer CTA buttons are active (isOwner == false)
       expect(find.text('Thêm vào giỏ'), findsOneWidget);
       expect(find.text('Mua ngay'), findsOneWidget);
     });

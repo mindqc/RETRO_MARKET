@@ -5,6 +5,7 @@ import 'package:izithrift/core/theme/app_colors.dart';
 import 'package:izithrift/core/theme/design_tokens.dart';
 import 'package:izithrift/core/theme/app_typography.dart';
 import 'package:izithrift/core/theme/seasonal_decor_provider.dart';
+import 'package:izithrift/core/utils/product_image_resolver.dart';
 import 'package:izithrift/core/widgets/condition_badge.dart';
 import 'package:izithrift/core/widgets/fashion_category_icon.dart';
 import 'package:izithrift/core/widgets/izithrift_global_app_bar.dart';
@@ -16,6 +17,7 @@ import 'package:izithrift/core/widgets/price_breakdown_card.dart';
 import 'package:izithrift/core/widgets/server_countdown_timer.dart';
 import 'package:izithrift/core/widgets/defect_authenticity_box.dart';
 import 'package:izithrift/core/widgets/seasonal_decor_overlay.dart';
+import 'package:izithrift/features/catalog/models/product_summary_model.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -272,7 +274,7 @@ void main() {
       expect(find.text('Kho đồ secondhand & vintage tuyển chọn'), findsOneWidget);
     });
 
-    testWidgets('IzithriftGlobalAppBar keeps unified height across root and subPage modes', (tester) async {
+    testWidgets('IzithriftGlobalAppBar keeps unified height and shows only izithrift logo when showBrandMark is true', (tester) async {
       const rootBar = IzithriftGlobalAppBar(
         activeDestination: IzithriftUpperNavDestination.home,
       );
@@ -296,7 +298,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Danh mục sản phẩm'), findsOneWidget);
+      expect(find.text('izithrift'), findsOneWidget);
+      expect(find.text('Danh mục sản phẩm'), findsNothing);
       expect(find.byTooltip('Quay lại'), findsOneWidget);
       expect(find.byTooltip('Thông báo'), findsOneWidget);
       expect(find.byTooltip('Giỏ hàng'), findsOneWidget);
@@ -326,14 +329,14 @@ void main() {
       );
     });
 
-    testWidgets('Compact RetroProductCard renders distance, freshness, and verified shop metadata tightly', (tester) async {
+    testWidgets('Compact RetroProductCard removes photo corner freshness badge and groups distance, freshness, and Uy tín in one row', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
               child: SizedBox(
                 width: 170,
-                height: 252,
+                height: 238,
                 child: RetroProductCard(
                   id: 101,
                   title: 'Áo Khoác Denim Levi\'s 90s Vintage',
@@ -351,9 +354,79 @@ void main() {
       );
 
       expect(find.text('1.2 km'), findsOneWidget);
+      expect(find.text('Độ mới: 95%'), findsOneWidget);
+      expect(find.byType(ConditionBadge), findsNothing);
       expect(find.text('Tiệm Đồ Si Sài Gòn'), findsOneWidget);
       expect(find.text('Uy tín'), findsOneWidget);
       expect(find.byIcon(Icons.verified_rounded), findsOneWidget);
+    });
+
+    test('ProductSummaryModel parses primary_image/images.first, prefers shop_name, and avoids raw technical codes', () {
+      final fromImagesList = ProductSummaryModel.fromJson({
+        'id': 42,
+        'product_code': 'PRD-2026-0042',
+        'title': 'Áo Sơ Mi Flannel Nhật 90s',
+        'slug': 'ao-so-mi-flannel-nhat-90s',
+        'listing_type': 'FIXED_PRICE',
+        'condition': 'LIKE_NEW',
+        'price': 320000,
+        'status': 'APPROVED',
+        'primary_image': null,
+        'images': [
+          {'image_url': 'https://cdn.example.org/p42-secondary.jpg', 'is_primary': false},
+          {'image_url': 'https://cdn.example.org/p42-primary.jpg', 'is_primary': true},
+        ],
+        'seller': {
+          'id': 7,
+          'display_name': 'Nguyễn Văn A',
+          'seller_profile': {
+            'shop_name': 'Tiệm Flannel Đà Lạt',
+            'shop_slug': 'tiem-flannel-da-lat',
+          },
+        },
+        'category': {'id': 5, 'name': 'Vintage Shirt'},
+      });
+
+      expect(fromImagesList.primaryImageUrl, 'https://cdn.example.org/p42-primary.jpg');
+      expect(fromImagesList.displayTitle, 'Áo Sơ Mi Flannel Nhật 90s');
+      expect(fromImagesList.displaySellerName, 'Tiệm Flannel Đà Lạt');
+
+      final technicalFallback = ProductSummaryModel.fromJson({
+        'id': 43,
+        'product_code': 'PRD-D95A1879',
+        'title': 'prd_d95a1879',
+        'slug': 'prd_d95a1879',
+        'listing_type': 'FIXED_PRICE',
+        'condition': 'GOOD',
+        'price': 210000,
+        'status': 'APPROVED',
+        'primary_image': {'image_url': '/storage/products/item43.jpg'},
+        'seller': {
+          'id': 9,
+          'display_name': 'seller_99a1b2',
+          'shop_slug': 'seller_99a1b2',
+        },
+        'category': {'id': 2, 'name': 'Áo khoác Vintage'},
+      });
+
+      expect(technicalFallback.displayTitle, 'Đồ si Áo khoác Vintage');
+      expect(technicalFallback.displaySellerName, 'Tiệm đồ si uy tín');
+      expect(
+        ProductImageResolver.resolveImage(
+          rawUrl: technicalFallback.primaryImageUrl,
+          title: technicalFallback.displayTitle,
+          id: technicalFallback.id,
+        ),
+        endsWith('/storage/products/item43.jpg'),
+      );
+      expect(
+        ProductImageResolver.resolveImage(
+          rawUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+          title: 'Túi Da Bò Vintage',
+          id: 9,
+        ),
+        'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+      );
     });
   });
 }

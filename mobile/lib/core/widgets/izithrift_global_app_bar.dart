@@ -262,26 +262,22 @@ class IzithriftGlobalAppBar extends ConsumerWidget
     if (titleWidget != null) {
       return titleWidget!;
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (showBrandMark) ...[
-          const IzithriftLogo.iconOnly(iconSize: 26),
-          const SizedBox(width: 8),
-        ],
-        Flexible(
-          child: Text(
-            title ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.headingSmall.copyWith(
-              fontSize: 17,
-              color: AppColors.pineDeep,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
+    if (showBrandMark) {
+      return const IzithriftLogo(
+        iconSize: 30,
+        fontSize: 20,
+        showWordmark: true,
+      );
+    }
+    return Text(
+      title ?? '',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTypography.headingSmall.copyWith(
+        fontSize: 17,
+        color: AppColors.pineDeep,
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
 }

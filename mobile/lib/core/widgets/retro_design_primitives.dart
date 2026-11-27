@@ -23,11 +23,12 @@ class RetroBrandWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (titleText == 'izithrift') {
-      return IzithriftLogo(
-        iconSize: 28,
-        fontSize: 19,
-        wordmarkText: titleText,
+    final normalized = titleText.trim().toLowerCase();
+    if (normalized == 'izithrift' || normalized.startsWith('izithrift ')) {
+      return const IzithriftLogo(
+        iconSize: 30,
+        fontSize: 20,
+        wordmarkText: 'izithrift',
       );
     }
 

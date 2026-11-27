@@ -1,10 +1,12 @@
+import '../config/env_config.dart';
+
 /// Resolves authentic vintage product photography, condition freshness percentages,
 /// compact category labels, and nearby distance labels across Retro Market (izithrift).
 ///
 /// Priority order for product imagery:
-/// 1. Real uploaded / custom product image URLs (from backend or user upload)
+/// 1. Real product image URLs from API (`primary_image`, `images.first`, relative `/storage/...`)
 /// 2. Bundled local studio vintage photography assets under `assets/images/products/`
-///    matched intelligently by product title, category, and deterministic ID.
+///    used ONLY when an item has no valid URL or network loading fails.
 class ProductImageResolver {
   ProductImageResolver._();
 
@@ -81,34 +83,60 @@ class ProductImageResolver {
     ),
   ];
 
-  /// Known generic/placeholder or duplicated seeder URLs that should be upgraded
-  /// to item-specific vintage studio assets so every product has a distinct, relevant image.
+  /// Normalizes a raw image path/URL from API or local assets.
+  /// Relative backend paths (`/storage/...`, `storage/...`) are resolved against
+  /// [EnvConfig.mediaBaseUrl] so cards and detail pages load the exact same API image.
+  static String? normalizeImageUrl(String? rawUrl) {
+    if (rawUrl == null) return null;
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('assets/') ||
+        trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('//')) {
+      return 'https:$trimmed';
+    }
+    if (trimmed.startsWith('/')) {
+      return '${EnvConfig.mediaBaseUrl}$trimmed';
+    }
+    if (trimmed.startsWith('storage/') ||
+        trimmed.startsWith('uploads/') ||
+        trimmed.startsWith('images/')) {
+      return '${EnvConfig.mediaBaseUrl}/$trimmed';
+    }
+    return trimmed;
+  }
+
+  /// True ONLY when a URL is empty or points to an unreachable dummy placeholder host.
+  /// Real remote HTTP/HTTPS URLs and backend storage paths are preserved verbatim.
   static bool isGenericOrBrokenUrl(String? rawUrl) {
-    if (rawUrl == null || rawUrl.trim().isEmpty) return true;
-    final lower = rawUrl.trim().toLowerCase();
+    final normalized = normalizeImageUrl(rawUrl);
+    if (normalized == null || normalized.isEmpty) return true;
+    final lower = normalized.toLowerCase();
     if (lower.contains('placeholder.jpg') ||
         lower.contains('izithrift.local') ||
-        lower.contains('example.com') ||
-        lower.contains('photo-1544441893-675973e31985') ||
-        lower.contains('photo-1523381210434-271e8be1f52b') ||
-        lower.contains('photo-1512436991641-6745cdb1723f')) {
+        lower.contains('example.com')) {
       return true;
     }
-    return false;
+    if (isLocalAsset(normalized)) return false;
+    return !(lower.startsWith('http://') || lower.startsWith('https://'));
   }
 
   /// True when the resolved path points to a bundled Flutter local asset.
   static bool isLocalAsset(String path) => path.startsWith('assets/');
 
-  /// Resolves the best display image (remote URL or bundled asset path) for any product/auction.
+  /// Resolves the best display image (remote API URL or bundled asset fallback).
   static String resolveImage({
     String? rawUrl,
     String? title,
     String? categoryName,
     int id = 0,
   }) {
-    if (!isGenericOrBrokenUrl(rawUrl)) {
-      return rawUrl!.trim();
+    final normalized = normalizeImageUrl(rawUrl);
+    if (normalized != null && !isGenericOrBrokenUrl(normalized)) {
+      return normalized;
     }
     return fallbackAssetFor(
       title: title,
@@ -117,8 +145,7 @@ class ProductImageResolver {
     );
   }
 
-  /// Returns a curated local gallery (2–3 distinct related angles/assets) for detail screens
-  /// when the backend only supplies placeholder images or a single image.
+  /// Returns normalized gallery URLs from API when present, or a single category-matched fallback.
   static List<String> resolveGallery({
     required List<String> rawUrls,
     String? primaryUrl,
@@ -128,15 +155,19 @@ class ProductImageResolver {
   }) {
     final validRemote = <String>[];
     for (final url in rawUrls) {
-      if (!isGenericOrBrokenUrl(url) && !validRemote.contains(url.trim())) {
-        validRemote.add(url.trim());
+      final normalized = normalizeImageUrl(url);
+      if (normalized != null &&
+          !isGenericOrBrokenUrl(normalized) &&
+          !validRemote.contains(normalized)) {
+        validRemote.add(normalized);
       }
     }
     if (validRemote.isNotEmpty) {
       return validRemote;
     }
-    if (!isGenericOrBrokenUrl(primaryUrl)) {
-      return [primaryUrl!.trim()];
+    final normalizedPrimary = normalizeImageUrl(primaryUrl);
+    if (normalizedPrimary != null && !isGenericOrBrokenUrl(normalizedPrimary)) {
+      return [normalizedPrimary];
     }
 
     final primary = fallbackAssetFor(
@@ -147,7 +178,8 @@ class ProductImageResolver {
     return [primary];
   }
 
-  /// Deterministically maps product title/category keywords to a matching vintage product photo.
+  /// Deterministically maps product title/category keywords to a matching vintage product photo
+  /// when no valid remote image is available.
   static String fallbackAssetFor({
     String? title,
     String? categoryName,
@@ -180,7 +212,10 @@ class ProductImageResolver {
       return assetVarsityJacket;
     }
 
-    final safeIdx = (id.abs()) % allBundledAssets.length;
+    final seed = id != 0
+        ? id.abs()
+        : text.trim().codeUnits.fold<int>(0, (acc, unit) => acc + unit);
+    final safeIdx = seed % allBundledAssets.length;
     return allBundledAssets[safeIdx];
   }
 

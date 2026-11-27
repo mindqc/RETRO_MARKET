@@ -600,7 +600,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('izithrift • Khám phá'), findsOneWidget);
+        expect(find.text('izithrift'), findsOneWidget);
+        expect(find.textContaining('• Khám phá'), findsNothing);
         expect(find.text('Danh mục sản phẩm'), findsOneWidget);
         expect(find.text('Thương hiệu phổ biến'), findsOneWidget);
         expect(find.text('Áo khoác Vintage'), findsOneWidget);

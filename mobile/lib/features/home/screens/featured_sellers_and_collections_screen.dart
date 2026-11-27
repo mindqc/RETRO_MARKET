@@ -62,7 +62,6 @@ class _FeaturedSellersAndCollectionsScreenState
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
       appBar: IzithriftGlobalAppBar.subPage(
-        title: 'Tiệm đồ si & Bộ sưu tập',
         showBrandMark: true,
         showNotificationsAction: false,
         showCartAction: true,
@@ -76,8 +75,16 @@ class _FeaturedSellersAndCollectionsScreenState
       ),
       body: RetroAmbientSnowflakes(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
           children: [
+            Text(
+              'Tiệm đồ si & Bộ sưu tập',
+              style: AppTypography.headingMedium.copyWith(
+                fontSize: 20,
+                color: AppColors.pineDeep,
+              ),
+            ),
+            const SizedBox(height: 10),
             _buildHeroBanner(),
             const SizedBox(height: 22),
             _buildRegionSelector(),
