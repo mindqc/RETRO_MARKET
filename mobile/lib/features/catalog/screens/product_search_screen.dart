@@ -387,7 +387,9 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                 condition: product.condition,
                 categoryName: product.categoryName,
                 showConditionPercent: true,
+                sellerId: product.sellerId,
                 sellerName: product.displaySellerName,
+                sellerAvatarUrl: product.sellerAvatarUrl,
                 isOwner: product.isOwner,
                 isLiked: product.isFavorited,
                 onTap: () =>

@@ -11,6 +11,7 @@ import 'package:izithrift/core/widgets/fashion_category_icon.dart';
 import 'package:izithrift/core/widgets/izithrift_global_app_bar.dart';
 import 'package:izithrift/core/widgets/izithrift_logo.dart';
 import 'package:izithrift/core/widgets/retro_product_card.dart';
+import 'package:izithrift/core/widgets/retro_shop_avatar.dart';
 import 'package:izithrift/core/widgets/verification_badge.dart';
 import 'package:izithrift/core/widgets/status_pill_badge.dart';
 import 'package:izithrift/core/widgets/price_breakdown_card.dart';
@@ -329,23 +330,26 @@ void main() {
       );
     });
 
-    testWidgets('Compact RetroProductCard removes photo corner freshness badge and groups distance, freshness, and Uy tín in one row', (tester) async {
+    testWidgets('Compact RetroProductCard removes photo corner freshness badge and groups distance, freshness, and Uy tín in one row with friendly shop avatar', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
               child: SizedBox(
-                width: 170,
-                height: 238,
+                width: 174,
+                height: 254,
                 child: RetroProductCard(
                   id: 101,
-                  title: 'Áo Khoác Denim Levi\'s 90s Vintage',
+                  title: 'Áo Khoác Denim Levi\'s 90s Vintage Siêu Dài Để Kiểm Tra Tràn Dòng',
                   price: 450000,
                   condition: 'LIKE_NEW',
                   categoryName: 'Denim Jacket',
                   distanceLabel: '1.2 km',
                   showConditionPercent: true,
-                  sellerName: 'Tiệm Đồ Si Sài Gòn',
+                  sellerId: 4,
+                  sellerName: 'Tiệm Đồ Si Nhà Gấu Vintage Sài Gòn',
+                  sellerAvatarUrl:
+                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
                 ),
               ),
             ),
@@ -353,12 +357,75 @@ void main() {
         ),
       );
 
+      expect(tester.takeException(), isNull);
       expect(find.text('1.2 km'), findsOneWidget);
       expect(find.text('Độ mới: 95%'), findsOneWidget);
       expect(find.byType(ConditionBadge), findsNothing);
-      expect(find.text('Tiệm Đồ Si Sài Gòn'), findsOneWidget);
+      expect(find.byType(RetroShopAvatar), findsOneWidget);
+      expect(find.text('Tiệm Đồ Si Nhà Gấu Vintage Sài Gòn'), findsOneWidget);
       expect(find.text('Uy tín'), findsOneWidget);
       expect(find.byIcon(Icons.verified_rounded), findsOneWidget);
+    });
+
+    testWidgets('RetroShopAvatar replaces stock human-portrait URLs with deterministic illustrated shop avatars', (tester) async {
+      expect(
+        RetroShopAvatar.isSampleOrPortraitUrl(
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+        ),
+        isTrue,
+      );
+      expect(
+        RetroShopAvatar.isSampleOrPortraitUrl('/storage/shops/custom_logo.png'),
+        isFalse,
+      );
+      expect(
+        RetroShopAvatar.extractInitials('Tiệm Đồ Si Nhà Gấu'),
+        'NG',
+      );
+      expect(
+        RetroShopAvatar.extractInitials('Sài Gòn Retro Lab'),
+        'SG',
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                RetroShopAvatar(
+                  sellerId: 1,
+                  shopName: 'Tiệm Đồ Si Nhà Gấu',
+                  avatarUrl:
+                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+                  size: 48,
+                ),
+                RetroShopAvatar(
+                  sellerId: 2,
+                  shopName: 'Sài Gòn Retro Lab',
+                  avatarUrl:
+                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
+                  size: 48,
+                ),
+                RetroShopAvatar(
+                  sellerId: 3,
+                  shopName: 'Tiệm Nhỏ Trên Mây',
+                  avatarUrl: null,
+                  size: 48,
+                ),
+                RetroShopAvatar(
+                  sellerId: 4,
+                  shopName: 'Góc Vintage Hà Nội',
+                  avatarUrl: null,
+                  size: 48,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(RetroShopAvatar), findsNWidgets(4));
     });
 
     test('ProductSummaryModel parses primary_image/images.first, prefers shop_name, and avoids raw technical codes', () {
@@ -421,11 +488,28 @@ void main() {
       );
       expect(
         ProductImageResolver.resolveImage(
-          rawUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+          rawUrl: 'https://cdn.example.org/products/custom-bag-9.jpg',
           title: 'Túi Da Bò Vintage',
           id: 9,
         ),
-        'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+        'https://cdn.example.org/products/custom-bag-9.jpg',
+      );
+      // Known single duplicated backend seeder URL diversifies per product title
+      expect(
+        ProductImageResolver.resolveImage(
+          rawUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+          title: 'Túi Da Bò Vintage Coach',
+          id: 9,
+        ),
+        ProductImageResolver.assetLeatherBag,
+      );
+      expect(
+        ProductImageResolver.resolveImage(
+          rawUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=600',
+          title: 'Máy Ảnh Film Cơ Olympus OM-10',
+          id: 7,
+        ),
+        ProductImageResolver.assetFilmCamera,
       );
     });
   });

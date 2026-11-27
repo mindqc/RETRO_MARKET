@@ -6,19 +6,23 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/utils/product_image_resolver.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
 import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/price_breakdown_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
+import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/retro_product_image.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
 import '../../engagement/repositories/communication_engagement_repository.dart';
 import '../models/product_detail_model.dart';
 import '../models/product_image_model.dart';
+import '../models/product_summary_model.dart';
 import '../viewmodels/product_detail_view_model.dart';
+import '../widgets/product_shop_reviews_section.dart';
+import '../widgets/product_specifications_card.dart';
 import 'full_screen_zoom_viewer.dart';
 
 /// Product Detail Screen for secondhand vintage items (M-PD-01).
@@ -50,6 +54,22 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           .read(productDetailViewModelProvider.notifier)
           .loadProductDetail(widget.productId);
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.productId != widget.productId) {
+      if (_imagePageController.hasClients) {
+        _imagePageController.jumpToPage(0);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(productDetailViewModelProvider.notifier)
+            .loadProductDetail(widget.productId);
+      });
+    }
   }
 
   @override
@@ -217,10 +237,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildSellerCard(context, product.seller!, product),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
           ],
 
-          // 4. Product Description (clean, airy typography)
+          // 4. Product Specifications (Size, Garment Measurements & Material)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ProductSpecificationsCard(product: product),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 5. Product Description (clean, airy typography)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -249,9 +277,37 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ),
           ),
 
+          // 6. Shop Reviews & Buyer Comments
+          if (product.seller != null) ...[
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ProductShopReviewsSection(
+                averageRating: viewModel.sellerAverageRating ??
+                    product.seller!.averageRating,
+                reviewCount: viewModel.sellerReviewCount,
+                reviews: viewModel.sellerReviews,
+                isLoading: viewModel.isLoadingSellerExtras,
+                onSeeAllTap: () => context.push(
+                  AppRoutes.sellerStorefrontPath(product.seller!.id),
+                ),
+              ),
+            ),
+          ],
+
+          // 7. Other Products from This Shop (horizontal scrollable carousel)
+          if (viewModel.sellerOtherProducts.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _buildOtherShopProductsSection(
+              context,
+              viewModel.sellerOtherProducts,
+              product,
+            ),
+          ],
+
           const SizedBox(height: 18),
 
-          // 5. Compact Cost Summary right above fixed CTA bar (no Escrow notice)
+          // 8. Collapsible Cost Breakdown Dropdown right above fixed CTA bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: PriceBreakdownCard(
@@ -261,6 +317,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               showSellerNetAmount: product.isOwner,
               showEscrowNotice: false,
               isCompact: true,
+              collapsible: true,
+              initiallyExpanded: false,
             ),
           ),
         ],
@@ -317,6 +375,49 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 );
               },
             ),
+            // Left floating navigation arrow (hidden on first image or single image)
+            if (images.length > 1 && viewModel.currentImageIndex > 0)
+              Positioned(
+                left: 10,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildCarouselArrowButton(
+                    key: const Key('product_carousel_prev_arrow'),
+                    icon: Icons.chevron_left_rounded,
+                    tooltip: 'Ảnh trước',
+                    onTap: () {
+                      _imagePageController.previousPage(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+            // Right floating navigation arrow (hidden on last image or single image)
+            if (images.length > 1 &&
+                viewModel.currentImageIndex < images.length - 1)
+              Positioned(
+                right: 10,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildCarouselArrowButton(
+                    key: const Key('product_carousel_next_arrow'),
+                    icon: Icons.chevron_right_rounded,
+                    tooltip: 'Ảnh tiếp theo',
+                    onTap: () {
+                      _imagePageController.nextPage(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                      );
+                    },
+                  ),
+                ),
+              ),
+
             Positioned(
               right: 12,
               bottom: 12,
@@ -359,6 +460,136 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
+  Widget _buildCarouselArrowButton({
+    Key? key,
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      key: key,
+      color: Colors.black.withValues(alpha: 0.42),
+      shape: CircleBorder(
+        side: BorderSide(
+          color: Colors.white.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onTap,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+        icon: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
+  Widget _buildOtherShopProductsSection(
+    BuildContext context,
+    List<ProductSummaryModel> products,
+    ProductDetailModel currentProduct,
+  ) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.43).clamp(154.0, 178.0);
+    final seller = currentProduct.seller;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.storefront_rounded,
+                size: 18,
+                color: AppColors.pineDeep,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  'Các sản phẩm khác của shop',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.headingSmall.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.pineDeep,
+                  ),
+                ),
+              ),
+              if (seller != null)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.ctaTerracotta,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () => context.push(
+                    AppRoutes.sellerStorefrontPath(seller.id),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Xem thêm',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded, size: 16),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 254,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: products.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 11),
+            itemBuilder: (context, index) {
+              final item = products[index];
+              return SizedBox(
+                width: cardWidth,
+                child: RetroProductCard(
+                  id: item.id,
+                  title: item.displayTitle,
+                  price: item.price,
+                  primaryImageUrl: item.primaryImageUrl,
+                  condition: item.condition,
+                  categoryName: item.categoryName,
+                  showConditionPercent: true,
+                  sellerId: item.sellerId ?? seller?.id,
+                  sellerName: seller?.displayShopName ?? item.displaySellerName,
+                  sellerAvatarUrl: item.sellerAvatarUrl ?? seller?.avatarUrl,
+                  isOwner: item.isOwner,
+                  isLiked: item.isFavorited,
+                  onTap: () => context.push(
+                    AppRoutes.productDetailPath(item.id),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMetaChip(IconData icon, String label, {Color? color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -390,12 +621,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     ProductSellerInfo seller,
     ProductDetailModel product,
   ) {
-    final normalizedAvatar =
-        ProductImageResolver.normalizeImageUrl(seller.avatarUrl);
-    final hasValidAvatar = normalizedAvatar != null &&
-        (normalizedAvatar.startsWith('http://') ||
-            normalizedAvatar.startsWith('https://'));
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -409,27 +634,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         children: [
           Row(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.creamBadgeBorder,
-                    width: 1.4,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 23,
-                  backgroundColor: AppColors.categoryCircleEnd,
-                  backgroundImage:
-                      hasValidAvatar ? NetworkImage(normalizedAvatar) : null,
-                  child: !hasValidAvatar
-                      ? const Icon(
-                          Icons.storefront_rounded,
-                          color: AppColors.pineDeep,
-                          size: 22,
-                        )
-                      : null,
-                ),
+              RetroShopAvatar(
+                sellerId: seller.id,
+                shopName: seller.displayShopName,
+                avatarUrl: seller.avatarUrl,
+                size: 46,
+                borderColor: AppColors.creamBadgeBorder,
+                borderWidth: 1.5,
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -25,7 +25,7 @@ class ProductImageModel {
       id: SafeJsonParser.toInt(json['id']),
       imageUrl: SafeJsonParser.toStringValue(
         json['image_url'] ?? json['url'],
-        defaultValue: 'https://images.unsplash.com/photo-1550614000-4895a10e1bfd?auto=format&fit=crop&w=800&q=80',
+        defaultValue: '',
       ),
       imageType: SafeJsonParser.toStringValue(json['image_type'], defaultValue: 'GALLERY'),
       isPrimary: SafeJsonParser.toBool(json['is_primary']),

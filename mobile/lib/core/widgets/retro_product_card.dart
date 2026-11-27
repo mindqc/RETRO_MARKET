@@ -6,6 +6,7 @@ import '../theme/design_tokens.dart';
 import '../utils/product_image_resolver.dart';
 import '../utils/vnd_formatter.dart';
 import 'retro_product_image.dart';
+import 'retro_shop_avatar.dart';
 import 'verification_badge.dart';
 
 /// Compact, information-rich editorial product card for fixed-price secondhand
@@ -20,7 +21,9 @@ class RetroProductCard extends StatelessWidget {
   final String? distanceLabel;
   final bool showConditionPercent;
   final String? verificationStatus;
+  final int? sellerId;
   final String? sellerName;
+  final String? sellerAvatarUrl;
   final bool isOwner;
   final bool isLiked;
   final VoidCallback? onTap;
@@ -37,7 +40,9 @@ class RetroProductCard extends StatelessWidget {
     this.distanceLabel,
     this.showConditionPercent = false,
     this.verificationStatus,
+    this.sellerId,
     this.sellerName,
+    this.sellerAvatarUrl,
     this.isOwner = false,
     this.isLiked = false,
     this.onTap,
@@ -80,7 +85,7 @@ class RetroProductCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: AspectRatio(
-                    aspectRatio: 1.14,
+                    aspectRatio: 1.18,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -216,18 +221,20 @@ class RetroProductCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontSize: 11.8,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textCharcoal,
-                          height: 1.16,
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontSize: 11.6,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textCharcoal,
+                            height: 1.15,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2.5),
+                      const SizedBox(height: 2),
                       Text(
                         VndFormatter.format(price),
                         maxLines: 1,
@@ -317,15 +324,17 @@ class RetroProductCard extends StatelessWidget {
                         ],
                       ),
                       if (hasSeller) ...[
-                        const SizedBox(height: 2.5),
+                        const SizedBox(height: 3),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.storefront_rounded,
-                              size: 10.5,
-                              color: AppColors.textMuted,
+                            RetroShopAvatar(
+                              sellerId: sellerId,
+                              shopName: sellerName!.trim(),
+                              avatarUrl: sellerAvatarUrl,
+                              size: 15,
+                              borderWidth: 0.8,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 sellerName!.trim(),

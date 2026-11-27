@@ -109,8 +109,31 @@ class ProductImageResolver {
     return trimmed;
   }
 
-  /// True ONLY when a URL is empty or points to an unreachable dummy placeholder host.
-  /// Real remote HTTP/HTTPS URLs and backend storage paths are preserved verbatim.
+  /// Known single placeholder URLs duplicated across every seeded product in
+  /// `CatalogAndProductsSeeder` and legacy `ProductImageModel` defaults.
+  /// Real uploaded product photos (`/storage/...`) and unique remote URLs are
+  /// never matched here and always render verbatim.
+  static const List<String> _duplicatedSeederImageTokens = [
+    'photo-1544441893-675973e31985',
+    'photo-1523381210434-271e8be1f52b',
+    'photo-1512436991641-6745cdb1723f',
+    'photo-1550614000-4895a10e1bfd',
+  ];
+
+  /// True when [rawUrl] is one of the shared duplicated seeder placeholder URLs.
+  static bool isDuplicatedSeederUrl(String? rawUrl) {
+    final normalized = normalizeImageUrl(rawUrl);
+    if (normalized == null || normalized.isEmpty) return false;
+    final lower = normalized.toLowerCase();
+    for (final token in _duplicatedSeederImageTokens) {
+      if (lower.contains(token)) return true;
+    }
+    return false;
+  }
+
+  /// True when a URL is empty, points to an unreachable dummy placeholder host,
+  /// or is one of the duplicated single-photo seeder placeholders.
+  /// Real uploaded `/storage/...` images and unique remote URLs are preserved verbatim.
   static bool isGenericOrBrokenUrl(String? rawUrl) {
     final normalized = normalizeImageUrl(rawUrl);
     if (normalized == null || normalized.isEmpty) return true;
@@ -120,6 +143,7 @@ class ProductImageResolver {
         lower.contains('example.com')) {
       return true;
     }
+    if (isDuplicatedSeederUrl(normalized)) return true;
     if (isLocalAsset(normalized)) return false;
     return !(lower.startsWith('http://') || lower.startsWith('https://'));
   }
@@ -179,7 +203,7 @@ class ProductImageResolver {
   }
 
   /// Deterministically maps product title/category keywords to a matching vintage product photo
-  /// when no valid remote image is available.
+  /// when no unique remote image is available.
   static String fallbackAssetFor({
     String? title,
     String? categoryName,
@@ -187,29 +211,29 @@ class ProductImageResolver {
   }) {
     final text = '${title ?? ''} ${categoryName ?? ''}'.toLowerCase();
 
-    if (_containsAny(text, ['máy ảnh', 'camera', 'canon', 'nikon', 'olympus', 'minolta', 'film', 'phim', 'điện tử'])) {
+    if (_containsAny(text, ['máy ảnh', 'camera', 'canon', 'nikon', 'olympus', 'minolta', 'film', 'phim', 'cassette', 'đĩa than', 'vinyl', 'điện tử'])) {
       return assetFilmCamera;
     }
-    if (_containsAny(text, ['đồng hồ', 'watch', 'watches', 'seiko', 'omega', 'citizen', 'casio', 'phụ kiện', 'accessories', 'kính', 'nhẫn', 'dây chuyền', 'khăn'])) {
+    if (_containsAny(text, ['đồng hồ', 'watch', 'watches', 'seiko', 'omega', 'citizen', 'casio', 'kính', 'nhẫn', 'dây chuyền'])) {
       return assetMechanicalWatch;
     }
-    if (_containsAny(text, ['túi', 'ví', 'balo', 'cặp', 'bag', 'bags', 'leather bag', 'satchel', 'tote', 'coach', 'đồ da'])) {
+    if (_containsAny(text, ['túi', 'ví da', 'ví ', 'balo', 'cặp', 'bag', 'bags', 'leather bag', 'satchel', 'tote', 'coach', 'đồ da'])) {
       return assetLeatherBag;
     }
-    if (_containsAny(text, ['giày', 'sneaker', 'sneakers', 'boot', 'dép', 'nike', 'adidas', 'converse', 'new balance', 'vans', 'puma', 'asics'])) {
+    if (_containsAny(text, ['giày', 'sneaker', 'sneakers', 'boot', 'bốt', 'dr. martens', 'dép', 'nike', 'adidas', 'converse', 'new balance', 'vans', 'puma', 'asics'])) {
       return assetRetroSneakers;
+    }
+    if (_containsAny(text, ['denim jacket', 'trucker', 'áo khoác', 'khoác', 'outerwear', 'varsity', 'bomber', 'jacket', 'workwear', 'carhartt', 'măng tô', 'áo dạ', 'tweed', 'blazer'])) {
+      return assetVarsityJacket;
     }
     if (_containsAny(text, ['quần', 'jean', 'jeans', 'flare', 'trouser', 'trousers', 'levi', 'kaki', 'cargo', 'chinos', 'selvedge'])) {
       return assetDenimJeans;
     }
-    if (_containsAny(text, ['len', 'cardigan', 'sweater', 'sweaters', 'nỉ', 'hoodie', 'knit', 'mohair', 'dệt kim', 'mùa đông'])) {
+    if (_containsAny(text, ['len', 'cardigan', 'sweater', 'sweaters', 'nỉ', 'hoodie', 'knit', 'mohair', 'dệt kim', 'khăn choàng', 'mũ nồi', 'beret', 'mùa đông'])) {
       return assetKnitCardigan;
     }
-    if (_containsAny(text, ['flannel', 'sơ mi', 'caro', 'shirt', 'vintage shirt', 'american tee', 'boxy tee', 'tee', 'polo', 'thun'])) {
+    if (_containsAny(text, ['flannel', 'sơ mi', 'chân váy', 'váy', 'caro', 'shirt', 'vintage shirt', 'american tee', 'boxy tee', 'tee', 'polo', 'thun'])) {
       return assetFlannelShirt;
-    }
-    if (_containsAny(text, ['denim jacket', 'khoác', 'outerwear', 'varsity', 'bomber', 'jacket', 'workwear', 'carhartt', 'măng tô', 'dạ', 'blazer', 'trucker'])) {
-      return assetVarsityJacket;
     }
 
     final seed = id != 0

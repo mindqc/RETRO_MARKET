@@ -10,6 +10,7 @@ import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../../../core/widgets/seasonal_decor_overlay.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/review_item_model.dart';
@@ -167,36 +168,13 @@ class _PublicSellerStorefrontScreenState
                       children: [
                         Row(
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.creamBadgeBg,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Builder(
-                                builder: (_) {
-                                  final avatarUrl = seller.avatarUrl?.trim();
-                                  final hasValidAvatar = avatarUrl != null &&
-                                      (avatarUrl.startsWith('http://') ||
-                                          avatarUrl.startsWith('https://'));
-                                  return CircleAvatar(
-                                    radius: 32,
-                                    backgroundColor: AppColors.categoryCircleEnd,
-                                    backgroundImage: hasValidAvatar
-                                        ? NetworkImage(avatarUrl)
-                                        : null,
-                                    child: !hasValidAvatar
-                                        ? const Icon(
-                                            Icons.storefront_rounded,
-                                            color: AppColors.pineDeep,
-                                            size: 30,
-                                          )
-                                        : null,
-                                  );
-                                },
-                              ),
+                            RetroShopAvatar(
+                              sellerId: seller.userId,
+                              shopName: seller.displayName,
+                              avatarUrl: seller.avatarUrl,
+                              size: 64,
+                              borderColor: AppColors.creamBadgeBg,
+                              borderWidth: 2,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -420,7 +398,9 @@ class _PublicSellerStorefrontScreenState
           primaryImageUrl: prod.primaryImageUrl,
           isLiked: prod.isFavorited,
           isOwner: prod.isOwner,
+          sellerId: prod.sellerId ?? seller.userId,
           sellerName: prod.displaySellerName,
+          sellerAvatarUrl: prod.sellerAvatarUrl ?? seller.avatarUrl,
           onTap: () => context.push(AppRoutes.productDetailPath(prod.id)),
         );
       },
@@ -492,7 +472,9 @@ class _PublicSellerStorefrontScreenState
             primaryImageUrl: prod.primaryImageUrl,
             isLiked: prod.isFavorited,
             isOwner: prod.isOwner,
+            sellerId: prod.sellerId ?? seller.userId,
             sellerName: prod.displaySellerName,
+            sellerAvatarUrl: prod.sellerAvatarUrl ?? seller.avatarUrl,
             onTap: () => context.push(AppRoutes.productDetailPath(prod.id)),
           ),
         );

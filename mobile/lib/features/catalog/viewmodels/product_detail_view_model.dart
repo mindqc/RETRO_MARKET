@@ -8,25 +8,40 @@ import '../../../core/theme/app_colors.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
 import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../models/product_detail_model.dart';
+import '../models/product_summary_model.dart';
+import '../models/review_item_model.dart';
 import '../repositories/home_catalog_repository.dart';
+import '../repositories/seller_storefront_repository.dart';
 
 /// ViewModel for Product Detail screen (M-PD-01) and Defect Verification (M-PD-02)
 class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
   final HomeCatalogRepository repository;
+  final SellerStorefrontRepository? sellerStorefrontRepository;
   final Ref ref;
 
   int _currentImageIndex = 0;
   int _selectedQuantity = 1;
   bool _isAddingToCart = false;
+  bool _isLoadingSellerExtras = false;
+  List<ReviewItemModel> _sellerReviews = const [];
+  int _sellerReviewCount = 0;
+  double? _sellerAverageRating;
+  List<ProductSummaryModel> _sellerOtherProducts = const [];
 
   ProductDetailViewModel({
     required this.repository,
+    this.sellerStorefrontRepository,
     required this.ref,
   });
 
   int get currentImageIndex => _currentImageIndex;
   int get selectedQuantity => _selectedQuantity;
   bool get isAddingToCart => _isAddingToCart;
+  bool get isLoadingSellerExtras => _isLoadingSellerExtras;
+  List<ReviewItemModel> get sellerReviews => _sellerReviews;
+  int get sellerReviewCount => _sellerReviewCount;
+  double? get sellerAverageRating => _sellerAverageRating;
+  List<ProductSummaryModel> get sellerOtherProducts => _sellerOtherProducts;
 
   void setImageIndex(int index) {
     if (_currentImageIndex != index) {
@@ -43,14 +58,22 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
     }
   }
 
-  /// Loads product detail from GET /api/v1/products/{id}, with demo-compatible fallback
+  /// Loads product detail from GET /api/v1/products/{id}, with demo-compatible fallback,
+  /// then loads seller reviews and other active listings from the same shop.
   Future<void> loadProductDetail(int productId) async {
     _currentImageIndex = 0;
     _selectedQuantity = 1;
+    _sellerReviews = const [];
+    _sellerReviewCount = 0;
+    _sellerAverageRating = null;
+    _sellerOtherProducts = const [];
+    _isLoadingSellerExtras = false;
+
     final demoFallback =
         ref.read(retroDemoStoreProvider).getDemoProductDetail(productId);
     if (demoFallback != null) {
       setSuccess(demoFallback);
+      await _loadSellerReviewsAndOtherProducts(demoFallback);
       return;
     }
     await runCatching(
@@ -66,6 +89,101 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
       },
       emptyMessage: 'Không tìm thấy sản phẩm hoặc sản phẩm đã bị ẩn.',
     );
+
+    final loaded = state.data;
+    if (loaded != null) {
+      await _loadSellerReviewsAndOtherProducts(loaded);
+    }
+  }
+
+  Future<void> _loadSellerReviewsAndOtherProducts(
+    ProductDetailModel product,
+  ) async {
+    final seller = product.seller;
+    if (seller == null || seller.id <= 0) return;
+
+    if (isDisposed) return;
+    _isLoadingSellerExtras = true;
+    notifyListeners();
+
+    List<ReviewItemModel> reviews = const [];
+    int reviewCount = 0;
+    double? avgRating = seller.averageRating > 0 ? seller.averageRating : null;
+    List<ProductSummaryModel> otherProducts = const [];
+
+    final storefrontRepo = sellerStorefrontRepository;
+    if (storefrontRepo != null) {
+      // 1. Fetch seller reviews via GET /api/v1/sellers/{id}/reviews
+      try {
+        final paginated = await storefrontRepo.fetchSellerReviews(
+          seller.id,
+          page: 1,
+          perPage: 5,
+        );
+        reviews = paginated.items;
+        reviewCount = paginated.meta.total > 0
+            ? paginated.meta.total
+            : reviews.length;
+      } catch (_) {
+        // Non-fatal: fallback handled below
+      }
+
+      // 2. Fetch seller storefront active listings via GET /api/v1/sellers/{id}
+      try {
+        final storefront = await storefrontRepo.fetchSellerStorefront(
+          seller.id,
+          tab: 'approved',
+          page: 1,
+          perPage: 10,
+        );
+        if (storefront.averageRating > 0) {
+          avgRating = storefront.averageRating;
+        }
+        if (storefront.reviewCount > reviewCount) {
+          reviewCount = storefront.reviewCount;
+        }
+        if (reviews.isEmpty && storefront.reviews.isNotEmpty) {
+          reviews = storefront.reviews;
+          if (reviewCount == 0) reviewCount = reviews.length;
+        }
+        otherProducts = storefront.activeListings
+            .where((item) => item.id != product.id)
+            .toList();
+      } catch (_) {
+        // Non-fatal: fallback handled below
+      }
+    }
+
+    // Fallback for offline/demo listings when API returns empty
+    if (otherProducts.isEmpty && product.relatedProducts.isNotEmpty) {
+      otherProducts = product.relatedProducts
+          .where((item) => item.id != product.id)
+          .toList();
+    }
+    if (otherProducts.isEmpty) {
+      final demoStore = ref.read(retroDemoStoreProvider);
+      final demoSeller = demoStore.getDemoSellerStorefront(seller.id);
+      if (demoSeller != null) {
+        otherProducts = demoSeller.activeListings
+            .where((item) => item.id != product.id)
+            .toList();
+        if (reviews.isEmpty && demoSeller.reviews.isNotEmpty) {
+          reviews = demoSeller.reviews;
+          reviewCount = demoSeller.reviewCount > 0
+              ? demoSeller.reviewCount
+              : reviews.length;
+        }
+      }
+    }
+
+    if (isDisposed || state.data?.id != product.id) return;
+
+    _sellerReviews = reviews;
+    _sellerReviewCount = reviewCount;
+    _sellerAverageRating = avgRating;
+    _sellerOtherProducts = otherProducts;
+    _isLoadingSellerExtras = false;
+    notifyListeners();
   }
 
   /// Optimistic favorite toggle with guest login guard (DEC-01)
@@ -227,5 +345,10 @@ class ProductDetailViewModel extends BaseViewModel<ProductDetailModel> {
 /// Riverpod provider for ProductDetailViewModel
 final productDetailViewModelProvider = ChangeNotifierProvider.autoDispose<ProductDetailViewModel>((ref) {
   final repo = ref.watch(homeCatalogRepositoryProvider);
-  return ProductDetailViewModel(repository: repo, ref: ref);
+  final storefrontRepo = ref.watch(sellerStorefrontRepositoryProvider);
+  return ProductDetailViewModel(
+    repository: repo,
+    sellerStorefrontRepository: storefrontRepo,
+    ref: ref,
+  );
 });

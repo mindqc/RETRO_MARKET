@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../viewmodels/home_view_model.dart';
 
 /// M-HM-02: Curated Collections & Featured Stores
@@ -536,24 +537,13 @@ class _FeaturedSellersAndCollectionsScreenState
         children: [
           Row(
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [
-                      AppColors.categoryCircleStart,
-                      AppColors.categoryCircleEnd,
-                    ],
-                  ),
-                  border: Border.all(color: AppColors.creamBadgeBorder),
-                ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  color: AppColors.pineDeep,
-                  size: 28,
-                ),
+              RetroShopAvatar(
+                sellerId: seller.userId > 0 ? seller.userId : seller.id,
+                shopName: seller.shopName,
+                avatarUrl: seller.avatarUrl,
+                size: 58,
+                borderColor: AppColors.creamBadgeBorder,
+                borderWidth: 1.5,
               ),
               const SizedBox(width: 14),
               Expanded(

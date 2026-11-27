@@ -223,6 +223,12 @@ class ProductDetailModel {
   final bool isOwner;
   final bool isFavorited;
   final List<ProductSummaryModel> relatedProducts;
+  final String? size;
+  final String? shirtLength;
+  final String? chestWidth;
+  final String? pantsLength;
+  final String? legOpening;
+  final String? material;
 
   const ProductDetailModel({
     required this.id,
@@ -252,6 +258,12 @@ class ProductDetailModel {
     this.isOwner = false,
     this.isFavorited = false,
     this.relatedProducts = const [],
+    this.size,
+    this.shirtLength,
+    this.chestWidth,
+    this.pantsLength,
+    this.legOpening,
+    this.material,
   });
 
   /// Human-readable product title avoiding raw technical codes like `prd_...`.
@@ -339,6 +351,10 @@ class ProductDetailModel {
     final bool isOwnerValue = SafeJsonParser.toBool(rawJson['is_owner'] ?? data['is_owner']);
     final bool isFavoritedValue = SafeJsonParser.toBool(rawJson['is_favorited'] ?? data['is_favorited']);
 
+    final specMap = data['specifications'] is Map
+        ? data['specifications'] as Map
+        : (data['measurements'] is Map ? data['measurements'] as Map : null);
+
     return ProductDetailModel(
       id: SafeJsonParser.toInt(data['id']),
       productCode: SafeJsonParser.toStringValue(data['product_code'], defaultValue: 'PRD-${data['id']}'),
@@ -375,6 +391,24 @@ class ProductDetailModel {
       isOwner: isOwnerValue,
       isFavorited: isFavoritedValue,
       relatedProducts: parsedRelated,
+      size: SafeJsonParser.toNullableString(
+        data['size'] ?? specMap?['size'],
+      ),
+      shirtLength: SafeJsonParser.toNullableString(
+        data['shirt_length'] ?? specMap?['shirt_length'],
+      ),
+      chestWidth: SafeJsonParser.toNullableString(
+        data['chest_width'] ?? specMap?['chest_width'],
+      ),
+      pantsLength: SafeJsonParser.toNullableString(
+        data['pants_length'] ?? specMap?['pants_length'],
+      ),
+      legOpening: SafeJsonParser.toNullableString(
+        data['leg_opening'] ?? specMap?['leg_opening'],
+      ),
+      material: SafeJsonParser.toNullableString(
+        data['material'] ?? specMap?['material'],
+      ),
     );
   }
 
@@ -412,6 +446,12 @@ class ProductDetailModel {
       isOwner: isOwner ?? this.isOwner,
       isFavorited: isFavorited ?? this.isFavorited,
       relatedProducts: relatedProducts,
+      size: size,
+      shirtLength: shirtLength,
+      chestWidth: chestWidth,
+      pantsLength: pantsLength,
+      legOpening: legOpening,
+      material: material,
     );
   }
 }

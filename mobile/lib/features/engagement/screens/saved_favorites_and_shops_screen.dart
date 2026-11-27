@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../home/models/featured_seller_model.dart';
 import '../viewmodels/engagement_and_review_view_model.dart';
@@ -160,7 +161,9 @@ class _SavedFavoritesAndShopsScreenState
             condition: item.condition,
             categoryName: item.categoryName,
             showConditionPercent: true,
+            sellerId: item.sellerId,
             sellerName: item.displaySellerName,
+            sellerAvatarUrl: item.sellerAvatarUrl,
             isLiked: true,
             onTap: () => context.push('/products/${item.id}'),
             onLikeToggle: () => engVm.toggleFavoriteProduct(item.id),
@@ -229,37 +232,13 @@ class _SavedFavoritesAndShopsScreenState
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border:
-                      Border.all(color: AppColors.creamBadgeBorder, width: 1.5),
-                ),
-                child: Builder(
-                  builder: (_) {
-                    final avatarUrl = shop.avatarUrl?.trim();
-                    final hasValidAvatar = avatarUrl != null &&
-                        (avatarUrl.startsWith('http://') ||
-                            avatarUrl.startsWith('https://'));
-                    return CircleAvatar(
-                      radius: 26,
-                      backgroundColor: AppColors.categoryCircleStart,
-                      backgroundImage:
-                          hasValidAvatar ? NetworkImage(avatarUrl) : null,
-                      child: !hasValidAvatar
-                          ? Text(
-                              shop.shopName.isNotEmpty
-                                  ? shop.shopName.substring(0, 1).toUpperCase()
-                                  : 'S',
-                              style: AppTypography.headingSmall.copyWith(
-                                color: AppColors.pineDeep,
-                              ),
-                            )
-                          : null,
-                    );
-                  },
-                ),
+              RetroShopAvatar(
+                sellerId: shop.userId,
+                shopName: shop.shopName,
+                avatarUrl: shop.avatarUrl,
+                size: 52,
+                borderColor: AppColors.creamBadgeBorder,
+                borderWidth: 1.5,
               ),
               const SizedBox(width: 12),
               Expanded(

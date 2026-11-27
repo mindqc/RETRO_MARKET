@@ -11,6 +11,7 @@ import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_image.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../../../core/widgets/server_countdown_timer.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/status_pill_badge.dart';
@@ -812,25 +813,13 @@ class _LiveBiddingRoomScreenState extends ConsumerState<LiveBiddingRoomScreen> {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  Builder(
-                    builder: (_) {
-                      final avatarUrl = auction.sellerAvatarUrl?.trim();
-                      final hasValidAvatar = avatarUrl != null &&
-                          (avatarUrl.startsWith('http://') ||
-                              avatarUrl.startsWith('https://'));
-                      return CircleAvatar(
-                        radius: 22,
-                        backgroundColor: AppColors.categoryCircleEnd,
-                        backgroundImage:
-                            hasValidAvatar ? NetworkImage(avatarUrl) : null,
-                        child: !hasValidAvatar
-                            ? const Icon(
-                                Icons.storefront_rounded,
-                                color: AppColors.pineDeep,
-                              )
-                            : null,
-                      );
-                    },
+                  RetroShopAvatar(
+                    sellerId: auction.sellerId,
+                    shopName: auction.sellerDisplayName ?? 'Chủ tiệm Retro',
+                    avatarUrl: auction.sellerAvatarUrl,
+                    size: 44,
+                    borderColor: AppColors.creamBadgeBorder,
+                    borderWidth: 1.5,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

@@ -13,6 +13,7 @@ import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
+import '../../../core/widgets/retro_shop_avatar.dart';
 import '../../../core/widgets/seasonal_animations.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../auth/widgets/auth_login_bottom_sheet.dart';
@@ -1251,7 +1252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: DesignTokens.spaceMd),
         SizedBox(
-          height: 230,
+          height: 254,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
             scrollDirection: Axis.horizontal,
@@ -1270,7 +1271,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   condition: product.condition,
                   categoryName: product.categoryName,
                   showConditionPercent: true,
+                  sellerId: product.sellerId,
                   sellerName: product.displaySellerName,
+                  sellerAvatarUrl: product.sellerAvatarUrl,
                   isOwner: product.isOwner,
                   isLiked: product.isFavorited,
                   onTap: () => context.push(
@@ -1376,14 +1379,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     DemoNearbyShopInfo shop,
     int index,
   ) {
-    final monogram = shop.shopName
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .take(2)
-        .map((w) => w[0].toUpperCase())
-        .join();
-    final avatarBg = index.isEven ? AppColors.pineDeep : const Color(0xFF5A3928);
-
     return SizedBox(
       width: 220,
       child: Material(
@@ -1495,33 +1490,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                       ),
-                      // Store monogram anchored bottom-left of cover
+                      // Friendly illustrated shop avatar anchored bottom-left of cover
                       Positioned(
                         left: 10,
                         bottom: 7,
                         child: Row(
                           children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: avatarBg,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.8,
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                monogram,
-                                style: const TextStyle(
-                                  fontFamily: AppTypography.fontBody,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.creamBadgeBg,
-                                ),
-                              ),
+                            RetroShopAvatar(
+                              sellerId: shop.sellerId,
+                              shopName: shop.shopName,
+                              size: 32,
+                              borderColor: Colors.white,
+                              borderWidth: 1.8,
                             ),
                             const SizedBox(width: 7),
                             Container(
@@ -1892,7 +1872,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 categoryName: product.categoryName,
                 distanceLabel: distance,
                 showConditionPercent: true,
+                sellerId: product.sellerId,
                 sellerName: product.displaySellerName,
+                sellerAvatarUrl: product.sellerAvatarUrl,
                 isOwner: product.isOwner,
                 isLiked: product.isFavorited,
                 onTap: () => context.push(

@@ -7,6 +7,7 @@ import 'package:izithrift/core/services/secure_token_storage.dart';
 import 'package:izithrift/core/services/server_time_service.dart';
 import 'package:izithrift/core/theme/seasonal_decor_provider.dart';
 import 'package:izithrift/core/widgets/price_breakdown_card.dart';
+import 'package:izithrift/core/widgets/retro_product_card.dart';
 import 'package:izithrift/features/auth/models/user_model.dart';
 import 'package:izithrift/features/auth/repositories/auth_repository.dart';
 import 'package:izithrift/features/auth/viewmodels/auth_view_model.dart';
@@ -21,6 +22,8 @@ import 'package:izithrift/features/catalog/screens/defect_verification_modal.dar
 import 'package:izithrift/features/catalog/screens/full_screen_zoom_viewer.dart';
 import 'package:izithrift/features/catalog/screens/product_detail_screen.dart';
 import 'package:izithrift/features/catalog/screens/public_seller_storefront_screen.dart';
+import 'package:izithrift/features/catalog/widgets/product_shop_reviews_section.dart';
+import 'package:izithrift/features/catalog/widgets/product_specifications_card.dart';
 import 'package:izithrift/features/home/models/auction_summary_model.dart';
 import 'package:izithrift/features/profile/repositories/profile_repository.dart';
 
@@ -366,13 +369,15 @@ void main() {
     // -------------------------------------------------------------------------
     // Test 2: ProductDetailScreen (M-PD-01) displays price breakdown and seller card
     // -------------------------------------------------------------------------
-    testWidgets('2. ProductDetailScreen hides PRD code, BR-PR-03 defect box and Escrow notice while displaying streamlined layout', (tester) async {
+    testWidgets('2. ProductDetailScreen supports image arrows, product specs, shop reviews, other shop items, and collapsible cost dropdown', (tester) async {
       final mockRepo = MockHomeCatalogRepository();
+      final mockStorefrontRepo = MockSellerStorefrontRepository();
       final fakeAuth = FakeAuthViewModel(fakeAuthenticated: true);
 
       final container = ProviderContainer(
         overrides: [
           homeCatalogRepositoryProvider.overrideWithValue(mockRepo),
+          sellerStorefrontRepositoryProvider.overrideWithValue(mockStorefrontRepo),
           authViewModelProvider.overrideWith((ref) => fakeAuth),
         ],
       );
@@ -396,6 +401,20 @@ void main() {
       expect(find.byTooltip('Chia sẻ'), findsOneWidget);
       expect(find.byTooltip('Giỏ hàng'), findsOneWidget);
 
+      // 1. Image carousel arrows: starts at 1/2 (next visible, prev hidden)
+      expect(find.text('1/2'), findsOneWidget);
+      expect(find.byKey(const Key('product_carousel_prev_arrow')), findsNothing);
+      expect(find.byKey(const Key('product_carousel_next_arrow')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('product_carousel_next_arrow')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // After tapping next: 2/2 (prev visible, next hidden)
+      expect(find.text('2/2'), findsOneWidget);
+      expect(find.byKey(const Key('product_carousel_prev_arrow')), findsOneWidget);
+      expect(find.byKey(const Key('product_carousel_next_arrow')), findsNothing);
+
       // Main Info Block: title & 1-row tags
       expect(find.text('Áo khoác da cừu Vintage Bomber 1980s'), findsOneWidget);
 
@@ -405,20 +424,54 @@ void main() {
       expect(find.textContaining('Escrow'), findsNothing);
 
       // Seller Block: shop name, Uy tín badge, Xem shop / Nhắn tin
-      expect(find.text('Tiệm Đồ Si Chú Bảy'), findsOneWidget);
-      expect(find.text('Uy tín'), findsOneWidget);
-      expect(find.text('Xem shop'), findsOneWidget);
+      expect(find.text('Tiệm Đồ Si Chú Bảy'), findsWidgets);
+      expect(find.text('Uy tín'), findsWidgets);
+      expect(find.text('Xem shop'), findsWidgets);
       expect(find.text('Nhắn tin'), findsOneWidget);
 
-      // Description & Compact Cost Summary above CTA
+      // 2. Specifications block (Size, Dài áo, Ngang áo, Chất liệu)
+      expect(find.byType(ProductSpecificationsCard), findsOneWidget);
+      expect(find.text('Thông số sản phẩm'), findsOneWidget);
+      expect(find.text('Size'), findsOneWidget);
+      expect(find.text('Dài áo'), findsOneWidget);
+      expect(find.text('Ngang áo'), findsOneWidget);
+      expect(find.text('Chất liệu'), findsOneWidget);
+      expect(find.text('Da cừu thật 100%'), findsOneWidget);
+
+      // 3. Description, Shop Reviews & Other Shop Products
       expect(find.text('Mô tả sản phẩm'), findsOneWidget);
+      expect(find.byType(ProductShopReviewsSection), findsOneWidget);
+      expect(find.text('Đánh giá shop'), findsOneWidget);
+      expect(
+        find.text('Áo da đẹp hơn mong đợi, form chuẩn vintage 90s, đóng gói cẩn thận!'),
+        findsOneWidget,
+      );
+      expect(find.text('Các sản phẩm khác của shop'), findsOneWidget);
+      expect(find.byType(RetroProductCard), findsOneWidget);
+
+      // 4. Collapsible PriceBreakdownCard dropdown: starts collapsed showing Tổng dự kiến
       expect(find.byType(PriceBreakdownCard), findsOneWidget);
-      expect(find.text('Tóm tắt chi phí'), findsOneWidget);
       expect(find.text('Tổng dự kiến'), findsOneWidget);
+      expect(find.text('Xem chi tiết chi phí'), findsOneWidget);
+
+      final toggleFinder = find.byKey(const Key('price_breakdown_dropdown_toggle'));
+      await tester.ensureVisible(toggleFinder);
+      await tester.pump();
+      await tester.tap(toggleFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // Expanded breakdown shows all fee rows and Tổng cộng
+      expect(find.text('Thu gọn chi tiết chi phí'), findsOneWidget);
+      expect(find.text('Tiền hàng'), findsOneWidget);
+      expect(find.text('Phí vận chuyển'), findsOneWidget);
+      expect(find.text('Phí bảo vệ người mua'), findsOneWidget);
+      expect(find.text('Tổng cộng'), findsOneWidget);
 
       // Buyer CTA buttons are active (isOwner == false)
       expect(find.text('Thêm vào giỏ'), findsOneWidget);
       expect(find.text('Mua ngay'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     // -------------------------------------------------------------------------

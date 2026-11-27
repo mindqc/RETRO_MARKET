@@ -7,8 +7,9 @@ import '../utils/vnd_formatter.dart';
 
 /// Price breakdown card (DEC-04).
 /// Buyer Protection Fee = round(itemSubtotal * 6% + 7.000đ)
-/// Styled in the approved warm editorial card + crimson total + pine escrow trust banner.
-class PriceBreakdownCard extends StatelessWidget {
+/// Supports both always-expanded mode (default for checkout/payment) and
+/// collapsible dropdown mode (`collapsible: true`) for Product Detail screens.
+class PriceBreakdownCard extends StatefulWidget {
   final num itemSubtotal;
   final num shippingFee;
   final num? customBuyerProtectionFee;
@@ -16,6 +17,8 @@ class PriceBreakdownCard extends StatelessWidget {
   final bool showSellerNetAmount;
   final bool showEscrowNotice;
   final bool isCompact;
+  final bool collapsible;
+  final bool initiallyExpanded;
 
   const PriceBreakdownCard({
     super.key,
@@ -26,6 +29,8 @@ class PriceBreakdownCard extends StatelessWidget {
     this.showSellerNetAmount = false,
     this.showEscrowNotice = true,
     this.isCompact = false,
+    this.collapsible = false,
+    this.initiallyExpanded = false,
   });
 
   /// DEC-04 fallback calculation.
@@ -41,12 +46,200 @@ class PriceBreakdownCard extends StatelessWidget {
       customGrandTotalAmount ?? itemSubtotal + shippingFee + buyerProtectionFee;
 
   @override
+  State<PriceBreakdownCard> createState() => _PriceBreakdownCardState();
+}
+
+class _PriceBreakdownCardState extends State<PriceBreakdownCard> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = !widget.collapsible || widget.initiallyExpanded;
+  }
+
+  @override
+  void didUpdateWidget(covariant PriceBreakdownCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.collapsible && !_isExpanded) {
+      _isExpanded = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final rowGap = isCompact ? 9.0 : 12.0;
+    if (widget.collapsible) {
+      return _buildCollapsibleCard();
+    }
+    return _buildStaticExpandedCard();
+  }
+
+  Widget _buildCollapsibleCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: AppColors.borderWarm),
+        boxShadow: DesignTokens.cardElevation,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            key: const Key('price_breakdown_dropdown_toggle'),
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppColors.creamBadgeSoft,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.creamBadgeBorder),
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_rounded,
+                      size: 18,
+                      color: AppColors.pineDeep,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tổng dự kiến',
+                          style: AppTypography.headingSmall.copyWith(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textCharcoal,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          _isExpanded
+                              ? 'Thu gọn chi tiết chi phí'
+                              : 'Xem chi tiết chi phí',
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 11.5,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    VndFormatter.format(widget.totalAmount),
+                    style: AppTypography.priceLarge.copyWith(
+                      fontSize: 18.5,
+                      color: AppColors.priceCrimson,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: _isExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.pineDeep,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(height: 1, color: AppColors.borderSubtle),
+                  const SizedBox(height: 11),
+                  _buildRow(
+                    label: 'Tiền hàng',
+                    value: VndFormatter.format(widget.itemSubtotal),
+                    icon: Icons.shopping_bag_outlined,
+                  ),
+                  const SizedBox(height: 9),
+                  _buildRow(
+                    label: 'Phí vận chuyển',
+                    value: widget.shippingFee == 0
+                        ? 'Miễn phí'
+                        : VndFormatter.format(widget.shippingFee),
+                    valueColor: widget.shippingFee == 0
+                        ? AppColors.verifiedLeaf
+                        : AppColors.textCharcoal,
+                    icon: Icons.local_shipping_outlined,
+                  ),
+                  const SizedBox(height: 9),
+                  _buildProtectionFeeRow(),
+                  if (widget.showSellerNetAmount) ...[
+                    const SizedBox(height: 9),
+                    _buildRow(
+                      label: 'Thực nhận của người bán',
+                      value: VndFormatter.format(widget.itemSubtotal),
+                      valueColor: AppColors.verifiedLeaf,
+                      icon: Icons.account_balance_wallet_outlined,
+                    ),
+                  ],
+                  const SizedBox(height: 11),
+                  const Divider(height: 1, color: AppColors.borderWarm),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tổng cộng',
+                        style: AppTypography.headingSmall.copyWith(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textCharcoal,
+                        ),
+                      ),
+                      Text(
+                        VndFormatter.format(widget.totalAmount),
+                        style: AppTypography.priceMedium.copyWith(
+                          fontSize: 16.5,
+                          color: AppColors.priceCrimson,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (widget.showEscrowNotice) ...[
+                    const SizedBox(height: 12),
+                    _buildEscrowNotice(),
+                  ],
+                ],
+              ),
+            ),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 220),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaticExpandedCard() {
+    final rowGap = widget.isCompact ? 9.0 : 12.0;
 
     return Container(
       padding: EdgeInsets.all(
-        isCompact ? DesignTokens.spaceMd + 2 : DesignTokens.spaceLg,
+        widget.isCompact ? DesignTokens.spaceMd + 2 : DesignTokens.spaceLg,
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
@@ -58,41 +251,41 @@ class PriceBreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
+          SizedBox(height: widget.isCompact ? 10 : DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderSubtle),
-          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
+          SizedBox(height: widget.isCompact ? 10 : DesignTokens.spaceMd),
           _buildRow(
             label: 'Tiền hàng',
-            value: VndFormatter.format(itemSubtotal),
+            value: VndFormatter.format(widget.itemSubtotal),
             icon: Icons.shopping_bag_outlined,
           ),
           SizedBox(height: rowGap),
           _buildRow(
             label: 'Phí vận chuyển',
-            value: shippingFee == 0
+            value: widget.shippingFee == 0
                 ? 'Miễn phí'
-                : VndFormatter.format(shippingFee),
-            valueColor: shippingFee == 0
+                : VndFormatter.format(widget.shippingFee),
+            valueColor: widget.shippingFee == 0
                 ? AppColors.verifiedLeaf
                 : AppColors.textCharcoal,
             icon: Icons.local_shipping_outlined,
           ),
           SizedBox(height: rowGap),
           _buildProtectionFeeRow(),
-          if (showSellerNetAmount) ...[
+          if (widget.showSellerNetAmount) ...[
             SizedBox(height: rowGap),
             _buildRow(
               label: 'Thực nhận của người bán',
-              value: VndFormatter.format(itemSubtotal),
+              value: VndFormatter.format(widget.itemSubtotal),
               valueColor: AppColors.verifiedLeaf,
               icon: Icons.account_balance_wallet_outlined,
             ),
           ],
-          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
+          SizedBox(height: widget.isCompact ? 10 : DesignTokens.spaceMd),
           const Divider(height: 1, color: AppColors.borderWarm),
-          SizedBox(height: isCompact ? 10 : DesignTokens.spaceMd),
+          SizedBox(height: widget.isCompact ? 10 : DesignTokens.spaceMd),
           _buildTotal(),
-          if (showEscrowNotice) ...[
+          if (widget.showEscrowNotice) ...[
             const SizedBox(height: DesignTokens.spaceMd),
             _buildEscrowNotice(),
           ],
@@ -102,7 +295,7 @@ class PriceBreakdownCard extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    if (isCompact) {
+    if (widget.isCompact) {
       return Row(
         children: [
           const Icon(
@@ -189,9 +382,9 @@ class PriceBreakdownCard extends StatelessWidget {
   Widget _buildProtectionFeeRow() {
     return _buildRow(
       label: 'Phí bảo vệ người mua',
-      value: VndFormatter.format(buyerProtectionFee),
+      value: VndFormatter.format(widget.buyerProtectionFee),
       icon: Icons.shield_outlined,
-      tooltip: showEscrowNotice
+      tooltip: widget.showEscrowNotice
           ? 'DEC-04: 6% giá trị hàng + 7.000đ phí giao dịch an toàn ký quỹ Escrow.'
           : '6% giá trị hàng + 7.000đ phí bảo vệ quyền lợi người mua.',
     );
@@ -256,7 +449,7 @@ class PriceBreakdownCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 14,
-        vertical: isCompact ? 11 : 14,
+        vertical: widget.isCompact ? 11 : 14,
       ),
       decoration: BoxDecoration(
         color: AppColors.creamBadgeSoft,
@@ -271,13 +464,13 @@ class PriceBreakdownCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isCompact ? 'Tổng dự kiến' : 'Tổng thanh toán',
+                  widget.isCompact ? 'Tổng dự kiến' : 'Tổng thanh toán',
                   style: AppTypography.headingSmall.copyWith(
-                    fontSize: isCompact ? 15 : 16,
+                    fontSize: widget.isCompact ? 15 : 16,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                if (!isCompact) ...[
+                if (!widget.isCompact) ...[
                   const SizedBox(height: 2),
                   Text(
                     'Đã bao gồm các khoản phí',
@@ -292,10 +485,10 @@ class PriceBreakdownCard extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              VndFormatter.format(totalAmount),
+              VndFormatter.format(widget.totalAmount),
               textAlign: TextAlign.end,
               style: AppTypography.priceLarge.copyWith(
-                fontSize: isCompact ? 20 : 22,
+                fontSize: widget.isCompact ? 20 : 22,
                 color: AppColors.priceCrimson,
                 fontWeight: FontWeight.w900,
               ),
