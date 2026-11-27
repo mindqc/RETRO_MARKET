@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
@@ -52,46 +51,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const IzithriftLogo.iconOnly(iconSize: 96),
-                const SizedBox(height: DesignTokens.spaceLg),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'izithrift',
-                      style: AppTypography.brandWordmark.copyWith(
-                        color: AppColors.pineDeep,
-                        fontSize: 38,
-                        letterSpacing: -1.0,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.auto_awesome,
-                      size: 20,
-                      color: AppColors.starGold,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: DesignTokens.spaceSm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.creamBadgeSoft,
-                    borderRadius: DesignTokens.borderRadiusFull,
-                    border: Border.all(color: AppColors.creamBadgeBorder),
-                  ),
-                  child: Text(
-                    'Kho đồ secondhand & vintage tuyển chọn',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.creamBadgeText,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                const IzithriftLogo.stacked(
+                  iconSize: 92,
+                  fontSize: 36,
+                  showTagline: true,
+                  tagline: 'Kho đồ secondhand & vintage tuyển chọn',
                 ),
                 const SizedBox(height: DesignTokens.space2xl),
                 const SizedBox(

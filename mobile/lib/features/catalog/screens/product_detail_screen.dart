@@ -9,6 +9,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
 import '../../../core/widgets/defect_authenticity_box.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/price_breakdown_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
@@ -16,7 +17,6 @@ import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../../../core/widgets/verification_badge.dart';
 import '../../auth/viewmodels/auth_view_model.dart';
-import '../../auth/widgets/auth_login_bottom_sheet.dart';
 import '../../engagement/repositories/communication_engagement_repository.dart';
 import '../models/product_detail_model.dart';
 import '../models/product_image_model.dart';
@@ -64,66 +64,36 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        title: Text(
-          state.data != null ? state.data!.productCode : 'Chi tiết sản phẩm',
-          style: AppTypography.headingSmall.copyWith(fontSize: 16),
-        ),
-        actions: [
-          if (state.data != null) ...[
-            IconButton(
-              icon: Icon(
-                state.data!.isFavorited
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: state.data!.isFavorited
-                    ? AppColors.priceCrimson
-                    : AppColors.textCharcoal,
-              ),
-              tooltip: 'Yêu thích',
-              onPressed: () => viewModel.toggleFavorite(context),
-            ),
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Chia sẻ',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Đã sao chép liên kết sản phẩm ${state.data!.title}',
-                    ),
-                    backgroundColor: AppColors.pineDeep,
-                  ),
-                );
-              },
-            ),
-            RetroHeaderIconButton(
-              icon: Icons.shopping_bag_outlined,
-              tooltip: 'Giỏ hàng',
-              onPressed: () {
-                final allowed = requireAuthOrPrompt(
-                  context,
-                  ref,
-                  featureTitle: 'Đăng nhập để mở Giỏ hàng',
-                  description:
-                      'Xem lại các món đồ si đã chọn, kiểm tra phí vận chuyển và tiến hành thanh toán an toàn.',
-                  intendedTarget: const PendingNavigationTarget(
-                    route: AppRoutes.cart,
-                  ),
-                  icon: Icons.shopping_bag_outlined,
-                );
-                if (allowed) {
-                  context.push(AppRoutes.cart);
-                }
-              },
-            ),
-            const SizedBox(width: 4),
-          ],
-        ],
+      appBar: IzithriftGlobalAppBar.subPage(
+        title: state.data != null ? state.data!.productCode : 'Chi tiết sản phẩm',
+        showNotificationsAction: false,
+        showCartAction: state.data != null,
+        extraActions: state.data != null
+            ? [
+                RetroHeaderIconButton(
+                  icon: state.data!.isFavorited
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  tooltip: 'Yêu thích',
+                  isActive: state.data!.isFavorited,
+                  onPressed: () => viewModel.toggleFavorite(context),
+                ),
+                RetroHeaderIconButton(
+                  icon: Icons.share_outlined,
+                  tooltip: 'Chia sẻ',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Đã sao chép liên kết sản phẩm ${state.data!.title}',
+                        ),
+                        backgroundColor: AppColors.pineDeep,
+                      ),
+                    );
+                  },
+                ),
+              ]
+            : null,
       ),
       body: state.when(
         initial: () => const Center(

@@ -6,6 +6,10 @@ import 'package:izithrift/core/theme/design_tokens.dart';
 import 'package:izithrift/core/theme/app_typography.dart';
 import 'package:izithrift/core/theme/seasonal_decor_provider.dart';
 import 'package:izithrift/core/widgets/condition_badge.dart';
+import 'package:izithrift/core/widgets/fashion_category_icon.dart';
+import 'package:izithrift/core/widgets/izithrift_global_app_bar.dart';
+import 'package:izithrift/core/widgets/izithrift_logo.dart';
+import 'package:izithrift/core/widgets/retro_product_card.dart';
 import 'package:izithrift/core/widgets/verification_badge.dart';
 import 'package:izithrift/core/widgets/status_pill_badge.dart';
 import 'package:izithrift/core/widgets/price_breakdown_card.dart';
@@ -241,6 +245,115 @@ void main() {
       // Overlay container should no longer be rendered
       expect(find.byKey(const Key('seasonal_decor_overlay_active')), findsNothing);
       expect(find.text('Trang chủ Retro Market'), findsOneWidget);
+    });
+  });
+
+  group('Batch 2: Shared Logo, Upper Navigation, Fashion Icons & Compact Card Tests', () {
+    testWidgets('IzithriftLogo renders horizontal, iconOnly, and stacked variants', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                IzithriftLogo(),
+                IzithriftLogo.iconOnly(iconSize: 32),
+                IzithriftLogo.stacked(
+                  iconSize: 64,
+                  fontSize: 28,
+                  tagline: 'Kho đồ secondhand & vintage tuyển chọn',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('izithrift'), findsNWidgets(2));
+      expect(find.text('Kho đồ secondhand & vintage tuyển chọn'), findsOneWidget);
+    });
+
+    testWidgets('IzithriftGlobalAppBar keeps unified height across root and subPage modes', (tester) async {
+      const rootBar = IzithriftGlobalAppBar(
+        activeDestination: IzithriftUpperNavDestination.home,
+      );
+      const subBar = IzithriftGlobalAppBar.subPage(
+        title: 'Danh mục sản phẩm',
+        showBrandMark: true,
+        activeDestination: IzithriftUpperNavDestination.discover,
+      );
+
+      expect(rootBar.preferredSize.height, subBar.preferredSize.height);
+      expect(IzithriftGlobalAppBar.toolbarHeight, 58.0);
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: subBar,
+              body: SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Danh mục sản phẩm'), findsOneWidget);
+      expect(find.byTooltip('Quay lại'), findsOneWidget);
+      expect(find.byTooltip('Thông báo'), findsOneWidget);
+      expect(find.byTooltip('Giỏ hàng'), findsOneWidget);
+    });
+
+    testWidgets('FashionCategoryIcon renders all 12 secondhand fashion glyphs', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Wrap(
+              children: FashionCategoryGlyph.values
+                  .map(
+                    (g) => FashionCategoryIcon(
+                      glyph: g,
+                      color: AppColors.pineDeep,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byType(FashionCategoryIcon),
+        findsNWidgets(FashionCategoryGlyph.values.length),
+      );
+    });
+
+    testWidgets('Compact RetroProductCard renders distance, freshness, and verified shop metadata tightly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 170,
+                height: 252,
+                child: RetroProductCard(
+                  id: 101,
+                  title: 'Áo Khoác Denim Levi\'s 90s Vintage',
+                  price: 450000,
+                  condition: 'LIKE_NEW',
+                  categoryName: 'Denim Jacket',
+                  distanceLabel: '1.2 km',
+                  showConditionPercent: true,
+                  sellerName: 'Tiệm Đồ Si Sài Gòn',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('1.2 km'), findsOneWidget);
+      expect(find.text('Tiệm Đồ Si Sài Gòn'), findsOneWidget);
+      expect(find.text('Uy tín'), findsOneWidget);
+      expect(find.byIcon(Icons.verified_rounded), findsOneWidget);
     });
   });
 }

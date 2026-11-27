@@ -5,6 +5,8 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/auth_view_model.dart';
 
@@ -63,10 +65,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        title: const RetroBrandWordmark(titleText: 'izithrift'),
-        actions: [
+      appBar: IzithriftGlobalAppBar.subPage(
+        showBackButton: false,
+        showNotificationsAction: false,
+        showCartAction: false,
+        titleWidget: const IzithriftLogo(iconSize: 28, fontSize: 19),
+        extraActions: [
           TextButton(
             onPressed: () => _completeOnboarding(AppRoutes.home),
             child: Text(

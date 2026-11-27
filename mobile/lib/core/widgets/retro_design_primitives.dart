@@ -23,6 +23,14 @@ class RetroBrandWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (titleText == 'izithrift') {
+      return IzithriftLogo(
+        iconSize: 28,
+        fontSize: 19,
+        wordmarkText: titleText,
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -33,7 +41,10 @@ class RetroBrandWordmark extends StatelessWidget {
             titleText,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.brandWordmark.copyWith(fontSize: 19),
+            style: AppTypography.brandWordmark.copyWith(
+              fontSize: 18,
+              color: AppColors.pineDeep,
+            ),
           ),
         ),
         if (showSeasonalAccent) ...[
@@ -49,19 +60,24 @@ class RetroBrandWordmark extends StatelessWidget {
   }
 }
 
-/// Outlined top-bar icon button with optional Terracotta notification/cart counter badge.
+/// Standardized top-bar icon button with optional Terracotta notification/cart
+/// counter badge and active Pine Green state indicator.
 class RetroHeaderIconButton extends StatelessWidget {
   final IconData icon;
+  final IconData? activeIcon;
   final String tooltip;
   final VoidCallback onPressed;
   final int badgeCount;
+  final bool isActive;
 
   const RetroHeaderIconButton({
     super.key,
     required this.icon,
+    this.activeIcon,
     required this.tooltip,
     required this.onPressed,
     this.badgeCount = 0,
+    this.isActive = false,
   });
 
   @override
@@ -69,22 +85,46 @@ class RetroHeaderIconButton extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        IconButton(
-          icon: Icon(icon, color: AppColors.textCharcoal, size: 23),
-          tooltip: tooltip,
-          onPressed: onPressed,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Material(
+            color: isActive
+                ? AppColors.primaryForestGreenLight
+                : Colors.transparent,
+            shape: CircleBorder(
+              side: isActive
+                  ? BorderSide(
+                      color: AppColors.pineDeep.withValues(alpha: 0.28),
+                      width: 1,
+                    )
+                  : BorderSide.none,
+            ),
+            child: IconButton(
+              icon: Icon(
+                isActive ? (activeIcon ?? icon) : icon,
+                color: isActive ? AppColors.pineDeep : AppColors.textCharcoal,
+                size: 22,
+              ),
+              tooltip: tooltip,
+              onPressed: onPressed,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+              padding: EdgeInsets.zero,
+            ),
+          ),
         ),
         if (badgeCount > 0)
           Positioned(
-            top: 6,
-            right: 6,
+            top: 3,
+            right: 3,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                decoration: BoxDecoration(
                   color: AppColors.ctaTerracotta,
                   shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surfaceCard, width: 1.2),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -92,7 +132,7 @@ class RetroHeaderIconButton extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: AppTypography.fontBody,
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     height: 1.1,
                   ),

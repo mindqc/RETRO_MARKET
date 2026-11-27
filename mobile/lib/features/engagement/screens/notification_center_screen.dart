@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../models/notification_item_model.dart';
 import '../viewmodels/notification_view_model.dart';
@@ -34,22 +34,12 @@ class _NotificationCenterScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textCharcoal,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Thông Báo',
-          style: AppTypography.headingMedium.copyWith(fontSize: 20),
-        ),
-        actions: [
+      appBar: IzithriftGlobalAppBar.subPage(
+        title: 'Thông Báo',
+        activeDestination: IzithriftUpperNavDestination.notifications,
+        showNotificationsAction: true,
+        showCartAction: false,
+        extraActions: [
           if (notifVm.unreadCount > 0)
             TextButton(
               onPressed: () => notifVm.markAllAsRead(),
@@ -65,7 +55,6 @@ class _NotificationCenterScreenState
                 ),
               ),
             ),
-          const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),

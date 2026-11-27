@@ -74,13 +74,13 @@ class RetroProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Product Photo Frame with Compact Overlay Badges ───────────
+              // ── Compact Product Photo Frame with Crisp Overlay Badges ─────
               Padding(
-                padding: const EdgeInsets.fromLTRB(5, 5, 5, 0),
+                padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: AspectRatio(
-                    aspectRatio: 1.0,
+                    aspectRatio: 1.08,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -94,14 +94,14 @@ class RetroProductCard extends StatelessWidget {
                         // Top-left category tag or verification emblem
                         if (categoryName != null || showConditionPercent)
                           Positioned(
-                            top: 6,
-                            left: 6,
+                            top: 5,
+                            left: 5,
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 108),
+                              constraints: const BoxConstraints(maxWidth: 104),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 2.5,
+                                  horizontal: 6.5,
+                                  vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.pineDeep.withValues(
@@ -115,7 +115,7 @@ class RetroProductCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontFamily: AppTypography.fontBody,
-                                    fontSize: 9.5,
+                                    fontSize: 9.2,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                     height: 1.1,
@@ -129,10 +129,10 @@ class RetroProductCard extends StatelessWidget {
                             verificationStatus != 'NONE' &&
                             verificationStatus != 'UNVERIFIED')
                           Positioned(
-                            top: 6,
-                            left: 6,
+                            top: 5,
+                            left: 5,
                             child: Container(
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(3.5),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.92),
                                 shape: BoxShape.circle,
@@ -147,8 +147,8 @@ class RetroProductCard extends StatelessWidget {
                         // Top-right circular favorite button
                         if (onLikeToggle != null)
                           Positioned(
-                            top: 5,
-                            right: 5,
+                            top: 4,
+                            right: 4,
                             child: Material(
                               color: isLiked
                                   ? Colors.white.withValues(alpha: 0.94)
@@ -158,12 +158,12 @@ class RetroProductCard extends StatelessWidget {
                                 tooltip: isLiked
                                     ? 'Bỏ khỏi yêu thích'
                                     : 'Thêm vào yêu thích',
-                                iconSize: 15,
+                                iconSize: 14.5,
                                 padding: EdgeInsets.zero,
                                 visualDensity: VisualDensity.compact,
                                 constraints: const BoxConstraints.tightFor(
-                                  width: 28,
-                                  height: 28,
+                                  width: 26,
+                                  height: 26,
                                 ),
                                 icon: Icon(
                                   isLiked
@@ -179,13 +179,13 @@ class RetroProductCard extends StatelessWidget {
                           ),
                         // Bottom-left freshness pill ("Độ mới: 95%") or ConditionBadge
                         Positioned(
-                          bottom: isOwner ? 26 : 6,
-                          left: 6,
+                          bottom: isOwner ? 24 : 5,
+                          left: 5,
                           child: showConditionPercent
                               ? Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 2.5,
+                                    horizontal: 6.5,
+                                    vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppColors.creamBadgeBg.withValues(
@@ -194,7 +194,7 @@ class RetroProductCard extends StatelessWidget {
                                     borderRadius: DesignTokens.borderRadiusFull,
                                     border: Border.all(
                                       color: AppColors.creamBadgeBorder,
-                                      width: 0.9,
+                                      width: 0.85,
                                     ),
                                   ),
                                   child: Row(
@@ -202,17 +202,17 @@ class RetroProductCard extends StatelessWidget {
                                     children: [
                                       const Icon(
                                         Icons.auto_awesome_rounded,
-                                        size: 9.5,
+                                        size: 9,
                                         color: AppColors.ctaTerracotta,
                                       ),
-                                      const SizedBox(width: 3),
+                                      const SizedBox(width: 2.5),
                                       Text(
                                         freshnessText,
                                         style: const TextStyle(
                                           fontFamily: AppTypography.fontBody,
                                           color: AppColors.creamBadgeText,
                                           fontWeight: FontWeight.w800,
-                                          fontSize: 9.8,
+                                          fontSize: 9.5,
                                           height: 1.1,
                                         ),
                                       ),
@@ -232,7 +232,7 @@ class RetroProductCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: DesignTokens.spaceSm,
-                                vertical: 3,
+                                vertical: 2.5,
                               ),
                               color: AppColors.pineDeep.withValues(alpha: 0.92),
                               child: Text(
@@ -242,7 +242,7 @@ class RetroProductCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.textLight,
-                                  fontSize: 9.5,
+                                  fontSize: 9.2,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -254,131 +254,129 @@ class RetroProductCard extends StatelessWidget {
                 ),
               ),
 
-              // ── Compact Copy, Strong Price Hierarchy & Tight Metadata ─────
+              // ── Compact Copy, Strong Price Hierarchy & Tight Metadata Cluster
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 7),
+                  padding: const EdgeInsets.fromLTRB(7, 5, 7, 5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontSize: 12.2,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textCharcoal,
-                              height: 1.22,
-                            ),
-                          ),
-                          const SizedBox(height: 3.5),
-                          Text(
-                            VndFormatter.format(price),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.priceMedium.copyWith(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.priceCrimson,
-                              height: 1.15,
-                            ),
-                          ),
-                          if (distanceLabel != null) ...[
-                            const SizedBox(height: 3),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_rounded,
-                                  size: 11.5,
-                                  color: AppColors.ctaTerracotta,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  distanceLabel!,
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 10.2,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textCharcoal,
-                                    height: 1.1,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Container(
-                                  width: 2.5,
-                                  height: 2.5,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.borderWarm,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  child: Text(
-                                    freshnessText,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.caption.copyWith(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.verifiedLeaf,
-                                      height: 1.1,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontSize: 11.8,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textCharcoal,
+                          height: 1.18,
+                        ),
                       ),
-                      if (sellerName != null && sellerName!.isNotEmpty)
+                      const SizedBox(height: 2.5),
+                      Text(
+                        VndFormatter.format(price),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.priceMedium.copyWith(
+                          fontSize: 13.8,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.priceCrimson,
+                          height: 1.12,
+                        ),
+                      ),
+                      const SizedBox(height: 3.5),
+                      // Distance + Condition Freshness + Verified Shop tightly grouped
+                      if (distanceLabel != null) ...[
                         Row(
                           children: [
-                            Container(
-                              width: 15,
-                              height: 15,
-                              decoration: BoxDecoration(
-                                color: AppColors.categoryCircleStart,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.creamBadgeBorder,
-                                  width: 0.7,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.storefront_rounded,
-                                size: 9,
-                                color: AppColors.pineDeep,
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 11,
+                              color: AppColors.ctaTerracotta,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              distanceLabel!,
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textCharcoal,
+                                height: 1.1,
                               ),
                             ),
                             const SizedBox(width: 4),
+                            Container(
+                              width: 2.5,
+                              height: 2.5,
+                              decoration: const BoxDecoration(
+                                color: AppColors.borderWarm,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                freshnessText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.caption.copyWith(
+                                  fontSize: 9.8,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.verifiedLeaf,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                      ],
+                      if (sellerName != null && sellerName!.isNotEmpty)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 11.5,
+                              color: AppColors.verifiedLeaf,
+                            ),
+                            const SizedBox(width: 3),
                             Expanded(
                               child: Text(
                                 sellerName!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption.copyWith(
-                                  fontSize: 10.2,
+                                  fontSize: 10,
                                   color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                   height: 1.1,
                                 ),
                               ),
                             ),
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 11.5,
-                              color: AppColors.verifiedLeaf,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4.5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.verifiedLeafBg,
+                                borderRadius: DesignTokens.borderRadiusFull,
+                              ),
+                              child: Text(
+                                'Uy tín',
+                                style: AppTypography.caption.copyWith(
+                                  fontSize: 8.8,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.verifiedLeaf,
+                                  height: 1.1,
+                                ),
+                              ),
                             ),
                           ],
                         )
                       else
-                        const RetroVerifiedShopChip(fontSize: 10),
+                        const RetroVerifiedShopChip(fontSize: 9.8),
                     ],
                   ),
                 ),

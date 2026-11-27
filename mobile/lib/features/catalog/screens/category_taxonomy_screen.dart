@@ -6,13 +6,20 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/fashion_category_icon.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../models/taxonomy_model.dart';
 import '../viewmodels/catalog_search_view_model.dart';
 
-/// M-DS-01: Category & Brand Directory Screen (Tab 2 Root)
+/// M-DS-01: Category & Brand Directory Screen
 class CategoryTaxonomyScreen extends ConsumerStatefulWidget {
-  const CategoryTaxonomyScreen({super.key});
+  final int initialTabIndex;
+
+  const CategoryTaxonomyScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
 
   @override
   ConsumerState<CategoryTaxonomyScreen> createState() =>
@@ -33,10 +40,25 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2,
+      initialIndex: widget.initialTabIndex.clamp(0, 1),
+      vsync: this,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(catalogSearchViewModelProvider).loadTaxonomy();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoryTaxonomyScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTabIndex != widget.initialTabIndex) {
+      final target = widget.initialTabIndex.clamp(0, 1);
+      if (_tabController.index != target) {
+        _tabController.animateTo(target);
+      }
+    }
   }
 
   @override
@@ -47,36 +69,6 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
 
   Color _categoryColor(int index) => _palette[index % _palette.length];
 
-  IconData _categoryIcon(String name, {bool hasChildren = false}) {
-    final value = name.toLowerCase();
-    if (value.contains('áo') ||
-        value.contains('quần') ||
-        value.contains('váy') ||
-        value.contains('đồ')) {
-      if (value.contains('áo khoác') ||
-          value.contains('coat') ||
-          value.contains('dạ')) {
-        return Icons.checkroom_rounded;
-      }
-      return Icons.dry_cleaning_rounded;
-    }
-    if (value.contains('giày') || value.contains('dép')) {
-      return Icons.hiking_rounded;
-    }
-    if (value.contains('túi') || value.contains('ví')) {
-      return Icons.shopping_bag_outlined;
-    }
-    if (value.contains('đồng hồ')) return Icons.watch_outlined;
-    if (value.contains('trang sức')) return Icons.diamond_outlined;
-    if (value.contains('kính')) return Icons.visibility_outlined;
-    if (value.contains('đồ gia dụng')) return Icons.chair_outlined;
-    if (value.contains('sưu tầm') || value.contains('cổ')) {
-      return Icons.album_outlined;
-    }
-    if (value.contains('phụ kiện')) return Icons.style_outlined;
-    return hasChildren ? Icons.grid_view_rounded : Icons.inventory_2_outlined;
-  }
-
   @override
   Widget build(BuildContext context) {
     final searchVM = ref.watch(catalogSearchViewModelProvider);
@@ -84,26 +76,19 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: DesignTokens.spaceLg,
-        title: const RetroBrandWordmark(titleText: 'izithrift • Khám phá'),
-        actions: [
-          RetroHeaderIconButton(
-            icon: Icons.shopping_bag_outlined,
-            tooltip: 'Giỏ hàng',
-            onPressed: () => context.push(AppRoutes.cart),
-          ),
-          const SizedBox(width: DesignTokens.spaceSm),
-        ],
+      appBar: IzithriftGlobalAppBar.subPage(
+        titleWidget: const RetroBrandWordmark(
+          titleText: 'izithrift • Khám phá',
+        ),
+        activeDestination: IzithriftUpperNavDestination.discover,
+        showNotificationsAction: true,
+        showCartAction: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(112),
+          preferredSize: const Size.fromHeight(114),
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
                 child: RetroSearchPill(
                   placeholder: 'Tìm món đồ vintage bạn đang săn...',
                   onTap: () => context.push(AppRoutes.search),
@@ -127,7 +112,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                     ),
                     dividerColor: Colors.transparent,
                     indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: AppColors.priceCrimson,
+                    labelColor: AppColors.pineDeep,
                     unselectedLabelColor: AppColors.textMuted,
                     labelStyle: const TextStyle(
                       fontFamily: AppTypography.fontBody,
@@ -136,12 +121,16 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                     ),
                     tabs: const [
                       Tab(height: 36, text: 'Danh mục sản phẩm'),
-                      Tab(height: 36, text: 'Thương hiệu retro'),
+                      Tab(height: 36, text: 'Thương hiệu phổ biến'),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 10),
+              const ColoredBox(
+                color: AppColors.borderWarm,
+                child: SizedBox(height: 1, width: double.infinity),
+              ),
             ],
           ),
         ),
@@ -189,9 +178,8 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
           final cat = entry.value;
           final hasChildren = cat.hasChildren as bool;
           final color = _categoryColor(index);
-          final icon = _categoryIcon(
+          final glyph = FashionCategoryGlyph.fromCategoryName(
             cat.name as String,
-            hasChildren: hasChildren,
           );
 
           return Padding(
@@ -200,7 +188,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
               context,
               category: cat,
               color: color,
-              icon: icon,
+              glyph: glyph,
               hasChildren: hasChildren,
             ),
           );
@@ -215,7 +203,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     BuildContext context, {
     required dynamic category,
     required Color color,
-    required IconData icon,
+    required FashionCategoryGlyph glyph,
     required bool hasChildren,
   }) {
     final name = category.name as String;
@@ -243,7 +231,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                   vertical: 6,
                 ),
                 childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                leading: _buildRadialCategoryIcon(icon, color),
+                leading: _buildRadialCategoryIcon(glyph, color),
                 title: Text(
                   name,
                   style: const TextStyle(
@@ -296,7 +284,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
                 padding: const EdgeInsets.all(14),
                 child: Row(
                   children: [
-                    _buildRadialCategoryIcon(icon, color),
+                    _buildRadialCategoryIcon(glyph, color),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
@@ -331,7 +319,7 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
     );
   }
 
-  Widget _buildRadialCategoryIcon(IconData icon, Color color) {
+  Widget _buildRadialCategoryIcon(FashionCategoryGlyph glyph, Color color) {
     return Container(
       width: 50,
       height: 50,
@@ -345,7 +333,8 @@ class _CategoryTaxonomyScreenState extends ConsumerState<CategoryTaxonomyScreen>
         ),
         border: Border.all(color: AppColors.creamBadgeBorder, width: 1.1),
       ),
-      child: Icon(icon, size: 24, color: color),
+      alignment: Alignment.center,
+      child: FashionCategoryIcon(glyph: glyph, size: 24, color: color),
     );
   }
 

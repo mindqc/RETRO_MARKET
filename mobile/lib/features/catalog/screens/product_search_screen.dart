@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_product_card.dart';
 import '../../../core/widgets/state_feedback_views.dart';
 import '../viewmodels/catalog_search_view_model.dart';
@@ -79,32 +80,29 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: DesignTokens.borderRadiusFull,
-              boxShadow: DesignTokens.cardElevation,
-            ),
+      appBar: IzithriftGlobalAppBar.subPage(
+        showNotificationsAction: false,
+        showCartAction: false,
+        titleWidget: Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: SizedBox(
+            height: 40,
             child: TextField(
               controller: _searchController,
               textInputAction: TextInputAction.search,
               onSubmitted: (value) => searchVM.setKeyword(value),
               onChanged: (_) => setState(() {}),
+              style: AppTypography.bodyMedium.copyWith(fontSize: 13.5),
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm trên izithrift...',
                 hintStyle: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textMuted,
+                  fontSize: 13.5,
                 ),
                 prefixIcon: const Icon(
                   Icons.search_rounded,
-                  color: AppColors.textCharcoal,
-                  size: 20,
+                  color: AppColors.pineDeep,
+                  size: 19,
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -122,13 +120,13 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                         icon: const Icon(
                           Icons.tune_rounded,
                           size: 19,
-                          color: AppColors.textCharcoal,
+                          color: AppColors.pineDeep,
                         ),
                         onPressed: () => _openFilterBottomSheet(searchVM),
                       ),
                 filled: true,
-                fillColor: AppColors.surfaceCard,
-                contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                fillColor: AppColors.canvasParchment,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 border: OutlineInputBorder(
                   borderRadius: DesignTokens.borderRadiusFull,
                   borderSide: const BorderSide(color: AppColors.borderWarm),
@@ -350,10 +348,10 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                 ? 3
                 : 2;
         final cardAspectRatio = crossAxisCount == 4
-            ? 0.66
+            ? 0.69
             : crossAxisCount == 3
-                ? 0.68
-                : 0.60;
+                ? 0.70
+                : 0.67;
 
         return RefreshIndicator(
           onRefresh: () => searchVM.search(),

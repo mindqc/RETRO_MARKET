@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/home_view_model.dart';
 
@@ -60,18 +61,17 @@ class _FeaturedSellersAndCollectionsScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: const Text('Tiệm đồ si & Bộ sưu tập'),
-        actions: [
+      appBar: IzithriftGlobalAppBar.subPage(
+        title: 'Tiệm đồ si & Bộ sưu tập',
+        showBrandMark: true,
+        showNotificationsAction: false,
+        showCartAction: true,
+        extraActions: [
           RetroHeaderIconButton(
             icon: Icons.favorite_border_rounded,
             tooltip: 'Đã lưu',
             onPressed: () => context.push(AppRoutes.favorites),
           ),
-          const SizedBox(width: 6),
         ],
       ),
       body: RetroAmbientSnowflakes(

@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-/// Custom brand mark and wordmark for `izithrift`.
+/// Shared brand mark and wordmark for `izithrift`.
 ///
-/// Combines a stylized vintage clothing tag + circular reuse arc + subtle
-/// winter-star sparkle in Deep Pine Green (#174D38), Vintage Gold (#D6AE55),
-/// and Terracotta (#C65335). Cleanly scalable from 24px app bars to splash screens.
+/// Combines a distinctive thrift/vintage emblem (Deep Pine badge + Vintage Gold
+/// stitched inner frame + warm-cream garment hanger & price tag silhouette +
+/// Terracotta eyelet & circular reuse arc) with crisp `izithrift` wordmark
+/// typography.
+///
+/// Supports horizontal ([IzithriftLogo]), emblem-only ([IzithriftLogo.iconOnly]),
+/// and centered vertical hero ([IzithriftLogo.stacked]) lockups.
 class IzithriftLogo extends StatelessWidget {
   final double iconSize;
   final double fontSize;
@@ -16,6 +20,8 @@ class IzithriftLogo extends StatelessWidget {
   final bool onDarkSurface;
   final String wordmarkText;
   final bool showTagline;
+  final String tagline;
+  final bool stacked;
 
   const IzithriftLogo({
     super.key,
@@ -25,7 +31,8 @@ class IzithriftLogo extends StatelessWidget {
     this.onDarkSurface = false,
     this.wordmarkText = 'izithrift',
     this.showTagline = false,
-  });
+    this.tagline = 'Đồ si tuyển chọn',
+  }) : stacked = false;
 
   const IzithriftLogo.iconOnly({
     super.key,
@@ -34,7 +41,20 @@ class IzithriftLogo extends StatelessWidget {
   })  : fontSize = 0,
         showWordmark = false,
         wordmarkText = 'izithrift',
-        showTagline = false;
+        showTagline = false,
+        tagline = 'Đồ si tuyển chọn',
+        stacked = false;
+
+  const IzithriftLogo.stacked({
+    super.key,
+    this.iconSize = 84,
+    this.fontSize = 34,
+    this.onDarkSurface = false,
+    this.wordmarkText = 'izithrift',
+    this.showTagline = true,
+    this.tagline = 'Kho đồ secondhand & vintage tuyển chọn',
+  })  : showWordmark = true,
+        stacked = true;
 
   @override
   Widget build(BuildContext context) {
@@ -52,56 +72,98 @@ class IzithriftLogo extends StatelessWidget {
 
     final textColor = onDarkSurface ? Colors.white : AppColors.pineDeep;
     final subColor = onDarkSurface
-        ? Colors.white.withValues(alpha: 0.78)
+        ? Colors.white.withValues(alpha: 0.80)
         : AppColors.textMuted;
+
+    final wordmarkRow = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          wordmarkText,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.brandWordmark.copyWith(
+            fontSize: fontSize,
+            color: textColor,
+            letterSpacing: fontSize >= 28 ? -0.9 : -0.5,
+            height: 1.05,
+          ),
+        ),
+        Container(
+          width: (fontSize * 0.23).clamp(4.0, 7.0),
+          height: (fontSize * 0.23).clamp(4.0, 7.0),
+          margin: const EdgeInsets.only(left: 2.5),
+          decoration: const BoxDecoration(
+            color: AppColors.ctaTerracotta,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ],
+    );
+
+    if (stacked) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          badge,
+          SizedBox(height: (iconSize * 0.18).clamp(10.0, 18.0)),
+          wordmarkRow,
+          if (showTagline) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: onDarkSurface
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : AppColors.creamBadgeSoft,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: onDarkSurface
+                      ? AppColors.starGold.withValues(alpha: 0.45)
+                      : AppColors.creamBadgeBorder,
+                ),
+              ),
+              child: Text(
+                tagline,
+                textAlign: TextAlign.center,
+                style: AppTypography.caption.copyWith(
+                  fontSize: 11.5,
+                  color: onDarkSurface
+                      ? AppColors.creamBadgeBg
+                      : AppColors.creamBadgeText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         badge,
-        SizedBox(width: iconSize * 0.28),
+        SizedBox(width: (iconSize * 0.26).clamp(7.0, 12.0)),
         Flexible(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    wordmarkText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.brandWordmark.copyWith(
-                      fontSize: fontSize,
-                      color: textColor,
-                      letterSpacing: -0.5,
-                      height: 1.05,
-                    ),
-                  ),
-                  Container(
-                    width: (fontSize * 0.24).clamp(4.0, 6.5),
-                    height: (fontSize * 0.24).clamp(4.0, 6.5),
-                    margin: const EdgeInsets.only(left: 2),
-                    decoration: const BoxDecoration(
-                      color: AppColors.ctaTerracotta,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ),
+              wordmarkRow,
               if (showTagline)
                 Text(
-                  'Đồ si tuyển chọn',
+                  tagline,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.caption.copyWith(
-                    fontSize: (fontSize * 0.52).clamp(10.0, 13.0),
+                    fontSize: (fontSize * 0.50).clamp(10.0, 12.5),
                     color: subColor,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     height: 1.2,
                   ),
                 ),
@@ -124,71 +186,103 @@ class _IzithriftMarkPainter extends CustomPainter {
     final rect = Rect.fromLTWH(0, 0, s, s);
     final radius = Radius.circular(s * 0.28);
 
-    // 1. Deep Pine Green rounded square emblem backdrop
+    // 1. Deep Pine Green emblem backdrop
     final bgPaint = Paint()
       ..shader = LinearGradient(
         colors: onDarkSurface
-            ? const [Color(0xFF21664B), Color(0xFF174D38)]
-            : const [Color(0xFF174D38), Color(0xFF113C2B)],
+            ? const [Color(0xFF236B50), Color(0xFF174D38)]
+            : const [Color(0xFF1B5740), Color(0xFF103828)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(rect);
     canvas.drawRRect(RRect.fromRectAndRadius(rect, radius), bgPaint);
 
-    // Subtle vintage gold inner border
+    // 2. Vintage Gold inner heritage border
     final borderPaint = Paint()
-      ..color = AppColors.starGold.withValues(alpha: 0.35)
+      ..color = AppColors.starGold.withValues(alpha: 0.52)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = s * 0.032;
+      ..strokeWidth = (s * 0.032).clamp(1.0, 2.6);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(rect.deflate(s * 0.035), Radius.circular(s * 0.25)),
+      RRect.fromRectAndRadius(
+        rect.deflate(s * 0.055),
+        Radius.circular(s * 0.23),
+      ),
       borderPaint,
     );
 
-    // 2. Stylized Vintage Thrift Price Tag (rotated cleanly inside)
+    // 3. Vintage Clothing Hanger Hook & Thrift Tag String at top
+    final hangerPaint = Paint()
+      ..color = AppColors.starGold
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = (s * 0.048).clamp(1.3, 3.6)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final hookPath = Path()
+      ..moveTo(s * 0.44, s * 0.21)
+      ..cubicTo(s * 0.44, s * 0.12, s * 0.58, s * 0.12, s * 0.58, s * 0.20)
+      ..quadraticBezierTo(s * 0.58, s * 0.26, s * 0.50, s * 0.28)
+      ..lineTo(s * 0.50, s * 0.34);
+    canvas.drawPath(hookPath, hangerPaint);
+
+    // Subtle hanger shoulders extending from hook
+    final shouldersPath = Path()
+      ..moveTo(s * 0.25, s * 0.44)
+      ..lineTo(s * 0.50, s * 0.33)
+      ..lineTo(s * 0.75, s * 0.44);
+    canvas.drawPath(shouldersPath, hangerPaint);
+
+    // 4. Warm Cream Vintage Thrift Price Tag suspended from the hanger
     canvas.save();
-    canvas.translate(s * 0.50, s * 0.51);
-    canvas.rotate(-math.pi / 12);
+    canvas.translate(s * 0.50, s * 0.60);
+    canvas.rotate(-math.pi / 18);
 
     final tagPath = Path()
-      ..moveTo(-s * 0.24, -s * 0.08)
-      ..lineTo(-s * 0.06, -s * 0.25)
-      ..lineTo(s * 0.20, -s * 0.25)
-      ..quadraticBezierTo(s * 0.26, -s * 0.25, s * 0.26, -s * 0.19)
-      ..lineTo(s * 0.26, s * 0.19)
-      ..quadraticBezierTo(s * 0.26, s * 0.25, s * 0.20, s * 0.25)
-      ..lineTo(-s * 0.18, s * 0.25)
-      ..quadraticBezierTo(-s * 0.24, s * 0.25, -s * 0.24, s * 0.19)
+      ..moveTo(-s * 0.20, -s * 0.14)
+      ..lineTo(-s * 0.07, -s * 0.24)
+      ..lineTo(s * 0.07, -s * 0.24)
+      ..lineTo(s * 0.20, -s * 0.14)
+      ..lineTo(s * 0.20, s * 0.18)
+      ..quadraticBezierTo(s * 0.20, s * 0.24, s * 0.14, s * 0.24)
+      ..lineTo(-s * 0.14, s * 0.24)
+      ..quadraticBezierTo(-s * 0.20, s * 0.24, -s * 0.20, s * 0.18)
       ..close();
 
-    final tagFill = Paint()..color = const Color(0xFFFFFFFF);
+    final tagFill = Paint()..color = const Color(0xFFFFFDF9);
     canvas.drawPath(tagPath, tagFill);
 
-    // Punch hole in tag corner (Terracotta accent)
-    final holePaint = Paint()..color = AppColors.ctaTerracotta;
-    canvas.drawCircle(Offset(-s * 0.07, -s * 0.12), s * 0.055, holePaint);
+    // Terracotta tag eyelet punch
+    final eyeletPaint = Paint()..color = AppColors.ctaTerracotta;
+    canvas.drawCircle(Offset(0, -s * 0.13), s * 0.048, eyeletPaint);
 
-    // Minimalist thrift circular reuse arc inside the tag
+    // Circular thrift reuse arc + arrowhead inside tag (Pine Green)
     final arcPaint = Paint()
       ..color = AppColors.pineDeep
       ..style = PaintingStyle.stroke
-      ..strokeWidth = s * 0.062
+      ..strokeWidth = (s * 0.056).clamp(1.4, 4.2)
       ..strokeCap = StrokeCap.round;
 
     final arcRect = Rect.fromCenter(
-      center: Offset(s * 0.04, s * 0.06),
-      width: s * 0.22,
-      height: s * 0.22,
+      center: Offset(0, s * 0.06),
+      width: s * 0.20,
+      height: s * 0.20,
     );
-    canvas.drawArc(arcRect, -math.pi * 0.78, math.pi * 1.48, false, arcPaint);
+    canvas.drawArc(arcRect, -math.pi * 0.72, math.pi * 1.44, false, arcPaint);
+
+    // Small Terracotta stitch dot at arc tip
+    canvas.drawCircle(
+      Offset(s * 0.072, -s * 0.005),
+      s * 0.026,
+      Paint()..color = AppColors.ctaTerracotta,
+    );
 
     canvas.restore();
 
-    // 3. Subtle Vintage Gold 4-point star sparkle at top-right (seasonal touch)
+    // 5. Crisp Vintage Gold 4-point star sparkle at top-right
     final cx = s * 0.79;
     final cy = s * 0.22;
-    final rOuter = s * 0.105;
-    final rInner = s * 0.036;
+    final rOuter = s * 0.095;
+    final rInner = s * 0.032;
     final starPath = Path()
       ..moveTo(cx, cy - rOuter)
       ..quadraticBezierTo(cx, cy, cx + rOuter, cy)
@@ -196,14 +290,11 @@ class _IzithriftMarkPainter extends CustomPainter {
       ..quadraticBezierTo(cx, cy, cx - rOuter, cy)
       ..quadraticBezierTo(cx, cy, cx, cy - rOuter)
       ..close();
-    final starPaint = Paint()..color = AppColors.starGold;
-    canvas.drawPath(starPath, starPaint);
-
-    // Tiny center highlight on star
+    canvas.drawPath(starPath, Paint()..color = AppColors.starGold);
     canvas.drawCircle(
       Offset(cx, cy),
       rInner * 0.55,
-      Paint()..color = Colors.white,
+      Paint()..color = const Color(0xFFFFFDF9),
     );
   }
 

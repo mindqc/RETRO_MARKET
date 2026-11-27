@@ -59,7 +59,9 @@ class _ConversationInboxScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: const IzithriftGlobalAppBar(),
+      appBar: const IzithriftGlobalAppBar(
+        activeDestination: IzithriftUpperNavDestination.messages,
+      ),
       body: Column(
         children: [
           // Clean Header + Conversation Search Bar

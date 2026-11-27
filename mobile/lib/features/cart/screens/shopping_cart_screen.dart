@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/condition_badge.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/state_feedback_views.dart';
@@ -40,14 +41,21 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: DesignTokens.spaceMd,
-        title: Row(
+      appBar: IzithriftGlobalAppBar.subPage(
+        activeDestination: IzithriftUpperNavDestination.cart,
+        showNotificationsAction: false,
+        showCartAction: true,
+        titleWidget: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Giỏ hàng'),
+            Text(
+              'Giỏ hàng',
+              style: AppTypography.headingSmall.copyWith(
+                fontSize: 17,
+                color: AppColors.pineDeep,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(width: 8),
             vm.state.maybeWhen(
               success: (cart) => cart.isEmpty
@@ -57,10 +65,10 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
+        extraActions: [
+          RetroHeaderIconButton(
             tooltip: 'Làm mới giỏ hàng',
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icons.refresh_rounded,
             onPressed: () {
               ref.read(cartViewModelProvider).loadCart();
             },

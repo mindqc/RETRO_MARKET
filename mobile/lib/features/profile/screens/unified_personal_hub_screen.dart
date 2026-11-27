@@ -12,6 +12,7 @@ import '../../../core/theme/seasonal_decor_provider.dart';
 import '../../../core/utils/product_image_resolver.dart';
 import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/izithrift_global_app_bar.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_image.dart';
 import '../../../core/widgets/status_pill_badge.dart';
@@ -83,7 +84,9 @@ class _UnifiedPersonalHubScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: const IzithriftGlobalAppBar(),
+      appBar: const IzithriftGlobalAppBar(
+        activeDestination: IzithriftUpperNavDestination.profile,
+      ),
       body: RetroAmbientSnowflakes(
         enabled: isSeasonal,
         child: SafeArea(
@@ -115,26 +118,7 @@ class _UnifiedPersonalHubScreenState
           padding: const EdgeInsets.all(DesignTokens.space2xl),
           child: Column(
             children: [
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  gradient: const RadialGradient(
-                    colors: [
-                      AppColors.categoryCircleStart,
-                      AppColors.categoryCircleEnd,
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.borderWarm),
-                  boxShadow: DesignTokens.cardElevation,
-                ),
-                child: const Icon(
-                  Icons.person_outline_rounded,
-                  size: 44,
-                  color: AppColors.pineDeep,
-                ),
-              ),
+              const IzithriftLogo.iconOnly(iconSize: 72),
               const SizedBox(height: DesignTokens.spaceLg),
               Text(
                 'Tham gia cộng đồng izithrift',

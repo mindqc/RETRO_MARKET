@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/retro_product_card.dart';
@@ -80,7 +81,10 @@ class _PublicSellerStorefrontScreenState
         ),
         empty: (msg) => Scaffold(
           backgroundColor: AppColors.canvasParchment,
-          appBar: AppBar(title: const Text('Cửa hàng đồ si')),
+          appBar: const IzithriftGlobalAppBar.subPage(
+            title: 'Cửa hàng đồ si',
+            showBrandMark: true,
+          ),
           body: RetroEmptyStateView(
             title: 'Gian hàng không tồn tại',
             message:
@@ -91,7 +95,10 @@ class _PublicSellerStorefrontScreenState
         ),
         error: (msg, error) => Scaffold(
           backgroundColor: AppColors.canvasParchment,
-          appBar: AppBar(title: const Text('Cửa hàng đồ si')),
+          appBar: const IzithriftGlobalAppBar.subPage(
+            title: 'Cửa hàng đồ si',
+            showBrandMark: true,
+          ),
           body: RetroErrorRetryView(
             errorMessage: msg,
             onRetry: () => viewModel.loadStorefront(widget.sellerId),
@@ -399,9 +406,9 @@ class _PublicSellerStorefrontScreenState
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.60,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: 0.67,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: seller.activeListings.length,
       itemBuilder: (context, idx) {

@@ -107,7 +107,11 @@ class AppRouter {
       // Catalog & Discovery Standalone Routes
       GoRoute(
         path: AppRoutes.discover,
-        builder: (context, state) => const CategoryTaxonomyScreen(),
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'];
+          final initialTabIndex = tab == 'brands' ? 1 : 0;
+          return CategoryTaxonomyScreen(initialTabIndex: initialTabIndex);
+        },
       ),
       GoRoute(
         path: AppRoutes.search,

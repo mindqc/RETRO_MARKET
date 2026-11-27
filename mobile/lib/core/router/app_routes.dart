@@ -5,6 +5,8 @@ class AppRoutes {
   // Root 5 Tabs (NAV-DEC-01)
   static const String home = '/home';
   static const String discover = '/discover';
+  static String discoverPath({String? tab}) =>
+      tab != null ? '/discover?tab=$tab' : '/discover';
   static const String auctions = '/auctions';
   static const String messages = '/messages';
   static const String profile = '/profile';

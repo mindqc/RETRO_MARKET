@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/utils/product_image_resolver.dart';
+import '../../../core/widgets/fashion_category_icon.dart';
 import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/retro_auction_card.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
@@ -26,14 +27,14 @@ import '../viewmodels/home_view_model.dart';
 class _FashionCategoryItem {
   final String label;
   final String searchKeyword;
-  final IconData icon;
+  final FashionCategoryGlyph glyph;
   final Color iconColor;
   final Color tileTint;
 
   const _FashionCategoryItem({
     required this.label,
     required this.searchKeyword,
-    required this.icon,
+    required this.glyph,
     required this.iconColor,
     required this.tileTint,
   });
@@ -43,84 +44,84 @@ const List<_FashionCategoryItem> _kSecondhandFashionCategories = [
   _FashionCategoryItem(
     label: 'American Tee',
     searchKeyword: 'American Tee',
-    icon: Icons.checkroom_rounded,
+    glyph: FashionCategoryGlyph.americanTee,
     iconColor: Color(0xFFB34B2E),
     tileTint: Color(0xFFFAF0EB),
   ),
   _FashionCategoryItem(
     label: 'Boxy Tee',
     searchKeyword: 'Boxy Tee',
-    icon: Icons.dry_cleaning_outlined,
+    glyph: FashionCategoryGlyph.boxyTee,
     iconColor: Color(0xFF1A4B38),
     tileTint: Color(0xFFEDF5F1),
   ),
   _FashionCategoryItem(
     label: 'Flare Jeans',
     searchKeyword: 'Flare Jeans',
-    icon: Icons.layers_outlined,
+    glyph: FashionCategoryGlyph.flareJeans,
     iconColor: Color(0xFF2E4D7B),
     tileTint: Color(0xFFEEF3FA),
   ),
   _FashionCategoryItem(
     label: 'Denim Jacket',
     searchKeyword: 'Denim Jacket',
-    icon: Icons.shield_outlined,
+    glyph: FashionCategoryGlyph.denimJacket,
     iconColor: Color(0xFF395273),
     tileTint: Color(0xFFEFF2F7),
   ),
   _FashionCategoryItem(
     label: 'Vintage Shirt',
     searchKeyword: 'Vintage Shirt',
-    icon: Icons.style_outlined,
+    glyph: FashionCategoryGlyph.vintageShirt,
     iconColor: Color(0xFF9C6621),
     tileTint: Color(0xFFFAF4E6),
   ),
   _FashionCategoryItem(
     label: 'Trousers',
     searchKeyword: 'Trousers',
-    icon: Icons.straighten_rounded,
+    glyph: FashionCategoryGlyph.trousers,
     iconColor: Color(0xFF6B4C35),
     tileTint: Color(0xFFF6F0EA),
   ),
   _FashionCategoryItem(
     label: 'Sneakers',
     searchKeyword: 'Sneakers',
-    icon: Icons.hiking_rounded,
+    glyph: FashionCategoryGlyph.sneakers,
     iconColor: Color(0xFFA63434),
     tileTint: Color(0xFFFBEEEE),
   ),
   _FashionCategoryItem(
     label: 'Leather Bags',
     searchKeyword: 'Leather Bags',
-    icon: Icons.work_outline_rounded,
+    glyph: FashionCategoryGlyph.leatherBag,
     iconColor: Color(0xFF7B4A2D),
     tileTint: Color(0xFFF7EFE9),
   ),
   _FashionCategoryItem(
     label: 'Watches',
     searchKeyword: 'Watches',
-    icon: Icons.watch_outlined,
+    glyph: FashionCategoryGlyph.watch,
     iconColor: Color(0xFF8C6B1F),
     tileTint: Color(0xFFFBF6E5),
   ),
   _FashionCategoryItem(
     label: 'Accessories',
     searchKeyword: 'Accessories',
-    icon: Icons.diamond_outlined,
+    glyph: FashionCategoryGlyph.accessories,
     iconColor: Color(0xFF28635A),
     tileTint: Color(0xFFECF6F4),
   ),
   _FashionCategoryItem(
     label: 'Sweaters',
     searchKeyword: 'Sweaters',
-    icon: Icons.ac_unit_rounded,
+    glyph: FashionCategoryGlyph.sweater,
     iconColor: Color(0xFF873A43),
     tileTint: Color(0xFFF9EEF0),
   ),
   _FashionCategoryItem(
     label: 'Outerwear',
     searchKeyword: 'Outerwear',
-    icon: Icons.umbrella_outlined,
+    glyph: FashionCategoryGlyph.outerwear,
     iconColor: Color(0xFF3D5937),
     tileTint: Color(0xFFF0F5EE),
   ),
@@ -196,7 +197,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: const IzithriftGlobalAppBar(),
+      appBar: const IzithriftGlobalAppBar(
+        activeDestination: IzithriftUpperNavDestination.home,
+      ),
       body: RetroAmbientSnowflakes(
         child: Builder(
           builder: (context) {
@@ -463,46 +466,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row with "Khác" quick taxonomy shortcut (always visible)
+            // Header row with "Khác" 2-option navigation menu
             Row(
               children: [
                 const Icon(
-                  Icons.local_offer_outlined,
-                  size: 14,
+                  Icons.checkroom_rounded,
+                  size: 15,
                   color: AppColors.pineDeep,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Text(
-                  'Danh mục đồ si',
+                  'Danh mục sản phẩm',
                   style: AppTypography.bodySmall.copyWith(
                     fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
+                    fontSize: 13,
                     color: AppColors.pineDeep,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.creamBadgeSoft,
-                    borderRadius: DesignTokens.borderRadiusFull,
-                    border: Border.all(color: AppColors.creamBadgeBorder),
-                  ),
-                  child: Text(
-                    '${_kSecondhandFashionCategories.length} phong cách',
-                    style: AppTypography.caption.copyWith(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.creamBadgeText,
-                    ),
                   ),
                 ),
                 const Spacer(),
                 InkWell(
-                  onTap: () => context.push(AppRoutes.discover),
+                  onTap: () => _showMoreNavigationSheet(context),
                   borderRadius: DesignTokens.borderRadiusFull,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -534,7 +517,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Horizontally scrollable 12 diverse secondhand fashion categories
+            // Horizontally scrollable 12 secondhand fashion categories
             SizedBox(
               height: 76,
               child: ListView.separated(
@@ -587,10 +570,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   color: cat.iconColor.withValues(alpha: 0.22),
                                 ),
                               ),
-                              child: Icon(
-                                cat.icon,
+                              alignment: Alignment.center,
+                              child: FashionCategoryIcon(
+                                glyph: cat.glyph,
                                 color: cat.iconColor,
-                                size: 21,
+                                size: 22,
                               ),
                             ),
                             const SizedBox(height: 5),
@@ -654,6 +638,159 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Displays the "Khác" navigation sheet with exactly 2 clear routes:
+  /// 1. Danh mục sản phẩm (/discover?tab=categories)
+  /// 2. Thương hiệu phổ biến (/discover?tab=brands)
+  void _showMoreNavigationSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.canvasParchment,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderWarm,
+                      borderRadius: DesignTokens.borderRadiusFull,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Khám phá thêm',
+                  style: AppTypography.headingMedium.copyWith(
+                    fontSize: 18,
+                    color: AppColors.pineDeep,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Chọn khu vực bạn muốn duyệt trên izithrift',
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildMoreNavigationOption(
+                  context: sheetCtx,
+                  title: 'Danh mục sản phẩm',
+                  subtitle: 'Duyệt toàn bộ nhóm quần áo, giày, túi & phụ kiện đồ si',
+                  icon: Icons.checkroom_rounded,
+                  accentColor: AppColors.pineDeep,
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    context.push(AppRoutes.discoverPath(tab: 'categories'));
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildMoreNavigationOption(
+                  context: sheetCtx,
+                  title: 'Thương hiệu phổ biến',
+                  subtitle: 'Khám phá các nhãn hiệu vintage & secondhand được săn đón',
+                  icon: Icons.workspace_premium_outlined,
+                  accentColor: AppColors.ctaTerracotta,
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    context.push(AppRoutes.discoverPath(tab: 'brands'));
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMoreNavigationOption({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderWarm),
+            boxShadow: DesignTokens.cardElevation,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.24),
+                  ),
+                ),
+                child: Icon(icon, color: accentColor, size: 21),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textCharcoal,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: accentColor,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1114,7 +1251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: DesignTokens.spaceMd),
         SizedBox(
-          height: 256,
+          height: 244,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg),
             scrollDirection: Axis.horizontal,
@@ -1736,9 +1873,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemCount: visibleItems.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.60,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 11,
+              childAspectRatio: 0.67,
+              crossAxisSpacing: 9,
+              mainAxisSpacing: 10,
             ),
             itemBuilder: (context, index) {
               final product = visibleItems[index];

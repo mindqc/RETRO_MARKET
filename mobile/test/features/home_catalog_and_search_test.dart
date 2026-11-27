@@ -602,12 +602,42 @@ void main() {
 
         expect(find.text('izithrift • Khám phá'), findsOneWidget);
         expect(find.text('Danh mục sản phẩm'), findsOneWidget);
-        expect(find.text('Thương hiệu retro'), findsOneWidget);
+        expect(find.text('Thương hiệu phổ biến'), findsOneWidget);
         expect(find.text('Áo khoác Vintage'), findsOneWidget);
 
         // Switch to Brands Tab
-        await tester.tap(find.text('Thương hiệu retro'));
+        await tester.tap(find.text('Thương hiệu phổ biến'));
         await tester.pumpAndSettle();
+        expect(find.text('Levi\'s'), findsOneWidget);
+        expect(find.text('Seiko'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'CategoryTaxonomyScreen supports initialTabIndex=1 to open Popular Brands directly',
+      (tester) async {
+        final mockRepo = MockHomeCatalogRepository();
+        final container = ProviderContainer(
+          overrides: [
+            homeCatalogRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final searchVM = container.read(catalogSearchViewModelProvider);
+        await searchVM.loadTaxonomy();
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: CategoryTaxonomyScreen(initialTabIndex: 1),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Thương hiệu phổ biến'), findsOneWidget);
         expect(find.text('Levi\'s'), findsOneWidget);
         expect(find.text('Seiko'), findsOneWidget);
       },

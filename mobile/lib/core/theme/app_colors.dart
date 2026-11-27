@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Color tokens for RETRO MARKET (izithrift).
 ///
-/// Visual identity: Modern C2C Marketplace × Cozy Vintage Christmas
-/// - Background: Light Cool Gray (#F4F5F7)
-/// - Surface: Pure White (#FFFFFF)
+/// Visual identity: Warm Cream Vintage Marketplace × Cozy Seasonal Editorial
+/// - Background: Warm Cream (#F6F1E9)
+/// - Surface: Warm Ivory White (#FFFDF9)
 /// - Primary Brand: Deep Pine Green (#174D38)
 /// - Primary CTA: Terracotta (#C65335)
 /// - Accent: Vintage Gold (#D6AE55)
@@ -21,18 +21,18 @@ class AppColors {
   /// Base legacy cream token (preserved verbatim for tests).
   static const Color warmIvory = Color(0xFFFBF8F3);
 
-  /// Modern light cool gray scaffold canvas (#F4F5F7).
-  static const Color canvasParchment = Color(0xFFF4F5F7);
-  static const Color backgroundGray = Color(0xFFF4F5F7);
+  /// Warm Vintage Cream scaffold canvas (#F6F1E9).
+  static const Color canvasParchment = Color(0xFFF6F1E9);
+  static const Color backgroundGray = Color(0xFFF6F1E9);
 
-  /// Pure white elevated card & header surface (#FFFFFF).
-  static const Color surfaceCard = Color(0xFFFFFFFF);
+  /// Warm ivory-white elevated card & header surface (#FFFDF9).
+  static const Color surfaceCard = Color(0xFFFFFDF9);
 
-  /// Soft neutral secondary surface (chips, nested inputs, subtle pills).
-  static const Color surfaceWarm = Color(0xFFEEF0F3);
+  /// Soft warm linen secondary surface (chips, nested inputs, subtle pills).
+  static const Color surfaceWarm = Color(0xFFEDE4D5);
 
   /// Clean elevated section container surface.
-  static const Color surfaceSection = Color(0xFFFFFFFF);
+  static const Color surfaceSection = Color(0xFFFFFDF9);
 
   /// Warm vintage gold badge / timer tile fill ("Like New", "95%", "01:24:32").
   static const Color creamBadgeBg = Color(0xFFF8EED6);
@@ -90,10 +90,10 @@ class AppColors {
   // Typography, Borders & Neutrals
   // ---------------------------------------------------------------------------
   static const Color textCharcoal = Color(0xFF231F20);
-  static const Color textMuted = Color(0xFF6B7280);
+  static const Color textMuted = Color(0xFF665D54);
   static const Color textLight = Color(0xFFFFFFFF);
-  static const Color borderWarm = Color(0xFFE5E7EB);
-  static const Color borderSubtle = Color(0xFFEDF0F4);
+  static const Color borderWarm = Color(0xFFE5DAC8);
+  static const Color borderSubtle = Color(0xFFF0E8DA);
   static const Color darkFrostOverlay = Color(0x59000000);
 
   // Semantic aliases retained for existing screens.

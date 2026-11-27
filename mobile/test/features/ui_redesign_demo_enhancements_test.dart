@@ -11,6 +11,7 @@ import 'package:izithrift/core/services/secure_token_storage.dart';
 import 'package:izithrift/core/services/server_time_service.dart';
 import 'package:izithrift/core/theme/seasonal_decor_provider.dart';
 import 'package:izithrift/core/utils/product_image_resolver.dart';
+import 'package:izithrift/core/widgets/fashion_category_icon.dart';
 import 'package:izithrift/features/auth/models/user_model.dart';
 import 'package:izithrift/features/auth/repositories/auth_repository.dart';
 import 'package:izithrift/features/auth/viewmodels/auth_view_model.dart';
@@ -400,7 +401,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Danh mục đồ si'), findsOneWidget);
+      expect(find.text('Danh mục sản phẩm'), findsOneWidget);
+      expect(find.text('Danh mục đồ si'), findsNothing);
+      expect(find.textContaining('phong cách'), findsNothing);
+      expect(find.byType(FashionCategoryIcon), findsWidgets);
       expect(find.text('American Tee'), findsOneWidget);
       expect(find.text('Khác'), findsOneWidget);
 
@@ -426,6 +430,32 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.textContaining('Xem thêm sản phẩm'), findsOneWidget);
+    });
+
+    testWidgets('HomeScreen Khác button opens sheet with exactly 2 navigation options', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          homeCatalogRepositoryProvider.overrideWithValue(_StubHomeRepo()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: HomeScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Khác'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Khám phá thêm'), findsOneWidget);
+      expect(find.text('Danh mục sản phẩm'), findsNWidgets(2));
+      expect(find.text('Thương hiệu phổ biến'), findsOneWidget);
+      expect(AppRoutes.discoverPath(tab: 'categories'), '/discover?tab=categories');
+      expect(AppRoutes.discoverPath(tab: 'brands'), '/discover?tab=brands');
     });
 
     testWidgets('ChatRoomScreen attachment sheet removes quick demo options and shows Gallery, Camera, and Orders', (tester) async {

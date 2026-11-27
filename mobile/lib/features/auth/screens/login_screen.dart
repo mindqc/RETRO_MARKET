@@ -8,6 +8,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/sell_action_bottom_sheet.dart';
@@ -200,9 +201,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        title: const Text('Đăng nhập'),
+      appBar: const IzithriftGlobalAppBar.subPage(
+        title: 'Đăng nhập',
+        showNotificationsAction: false,
+        showCartAction: false,
       ),
       body: RetroAmbientSnowflakes(
         child: SafeArea(
@@ -213,31 +215,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const IzithriftLogo.iconOnly(iconSize: 48),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Chào mừng trở lại!',
-                              style: AppTypography.headingLarge.copyWith(
-                                color: AppColors.pineDeep,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Đăng nhập để khám phá kho đồ vintage và quản lý tiệm của bạn.',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const IzithriftLogo(
+                    iconSize: 40,
+                    fontSize: 24,
+                    showTagline: true,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceMd),
+                  Text(
+                    'Chào mừng trở lại!',
+                    style: AppTypography.headingLarge.copyWith(
+                      color: AppColors.pineDeep,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Đăng nhập để khám phá kho đồ vintage và quản lý tiệm của bạn.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                   ),
                   const SizedBox(height: DesignTokens.spaceXl),
 

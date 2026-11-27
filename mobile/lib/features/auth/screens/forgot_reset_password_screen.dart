@@ -6,6 +6,8 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
+import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../repositories/auth_repository.dart';
 
@@ -115,9 +117,10 @@ class _ForgotResetPasswordScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        title: Text(_currentStep == 1 ? 'Quên mật khẩu' : 'Đặt lại mật khẩu'),
+      appBar: IzithriftGlobalAppBar.subPage(
+        title: _currentStep == 1 ? 'Quên mật khẩu' : 'Đặt lại mật khẩu',
+        showNotificationsAction: false,
+        showCartAction: false,
       ),
       body: RetroAmbientSnowflakes(
         child: SafeArea(
@@ -126,6 +129,8 @@ class _ForgotResetPasswordScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const IzithriftLogo(iconSize: 34, fontSize: 20),
+                const SizedBox(height: DesignTokens.spaceMd),
                 // 2-Step Indicator Pill
                 Container(
                   padding: const EdgeInsets.symmetric(

@@ -92,7 +92,9 @@ class _ScheduledAuctionHubScreenState
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: const IzithriftGlobalAppBar(),
+      appBar: const IzithriftGlobalAppBar(
+        activeDestination: IzithriftUpperNavDestination.auctions,
+      ),
       body: RetroAmbientSnowflakes(
         child: Column(
           children: [

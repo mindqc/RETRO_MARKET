@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/izithrift_global_app_bar.dart';
 import '../../../core/widgets/izithrift_logo.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../viewmodels/auth_view_model.dart';
@@ -89,9 +90,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
-      appBar: AppBar(
-        backgroundColor: AppColors.canvasParchment,
-        title: const Text('Đăng ký tài khoản'),
+      appBar: const IzithriftGlobalAppBar.subPage(
+        title: 'Đăng ký tài khoản',
+        showNotificationsAction: false,
+        showCartAction: false,
       ),
       body: RetroAmbientSnowflakes(
         child: SafeArea(
@@ -102,7 +104,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const IzithriftLogo(iconSize: 34, fontSize: 20),
+                  const IzithriftLogo(
+                    iconSize: 38,
+                    fontSize: 22,
+                    showTagline: true,
+                  ),
                   const SizedBox(height: DesignTokens.spaceMd),
                   Text(
                     'Tham gia cộng đồng izithrift',
