@@ -25,15 +25,31 @@ class UserAddressModel {
   });
 
   /// Formatted full delivery address
-  String get fullAddress => '$streetAddress, $districtWard, $provinceCity';
+  String get fullAddress {
+    final parts = [streetAddress, districtWard, provinceCity]
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return parts.join(', ');
+  }
 
   factory UserAddressModel.fromJson(Map<String, dynamic> json) {
+    final rawDistrictWard = json['district_ward']?.toString().trim();
+    final fallbackDistrictWard = [
+      json['ward']?.toString().trim() ?? '',
+      json['district']?.toString().trim() ?? '',
+    ].where((e) => e.isNotEmpty).join(', ');
+
     return UserAddressModel(
       id: SafeJsonParser.toInt(json['id']),
       recipientName: json['recipient_name']?.toString() ?? '',
-      recipientPhone: json['recipient_phone']?.toString() ?? '',
-      provinceCity: json['province_city']?.toString() ?? '',
-      districtWard: json['district_ward']?.toString() ?? '',
+      recipientPhone:
+          (json['recipient_phone'] ?? json['phone'])?.toString() ?? '',
+      provinceCity:
+          (json['province_city'] ?? json['province'])?.toString() ?? '',
+      districtWard: (rawDistrictWard != null && rawDistrictWard.isNotEmpty)
+          ? rawDistrictWard
+          : fallbackDistrictWard,
       streetAddress: json['street_address']?.toString() ?? '',
       isDefault: SafeJsonParser.toBool(json['is_default'], defaultValue: false),
       createdAt: SafeJsonParser.toDateTime(json['created_at']),

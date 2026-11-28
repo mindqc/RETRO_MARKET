@@ -13,7 +13,9 @@ import '../../../core/utils/vnd_formatter.dart';
 import '../../../core/widgets/retro_design_primitives.dart';
 import '../../../core/widgets/server_countdown_timer.dart';
 import '../../../core/widgets/state_feedback_views.dart';
+import '../../orders/viewmodels/buyer_order_view_model.dart';
 import '../models/payment_session_model.dart';
+import '../viewmodels/cart_view_model.dart';
 import '../viewmodels/payment_view_model.dart';
 
 /// M-PM-01: Mock QR Payment Screen.
@@ -38,13 +40,46 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final vm = ref.read(paymentViewModelProvider);
-      if (widget.initialSession != null) {
+      if (widget.initialSession != null &&
+          widget.initialSession!.paymentId > 0) {
         vm.setSuccess(widget.initialSession!);
       } else {
         vm.loadPayment(widget.paymentId);
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant MockQrPaymentScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.paymentId != widget.paymentId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final vm = ref.read(paymentViewModelProvider);
+        if (widget.initialSession != null &&
+            widget.initialSession!.paymentId == widget.paymentId) {
+          vm.setSuccess(widget.initialSession!);
+        } else {
+          vm.loadPayment(widget.paymentId);
+        }
+      });
+    }
+  }
+
+  void _refreshCartAndOrdersAfterPayment() {
+    try {
+      final container = ProviderScope.containerOf(context, listen: false);
+      if (container.exists(cartViewModelProvider)) {
+        ref.read(cartViewModelProvider).loadCart(silent: true);
+      }
+      if (container.exists(buyerOrderViewModelProvider)) {
+        ref.read(buyerOrderViewModelProvider).loadPurchases(refresh: true);
+      }
+    } catch (_) {
+      // Safe fallback in isolated widget tests without full ProviderScope state.
+    }
   }
 
   @override
@@ -115,10 +150,12 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Đơn hàng đang chờ thanh toán',
-                  style: TextStyle(
+                  session.isPaid
+                      ? 'Đơn hàng đã được thanh toán'
+                      : 'Đơn hàng đang chờ thanh toán',
+                  style: const TextStyle(
                     color: AppColors.creamBadgeBg,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
@@ -132,9 +169,9 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
                   color: AppColors.creamBadgeBg,
                   borderRadius: DesignTokens.borderRadiusFull,
                 ),
-                child: const Text(
-                  'PENDING',
-                  style: TextStyle(
+                child: Text(
+                  session.paymentStatus,
+                  style: const TextStyle(
                     color: AppColors.creamBadgeText,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -187,34 +224,40 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
               ],
             ),
           ),
-          const SizedBox(height: DesignTokens.spaceMd),
-          Row(
-            children: [
-              const Icon(
-                Icons.timer_outlined,
-                color: AppColors.starGold,
-                size: 19,
-              ),
-              const SizedBox(width: 7),
-              const Text(
-                'Mã hết hạn sau',
-                style: TextStyle(color: Color(0xFFDCE9D9), fontSize: 12),
-              ),
-              const Spacer(),
-              ServerCountdownTimer(
-                endsAt: session.paymentExpiresAt,
-                customClock: () => ServerTimeService.instance.now(),
-                onExpired: () {
-                  if (mounted) {
+          if (!session.isPaid && !session.isFailed && !session.isExpired) ...[
+            const SizedBox(height: DesignTokens.spaceMd),
+            Row(
+              children: [
+                const Icon(
+                  Icons.timer_outlined,
+                  color: AppColors.starGold,
+                  size: 19,
+                ),
+                const SizedBox(width: 7),
+                const Text(
+                  'Mã hết hạn sau',
+                  style: TextStyle(color: Color(0xFFDCE9D9), fontSize: 12),
+                ),
+                const Spacer(),
+                ServerCountdownTimer(
+                  endsAt: session.paymentExpiresAt,
+                  customClock: () => ServerTimeService.instance.now(),
+                  onExpired: () {
+                    if (!mounted) return;
+                    final currentVm = ref.read(paymentViewModelProvider);
+                    final latestSession = currentVm.state.data ?? session;
+                    if (currentVm.isSimulating || latestSession.isPaid) {
+                      return;
+                    }
                     context.pushReplacement(
-                      AppRoutes.paymentFailurePath(session.paymentId),
-                      extra: session.copyWith(paymentStatus: 'EXPIRED'),
+                      AppRoutes.paymentFailurePath(latestSession.paymentId),
+                      extra: latestSession.copyWith(paymentStatus: 'EXPIRED'),
                     );
-                  }
-                },
-              ),
-            ],
-          ),
+                  },
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -490,73 +533,130 @@ class _MockQrPaymentScreenState extends ConsumerState<MockQrPaymentScreen> {
             ),
           ],
           const SizedBox(height: DesignTokens.spaceLg),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              key: const Key('btn_simulate_payment_success'),
-              icon: const Icon(Icons.check_circle_rounded, size: 20),
-              label: const Text(
-                'Mô phỏng thanh toán thành công',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.pineDeep,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor:
-                    AppColors.pineDeep.withValues(alpha: 0.45),
-                shape: const StadiumBorder(),
-              ),
-              onPressed: vm.isSimulating
-                  ? null
-                  : () async {
-                      final updated = await vm.simulateSuccess(
-                        session.paymentId,
-                      );
-                      if (updated != null && mounted) {
-                        context.pushReplacement(
-                          AppRoutes.paymentSuccessPath(session.paymentId),
-                          extra: updated,
-                        );
-                      }
-                    },
-            ),
-          ),
-          const SizedBox(height: DesignTokens.spaceSm),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: OutlinedButton.icon(
-              key: const Key('btn_simulate_payment_failure'),
-              icon: const Icon(Icons.error_outline_rounded, size: 18),
-              label: const Text(
-                'Mô phỏng thanh toán thất bại',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.priceCrimson,
-                side: const BorderSide(
-                  color: AppColors.priceCrimson,
-                  width: 1.2,
+          if (session.isPaid)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                label: const Text(
+                  'Xem chi tiết & Theo dõi đơn hàng',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
-                shape: const StadiumBorder(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.pineDeep,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                ),
+                onPressed: () {
+                  if (session.orderId > 0) {
+                    context.pushReplacement(
+                      AppRoutes.orderDetailPath(session.orderId),
+                    );
+                  } else {
+                    context.go(AppRoutes.myPurchases);
+                  }
+                },
               ),
-              onPressed: vm.isSimulating
-                  ? null
-                  : () async {
-                      final failed = await vm.simulateFailure(
-                        session.paymentId,
-                        reason: 'Giao dịch bị từ chối bởi ngân hàng mô phỏng.',
-                      );
-                      if (failed != null && mounted) {
-                        context.pushReplacement(
-                          AppRoutes.paymentFailurePath(session.paymentId),
-                          extra: failed,
+            )
+          else ...[
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                key: const Key('btn_simulate_payment_success'),
+                icon: vm.isSimulating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_rounded, size: 20),
+                label: Text(
+                  vm.isSimulating
+                      ? 'Đang xác nhận thanh toán...'
+                      : 'Mô phỏng thanh toán thành công',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.pineDeep,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.pineDeep.withValues(alpha: 0.45),
+                  shape: const StadiumBorder(),
+                ),
+                onPressed: vm.isSimulating
+                    ? null
+                    : () async {
+                        final updated = await vm.simulateSuccess(
+                          session.paymentId,
                         );
-                      }
-                    },
+                        if (updated != null && mounted) {
+                          _refreshCartAndOrdersAfterPayment();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Thanh toán thành công! Đang chuyển sang theo dõi đơn hàng.',
+                              ),
+                              backgroundColor: AppColors.pineDeep,
+                            ),
+                          );
+                          if (updated.orderId > 0) {
+                            context.pushReplacement(
+                              AppRoutes.orderDetailPath(updated.orderId),
+                            );
+                          } else {
+                            context.pushReplacement(
+                              AppRoutes.paymentSuccessPath(session.paymentId),
+                              extra: updated,
+                            );
+                          }
+                        }
+                      },
+              ),
             ),
-          ),
+            const SizedBox(height: DesignTokens.spaceSm),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton.icon(
+                key: const Key('btn_simulate_payment_failure'),
+                icon: const Icon(Icons.error_outline_rounded, size: 18),
+                label: const Text(
+                  'Mô phỏng thanh toán thất bại',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.priceCrimson,
+                  side: const BorderSide(
+                    color: AppColors.priceCrimson,
+                    width: 1.2,
+                  ),
+                  shape: const StadiumBorder(),
+                ),
+                onPressed: vm.isSimulating
+                    ? null
+                    : () async {
+                        final failed = await vm.simulateFailure(
+                          session.paymentId,
+                          reason: 'Giao dịch bị từ chối bởi ngân hàng mô phỏng.',
+                        );
+                        if (failed != null && mounted) {
+                          context.pushReplacement(
+                            AppRoutes.paymentFailurePath(session.paymentId),
+                            extra: failed,
+                          );
+                        }
+                      },
+              ),
+            ),
+          ],
         ],
       ),
     );

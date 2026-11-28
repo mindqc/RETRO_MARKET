@@ -40,14 +40,42 @@ class _PurchaseOrderDetailScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(buyerOrderViewModelProvider).loadOrderDetail(widget.orderId);
     });
   }
 
   @override
+  void didUpdateWidget(covariant PurchaseOrderDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.orderId != widget.orderId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(buyerOrderViewModelProvider).loadOrderDetail(widget.orderId);
+      });
+    }
+  }
+
+  String _formatTimestamp(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = ref.watch(buyerOrderViewModelProvider);
-    final order = vm.selectedOrder ?? widget.initialOrder;
+    final OrderModel? order =
+        (vm.selectedOrder != null && vm.selectedOrder!.id == widget.orderId)
+            ? vm.selectedOrder
+            : (widget.initialOrder != null &&
+                    widget.initialOrder!.id == widget.orderId
+                ? widget.initialOrder
+                : null);
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
@@ -173,8 +201,10 @@ class _PurchaseOrderDetailScreenState
           ),
           const SizedBox(height: 14),
           InkWell(
-            onTap: () =>
-                context.push(AppRoutes.shipmentTrackingPath(order.id)),
+            onTap: () => context.push(
+              AppRoutes.shipmentTrackingPath(order.id),
+              extra: order,
+            ),
             borderRadius: DesignTokens.borderRadiusFull,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -215,7 +245,9 @@ class _PurchaseOrderDetailScreenState
 
   Widget _buildShipmentTimeline(OrderModel order) {
     final shipment = order.shipment;
-    final events = shipment?.timelineEvents ?? [];
+    final events = (shipment != null && shipment.timelineEvents.isNotEmpty)
+        ? shipment.timelineEvents
+        : order.buildFullLifecycleTimeline();
 
     return _sectionCard(
       child: Column(
@@ -224,7 +256,7 @@ class _PurchaseOrderDetailScreenState
           _sectionHeader(
             icon: Icons.route_outlined,
             title: 'Hành trình đơn hàng',
-            subtitle: 'Cập nhật từ vận chuyển',
+            subtitle: 'Cập nhật trạng thái & mốc thời gian',
           ),
           if (shipment != null) ...[
             const SizedBox(height: 12),
@@ -265,6 +297,7 @@ class _PurchaseOrderDetailScreenState
               return _timelineEvent(
                 title: event.title,
                 description: event.description,
+                timestamp: event.timestamp,
                 completed: event.isCompleted,
                 isLast: isLast,
               );
@@ -284,6 +317,7 @@ class _PurchaseOrderDetailScreenState
   Widget _timelineEvent({
     required String title,
     required String description,
+    DateTime? timestamp,
     required bool completed,
     required bool isLast,
   }) {
@@ -304,7 +338,7 @@ class _PurchaseOrderDetailScreenState
               if (!isLast)
                 Container(
                   width: 2,
-                  height: 42,
+                  height: 44,
                   margin: const EdgeInsets.symmetric(vertical: 3),
                   color: completed
                       ? AppColors.verifiedLeaf.withValues(alpha: 0.35)
@@ -334,6 +368,17 @@ class _PurchaseOrderDetailScreenState
                     description,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+                if (timestamp != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    _formatTimestamp(timestamp),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.ctaTerracotta,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -848,9 +893,19 @@ class _PurchaseOrderDetailScreenState
                   foregroundColor: AppColors.textLight,
                   shape: const StadiumBorder(),
                 ),
-                onPressed: () => context.push(
-                  AppRoutes.paymentQrPath(order.paymentId ?? order.id),
-                ),
+                onPressed: () {
+                  context
+                      .push(
+                        AppRoutes.paymentQrPath(order.paymentId ?? order.id),
+                      )
+                      .then((_) {
+                        if (mounted) {
+                          ref
+                              .read(buyerOrderViewModelProvider)
+                              .loadOrderDetail(widget.orderId);
+                        }
+                      });
+                },
               ),
           ],
         ),

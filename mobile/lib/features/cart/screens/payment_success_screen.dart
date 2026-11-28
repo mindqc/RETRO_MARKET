@@ -25,7 +25,8 @@ class PaymentSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final orderCode = session?.orderCode ?? 'ORD-$paymentId';
     final amount = session?.amount ?? 0.0;
-    final orderId = session?.orderId ?? paymentId;
+    final int? resolvedOrderId =
+        (session != null && session!.orderId > 0) ? session!.orderId : null;
     final escrowStatus = session?.escrowStatus ?? 'HELD';
 
     final escrowHeld = escrowStatus == 'HELD' || escrowStatus == 'ESCROW_HELD';
@@ -55,7 +56,7 @@ class PaymentSuccessScreen extends StatelessWidget {
               const SizedBox(height: DesignTokens.spaceMd),
               _buildEscrowNotice(escrowHeld),
               const SizedBox(height: DesignTokens.spaceXl),
-              _buildActions(context, orderId),
+              _buildActions(context, resolvedOrderId),
             ],
           ),
         ),
@@ -292,7 +293,7 @@ class PaymentSuccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, int orderId) {
+  Widget _buildActions(BuildContext context, int? orderId) {
     return Column(
       children: [
         SizedBox(
@@ -310,7 +311,13 @@ class PaymentSuccessScreen extends StatelessWidget {
               foregroundColor: AppColors.textLight,
               shape: const StadiumBorder(),
             ),
-            onPressed: () => context.push(AppRoutes.orderDetailPath(orderId)),
+            onPressed: () {
+              if (orderId != null && orderId > 0) {
+                context.pushReplacement(AppRoutes.orderDetailPath(orderId));
+              } else {
+                context.go(AppRoutes.myPurchases);
+              }
+            },
           ),
         ),
         const SizedBox(height: DesignTokens.spaceSm),

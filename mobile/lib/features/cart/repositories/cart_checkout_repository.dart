@@ -105,16 +105,22 @@ class CartCheckoutRepository {
     int? quantity,
     int? addressId,
   }) async {
-    final payload = <String, dynamic>{'source': source.toUpperCase()};
-    if (cartItemIds != null && cartItemIds.isNotEmpty) {
-      payload['cart_item_ids'] = cartItemIds;
+    final normalizedSource = source.toUpperCase();
+    final payload = <String, dynamic>{'source': normalizedSource};
+    if (normalizedSource == 'BUY_NOW') {
+      if (productId != null && productId > 0) {
+        payload['product_id'] = productId;
+        payload['quantity'] = (quantity != null && quantity > 0) ? quantity : 1;
+      }
+    } else {
+      final validIds = cartItemIds?.where((id) => id > 0).toList();
+      if (validIds != null && validIds.isNotEmpty) {
+        payload['cart_item_ids'] = validIds;
+      }
     }
-    if (productId != null) {
-      payload['product_id'] = productId;
-      payload['quantity'] = quantity ?? 1;
-    }
-    if (addressId != null) {
+    if (addressId != null && addressId > 0) {
       payload['address_id'] = addressId;
+      payload['shipping_address_id'] = addressId;
     }
 
     final response = await dioClient.post<Map<String, dynamic>>(
@@ -135,19 +141,26 @@ class CartCheckoutRepository {
     required int shippingAddressId,
     String? note,
   }) async {
+    final normalizedSource = source.toUpperCase();
     final payload = <String, dynamic>{
-      'source': source.toUpperCase(),
+      'source': normalizedSource,
+      'address_id': shippingAddressId,
       'shipping_address_id': shippingAddressId,
     };
-    if (cartItemIds != null && cartItemIds.isNotEmpty) {
-      payload['cart_item_ids'] = cartItemIds;
+    if (normalizedSource == 'BUY_NOW') {
+      if (productId != null && productId > 0) {
+        payload['product_id'] = productId;
+        payload['quantity'] = (quantity != null && quantity > 0) ? quantity : 1;
+      }
+    } else {
+      final validIds = cartItemIds?.where((id) => id > 0).toList();
+      if (validIds != null && validIds.isNotEmpty) {
+        payload['cart_item_ids'] = validIds;
+      }
     }
-    if (productId != null) {
-      payload['product_id'] = productId;
-      payload['quantity'] = quantity ?? 1;
-    }
-    if (note != null && note.isNotEmpty) {
-      payload['note'] = note;
+    final trimmedNote = note?.trim();
+    if (trimmedNote != null && trimmedNote.isNotEmpty) {
+      payload['note'] = trimmedNote;
     }
 
     final response = await dioClient.post<Map<String, dynamic>>(

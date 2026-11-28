@@ -93,7 +93,10 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.addresses,
-        builder: (context, state) => const AddressListScreen(),
+        builder: (context, state) {
+          final isSelect = state.uri.queryParameters['select'] == 'true';
+          return AddressListScreen(selectionMode: isSelect);
+        },
       ),
       GoRoute(
         path: AppRoutes.addAddress,
@@ -195,21 +198,28 @@ class AppRouter {
 
           final rawCartItemIds = extraMap['cartItemIds'];
 
-          final cartItemIds = rawCartItemIds is List<int>
-              ? rawCartItemIds
+          final parsedCartItemIds = rawCartItemIds is List<int>
+              ? rawCartItemIds.where((id) => id > 0).toList()
               : (rawCartItemIds is List
                     ? rawCartItemIds
                           .map((e) => int.tryParse(e.toString()) ?? 0)
+                          .where((id) => id > 0)
                           .toList()
                     : null);
+          final cartItemIds =
+              (parsedCartItemIds != null && parsedCartItemIds.isNotEmpty)
+                  ? parsedCartItemIds
+                  : null;
 
           final productId = int.tryParse(
             extraMap['productId']?.toString() ?? queryParams['productId'] ?? '',
           );
 
-          final quantity = int.tryParse(
+          final rawQuantity = int.tryParse(
             extraMap['quantity']?.toString() ?? queryParams['quantity'] ?? '',
           );
+          final quantity =
+              (rawQuantity != null && rawQuantity > 0) ? rawQuantity : null;
 
           return CheckoutScreen(
             source: source,

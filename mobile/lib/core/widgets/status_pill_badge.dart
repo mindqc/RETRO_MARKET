@@ -205,6 +205,86 @@ class StatusPillBadge extends StatelessWidget {
           AppColors.priceCrimsonBorder,
         );
 
+      // Payment, Escrow & Dispute States
+      case 'UNPAID':
+        return const _StatusConfig(
+          'Chưa thanh toán',
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
+        );
+      case 'PENDING':
+        return const _StatusConfig(
+          'Đang chờ xử lý',
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
+        );
+      case 'NONE':
+        return const _StatusConfig(
+          'Không có',
+          AppColors.surfaceWarm,
+          AppColors.textMuted,
+          AppColors.borderWarm,
+        );
+      case 'RELEASED':
+        return const _StatusConfig(
+          'Đã giải ngân',
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
+        );
+      case 'REFUNDED':
+        return const _StatusConfig(
+          'Đã hoàn tiền',
+          Color(0xFFE7F2F8),
+          Color(0xFF0E6390),
+          Color(0xFFB5D8EB),
+        );
+      case 'FROZEN':
+      case 'DISPUTE_FROZEN':
+        return const _StatusConfig(
+          'Đang đóng băng',
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
+        );
+      case 'FAILED':
+        return const _StatusConfig(
+          'Thất bại',
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
+        );
+      case 'EXPIRED':
+        return const _StatusConfig(
+          'Hết hạn',
+          AppColors.surfaceWarm,
+          AppColors.textMuted,
+          AppColors.borderWarm,
+        );
+      case 'OPEN':
+        return const _StatusConfig(
+          'Đang mở khiếu nại',
+          AppColors.priceCrimsonSoft,
+          AppColors.priceCrimson,
+          AppColors.priceCrimsonBorder,
+        );
+      case 'NEED_MORE_INFO':
+        return const _StatusConfig(
+          'Cần bổ sung bằng chứng',
+          AppColors.creamBadgeSoft,
+          AppColors.creamBadgeText,
+          AppColors.creamBadgeBorder,
+        );
+      case 'RESOLVED':
+        return const _StatusConfig(
+          'Đã giải quyết',
+          AppColors.verifiedLeafBg,
+          AppColors.verifiedLeaf,
+          Color(0xFFB7DEC4),
+        );
+
       default:
         return _StatusConfig(
           rawStatus,

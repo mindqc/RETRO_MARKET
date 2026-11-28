@@ -77,6 +77,30 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
     super.dispose();
   }
 
+  void _refreshOnReturn() {
+    if (mounted) {
+      ref.read(buyerOrderViewModelProvider).loadPurchases(refresh: true);
+    }
+  }
+
+  void _openOrderDetail(OrderModel order) {
+    context
+        .push(AppRoutes.orderDetailPath(order.id), extra: order)
+        .then((_) => _refreshOnReturn());
+  }
+
+  void _openShipmentTracking(OrderModel order) {
+    context
+        .push(AppRoutes.shipmentTrackingPath(order.id), extra: order)
+        .then((_) => _refreshOnReturn());
+  }
+
+  void _openPaymentQr(OrderModel order) {
+    context
+        .push(AppRoutes.paymentQrPath(order.paymentId ?? order.id))
+        .then((_) => _refreshOnReturn());
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(buyerOrderViewModelProvider);
@@ -184,7 +208,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
       ),
       child: InkWell(
         borderRadius: DesignTokens.borderRadiusLg,
-        onTap: () => context.push(AppRoutes.orderDetailPath(order.id)),
+        onTap: () => _openOrderDetail(order),
         child: Padding(
           padding: const EdgeInsets.all(DesignTokens.spaceMd),
           child: Column(
@@ -450,9 +474,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
           ),
           ElevatedButton(
             style: _primaryActionStyle(),
-            onPressed: () => context.push(
-              AppRoutes.paymentQrPath(order.paymentId ?? order.id),
-            ),
+            onPressed: () => _openPaymentQr(order),
             child: const Text(
               'Thanh toán',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -470,8 +492,7 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
         children: [
           OutlinedButton(
             style: _outlinedActionStyle(),
-            onPressed: () =>
-                context.push(AppRoutes.shipmentTrackingPath(order.id)),
+            onPressed: () => _openShipmentTracking(order),
             child: const Text('Vận đơn'),
           ),
           ElevatedButton(
@@ -489,14 +510,14 @@ class _MyPurchasesScreenState extends ConsumerState<MyPurchasesScreen>
     if (order.isCompleted) {
       return OutlinedButton(
         style: _outlinedActionStyle(),
-        onPressed: () => context.push(AppRoutes.orderDetailPath(order.id)),
+        onPressed: () => _openOrderDetail(order),
         child: const Text('Xem chi tiết'),
       );
     }
 
     return OutlinedButton(
       style: _outlinedActionStyle(),
-      onPressed: () => context.push(AppRoutes.orderDetailPath(order.id)),
+      onPressed: () => _openOrderDetail(order),
       child: const Text('Chi tiết'),
     );
   }

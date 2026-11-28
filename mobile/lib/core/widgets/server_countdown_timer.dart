@@ -35,7 +35,7 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
   @override
   void initState() {
     super.initState();
-    _updateRemaining();
+    _updateRemaining(notifyImmediately: false);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -43,18 +43,27 @@ class _ServerCountdownTimerState extends State<ServerCountdownTimer> {
   void didUpdateWidget(covariant ServerCountdownTimer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.endsAt != widget.endsAt) {
-      _updateRemaining();
+      _hasExpiredTriggered = false;
+      _updateRemaining(notifyImmediately: false);
     }
   }
 
-  void _updateRemaining() {
+  void _updateRemaining({bool notifyImmediately = true}) {
     final now =
         widget.customClock != null ? widget.customClock!() : DateTime.now();
     final difference = widget.endsAt.difference(now);
     _remaining = difference.isNegative ? Duration.zero : difference;
     if (_remaining == Duration.zero && !_hasExpiredTriggered) {
       _hasExpiredTriggered = true;
-      widget.onExpired?.call();
+      if (notifyImmediately) {
+        widget.onExpired?.call();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            widget.onExpired?.call();
+          }
+        });
+      }
     }
   }
 

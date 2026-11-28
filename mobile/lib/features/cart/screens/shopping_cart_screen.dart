@@ -885,7 +885,13 @@ class _ShoppingCartScreenState extends ConsumerState<ShoppingCartScreen> {
                               'source': 'CART',
                               'cartItemIds': selectedIds,
                             },
-                          );
+                          ).then((_) {
+                            if (mounted) {
+                              ref
+                                  .read(cartViewModelProvider)
+                                  .loadCart(silent: true);
+                            }
+                          });
                         }
                       }
                     : null,

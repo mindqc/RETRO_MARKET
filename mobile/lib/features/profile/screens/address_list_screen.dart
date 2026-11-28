@@ -10,7 +10,9 @@ import 'add_edit_address_screen.dart';
 
 /// M-PF-03: Address Book List Screen
 class AddressListScreen extends ConsumerStatefulWidget {
-  const AddressListScreen({super.key});
+  final bool selectionMode;
+
+  const AddressListScreen({super.key, this.selectionMode = false});
 
   @override
   ConsumerState<AddressListScreen> createState() => _AddressListScreenState();
@@ -72,7 +74,9 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
       backgroundColor: AppColors.canvasParchment,
       appBar: AppBar(
         backgroundColor: AppColors.canvasParchment,
-        title: const Text('Sổ địa chỉ nhận hàng'),
+        title: Text(
+          widget.selectionMode ? 'Chọn địa chỉ nhận hàng' : 'Sổ địa chỉ nhận hàng',
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.ctaTerracotta,
@@ -139,7 +143,7 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
   }
 
   Widget _buildAddressCard(UserAddressModel address) {
-    return Container(
+    final cardContent = Container(
       padding: const EdgeInsets.all(DesignTokens.spaceLg),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
@@ -233,6 +237,29 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (widget.selectionMode) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.pineDeep,
+                      foregroundColor: AppColors.textLight,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(0, 36),
+                      shape: const StadiumBorder(),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                    label: const Text(
+                      'Chọn địa chỉ này',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(address),
+                  ),
+                ),
+                const SizedBox(width: DesignTokens.spaceSm),
+              ],
               TextButton.icon(
                 icon: const Icon(
                   Icons.edit_outlined,
@@ -275,6 +302,16 @@ class _AddressListScreenState extends ConsumerState<AddressListScreen> {
           ),
         ],
       ),
+    );
+
+    if (!widget.selectionMode) {
+      return cardContent;
+    }
+
+    return InkWell(
+      borderRadius: DesignTokens.borderRadiusLg,
+      onTap: () => Navigator.of(context).pop(address),
+      child: cardContent,
     );
   }
 }

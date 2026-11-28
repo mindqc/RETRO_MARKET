@@ -145,18 +145,26 @@ class OrderModel {
 
     if (json['seller'] is Map<String, dynamic>) {
       final s = json['seller'] as Map<String, dynamic>;
+      final sellerProfile = s['seller_profile'] is Map<String, dynamic>
+          ? s['seller_profile'] as Map<String, dynamic>
+          : null;
       sId = SafeJsonParser.toInt(s['id'] ?? s['seller_id']);
       sName = SafeJsonParser.toStringValue(
-        s['display_name'] ?? s['shop_name'] ?? s['name'],
+        sellerProfile?['shop_name'] ??
+            s['shop_name'] ??
+            s['display_name'] ??
+            s['name'],
         defaultValue: 'Tiệm Đồ Si',
       );
-      sSlug = SafeJsonParser.toNullableString(s['shop_slug']);
+      sSlug = SafeJsonParser.toNullableString(
+        sellerProfile?['shop_slug'] ?? s['shop_slug'],
+      );
       sAvatar = SafeJsonParser.toNullableString(s['avatar_url']);
       tScore = SafeJsonParser.toDouble(s['trust_score'], defaultValue: 100.0);
     } else {
       sId = SafeJsonParser.toInt(json['seller_id']);
       sName = SafeJsonParser.toStringValue(
-        json['shop_name'],
+        json['shop_name'] ?? json['seller_shop_name'] ?? json['seller_name'],
         defaultValue: 'Tiệm Đồ Si',
       );
       sSlug = SafeJsonParser.toNullableString(json['shop_slug']);
@@ -385,6 +393,33 @@ class OrderModel {
         isShipped ||
         isDelivered ||
         isCompleted;
+
+    if (isCancelled) {
+      if (isPaidStep) {
+        events.add(
+          ShipmentTimelineEventModel(
+            title: 'Thanh toán & Giữ tiền Escrow',
+            description:
+                'Đơn hàng đã thanh toán trước khi hủy. Tiền sẽ được hoàn trả theo quy định.',
+            timestamp: paidAt,
+            isCompleted: true,
+          ),
+        );
+      }
+      final reasonText = (cancelReason != null && cancelReason!.trim().isNotEmpty)
+          ? 'Lý do: ${cancelReason!.trim()}'
+          : 'Đơn hàng đã được hủy.';
+      events.add(
+        ShipmentTimelineEventModel(
+          title: 'Đơn hàng đã hủy',
+          description: reasonText,
+          timestamp: cancelledAt,
+          isCompleted: true,
+        ),
+      );
+      return events;
+    }
+
     events.add(
       ShipmentTimelineEventModel(
         title: 'Thanh toán & Giữ tiền Escrow',
@@ -423,8 +458,10 @@ class OrderModel {
       ShipmentTimelineEventModel(
         title: 'Đã giao cho vận chuyển ($carrier)',
         description: isShipStep
-            ? 'Mã vận đơn: $tracking. Kiện hàng đang trên đường giao.'
-            : 'Chờ tiệm bàn giao cho shipper.',
+            ? (tracking.isNotEmpty
+                ? 'Mã vận đơn: $tracking. Kiện hàng đang trên đường giao.'
+                : 'Kiện hàng đã được bàn giao và đang trên đường giao.')
+            : 'Chờ tiệm bàn giao cho đơn vị vận chuyển.',
         timestamp: shippedAt,
         isCompleted: isShipStep,
       ),
@@ -441,6 +478,19 @@ class OrderModel {
             : 'Đang lưu thông trên tuyến giao nhận.',
         timestamp: deliveredAt,
         isCompleted: isDeliverStep,
+      ),
+    );
+
+    // 6. Completed & Escrow Released
+    final bool isCompleteStep = completedAt != null || isCompleted;
+    events.add(
+      ShipmentTimelineEventModel(
+        title: 'Hoàn thành đơn hàng & Giải ngân Escrow',
+        description: isCompleteStep
+            ? 'Đơn hàng đã hoàn tất và tiền hàng đã được giải ngân cho tiệm.'
+            : 'Tiền hàng sẽ được giải ngân sau khi bạn xác nhận đã nhận hàng.',
+        timestamp: completedAt,
+        isCompleted: isCompleteStep,
       ),
     );
 

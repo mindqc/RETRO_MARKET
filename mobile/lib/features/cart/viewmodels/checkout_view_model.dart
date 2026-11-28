@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/error/api_exception.dart';
 import '../../../core/state/base_view_model.dart';
 import '../../profile/models/user_address_model.dart';
 import '../models/checkout_preview_model.dart';
@@ -44,12 +46,17 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
     int? productId,
     int? quantity,
     int? addressId,
+    bool refreshAddressFromServer = false,
   }) async {
     _submitErrorMessage = null;
     _source = source;
     _cartItemIds = cartItemIds;
     _productId = productId;
     _quantity = quantity;
+
+    final int? effectiveAddressId = refreshAddressFromServer
+        ? addressId
+        : (addressId ?? selectedAddress?.id);
 
     await runCatching(
       () async {
@@ -58,10 +65,14 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
           cartItemIds: cartItemIds,
           productId: productId,
           quantity: quantity,
-          addressId: addressId ?? selectedAddress?.id,
+          addressId: effectiveAddressId,
         );
 
-        if (selectedAddress == null && preview.shippingAddress != null) {
+        if (refreshAddressFromServer) {
+          selectedAddress = preview.shippingAddress;
+        } else if (preview.shippingAddress != null &&
+            (selectedAddress == null ||
+                selectedAddress!.id == preview.shippingAddress!.id)) {
           selectedAddress = preview.shippingAddress;
         }
 
@@ -88,6 +99,23 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
     );
   }
 
+  String _extractErrorMessage(Object error) {
+    if (error is DioException) {
+      if (error.error is ApiException) {
+        return (error.error as ApiException).message;
+      }
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return error.message ?? 'Không thể kết nối đến máy chủ.';
+    }
+    if (error is ApiException) {
+      return error.message;
+    }
+    return error.toString();
+  }
+
   /// Places the order and returns the Payment session (M-PM-01)
   Future<PaymentSessionModel?> placeOrder() async {
     _submitErrorMessage = null;
@@ -108,7 +136,7 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
       return null;
     }
 
-    if (selectedAddress == null) {
+    if (selectedAddress == null || selectedAddress!.id <= 0) {
       _submitErrorMessage = 'Vui lòng chọn hoặc thêm địa chỉ nhận hàng.';
       notifyListeners();
       return null;
@@ -132,7 +160,7 @@ class CheckoutViewModel extends BaseViewModel<CheckoutPreviewModel> {
       return paymentSession;
     } catch (e) {
       isSubmittingOrder = false;
-      _submitErrorMessage = 'Lỗi khi đặt hàng: $e';
+      _submitErrorMessage = 'Lỗi khi đặt hàng: ${_extractErrorMessage(e)}';
       notifyListeners();
       return null;
     }

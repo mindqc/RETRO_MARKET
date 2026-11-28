@@ -949,7 +949,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       ),
       builder: (sheetContext) {
         return StatefulBuilder(
-          builder: (context, setSheetState) {
+          builder: (sheetBodyContext, setSheetState) {
             return SafeArea(
               top: false,
               child: Padding(
@@ -1026,13 +1026,20 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         onPressed: () {
+                          final safeQty = selectedQty.clamp(
+                            1,
+                            product.availableQuantity > 0
+                                ? product.availableQuantity
+                                : 1,
+                          );
                           Navigator.of(sheetContext).pop();
-                          context.push(
+                          if (!mounted) return;
+                          this.context.push(
                             AppRoutes.checkout,
                             extra: {
                               'source': 'BUY_NOW',
                               'productId': product.id,
-                              'quantity': selectedQty,
+                              'quantity': safeQty,
                             },
                           );
                         },

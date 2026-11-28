@@ -32,14 +32,42 @@ class _ShipmentTrackingScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(buyerOrderViewModelProvider).loadOrderDetail(widget.orderId);
     });
   }
 
   @override
+  void didUpdateWidget(covariant ShipmentTrackingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.orderId != widget.orderId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(buyerOrderViewModelProvider).loadOrderDetail(widget.orderId);
+      });
+    }
+  }
+
+  String _formatTimestamp(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = ref.watch(buyerOrderViewModelProvider);
-    final order = vm.selectedOrder ?? widget.initialOrder;
+    final OrderModel? order =
+        (vm.selectedOrder != null && vm.selectedOrder!.id == widget.orderId)
+            ? vm.selectedOrder
+            : (widget.initialOrder != null &&
+                    widget.initialOrder!.id == widget.orderId
+                ? widget.initialOrder
+                : null);
 
     return Scaffold(
       backgroundColor: AppColors.canvasParchment,
@@ -261,7 +289,7 @@ class _ShipmentTrackingScreenState
               if (event.timestamp != null) ...[
                 const SizedBox(height: 3),
                 Text(
-                  event.timestamp!.toLocal().toString().substring(0, 16),
+                  _formatTimestamp(event.timestamp!),
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.ctaTerracotta,

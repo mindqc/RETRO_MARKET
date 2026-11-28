@@ -14,6 +14,7 @@ import '../../../core/widgets/state_feedback_views.dart';
 import '../../profile/models/user_address_model.dart';
 import '../models/cart_item_model.dart';
 import '../models/checkout_preview_model.dart';
+import '../viewmodels/cart_view_model.dart';
 import '../viewmodels/checkout_view_model.dart';
 
 /// M-OR-01: Order Confirmation & Checkout.
@@ -486,7 +487,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ),
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () => context.push(AppRoutes.addresses),
+            onPressed: _openAddressSelection,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               minimumSize: const Size(0, 36),
@@ -498,15 +499,23 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  void _openAddressSelection() {
-    context.push(AppRoutes.addresses).then((_) {
-      ref.read(checkoutViewModelProvider).loadCheckoutPreview(
-            source: widget.source,
-            cartItemIds: widget.cartItemIds,
-            productId: widget.productId,
-            quantity: widget.quantity,
-          );
-    });
+  Future<void> _openAddressSelection() async {
+    final selected = await context.push<UserAddressModel>(
+      '${AppRoutes.addresses}?select=true',
+    );
+    if (!mounted) return;
+    final vm = ref.read(checkoutViewModelProvider);
+    if (selected != null) {
+      vm.updateShippingAddress(selected);
+    } else {
+      await vm.loadCheckoutPreview(
+        source: widget.source,
+        cartItemIds: widget.cartItemIds,
+        productId: widget.productId,
+        quantity: widget.quantity,
+        refreshAddressFromServer: true,
+      );
+    }
   }
 
   Widget _buildOrderStoreGroup(CheckoutOrderGroupPreviewModel group) {
@@ -925,23 +934,34 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               key: const Key('btn_place_order'),
               onPressed: vm.isSubmittingOrder || !hasValidCheckout
                   ? null
-                  : () async {
-                      final session = await vm.placeOrder();
+                    : () async {
+                        final session = await vm.placeOrder();
 
-                      if (session != null && mounted) {
-                        context.push(
-                          AppRoutes.paymentQrPath(session.paymentId),
-                          extra: session,
-                        );
-                      } else if (vm.errorMessage != null && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: AppColors.priceCrimson,
-                            content: Text(vm.errorMessage!),
-                          ),
-                        );
-                      }
-                    },
+                        if (session != null &&
+                            session.paymentId > 0 &&
+                            mounted) {
+                          if (widget.source.toUpperCase() == 'CART') {
+                            try {
+                              ref
+                                  .read(cartViewModelProvider)
+                                  .loadCart(silent: true);
+                            } catch (_) {}
+                          }
+                          context.pushReplacement(
+                            AppRoutes.paymentQrPath(session.paymentId),
+                            extra: session,
+                          );
+                        } else if (mounted) {
+                          final errText = vm.errorMessage ??
+                              'Không thể khởi tạo phiên thanh toán QR. Vui lòng thử lại.';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppColors.priceCrimson,
+                              content: Text(errText),
+                            ),
+                          );
+                        }
+                      },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.ctaTerracotta,
                 foregroundColor: AppColors.textLight,
