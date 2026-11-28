@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DisputeStatus;
 use App\Exceptions\RolePermissionDeniedException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\CancelOrderRequest;
@@ -31,11 +32,16 @@ class BuyerOrderController extends Controller
 
         $query = Order::query()
             ->where('buyer_id', $request->user()->id)
-            ->with(['items', 'seller.sellerProfile', 'payments'])
+            ->with(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment', 'dispute'])
             ->latest('id');
 
         if (! empty($status)) {
-            $query->where('order_status', strtoupper($status));
+            $normalizedStatus = strtoupper(trim((string) $status));
+            if ($normalizedStatus === 'DISPUTED') {
+                $query->where('dispute_status', '!=', DisputeStatus::NONE);
+            } elseif ($normalizedStatus !== 'ALL') {
+                $query->where('order_status', $normalizedStatus);
+            }
         }
 
         $orders = $query->paginate($perPage);
@@ -54,7 +60,7 @@ class BuyerOrderController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        $order = Order::with(['items', 'seller.sellerProfile', 'buyer', 'payments'])->findOrFail($id);
+        $order = Order::with(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment', 'dispute'])->findOrFail($id);
         $user = $request->user();
 
         if ($user->id !== $order->buyer_id && $user->id !== $order->seller_id && ! $user->isInternalStaff()) {

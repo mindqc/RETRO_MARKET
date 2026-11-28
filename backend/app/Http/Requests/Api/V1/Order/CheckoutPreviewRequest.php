@@ -18,7 +18,10 @@ class CheckoutPreviewRequest extends FormRequest
             'product_id' => ['required_if:source,BUY_NOW,buy_now', 'nullable', 'integer', 'exists:products,id'],
             'quantity' => ['nullable', 'integer', 'min:1'],
             'seller_id' => ['nullable', 'integer', 'exists:users,id'],
+            'cart_item_ids' => ['nullable', 'array'],
+            'cart_item_ids.*' => ['integer', 'min:1'],
             'address_id' => ['nullable', 'integer', 'exists:user_addresses,id'],
+            'shipping_address_id' => ['nullable', 'integer', 'exists:user_addresses,id'],
         ];
     }
 
@@ -31,6 +34,7 @@ class CheckoutPreviewRequest extends FormRequest
             'product_id.exists' => 'Sản phẩm đã chọn không tồn tại.',
             'quantity.min' => 'Số lượng sản phẩm phải từ 1 trở lên.',
             'address_id.exists' => 'Địa chỉ nhận hàng đã chọn không tồn tại.',
+            'shipping_address_id.exists' => 'Địa chỉ nhận hàng đã chọn không tồn tại.',
         ];
     }
 }

@@ -112,6 +112,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:transactional');
 
         // Buyer Purchases & Order Lifecycle
+        Route::get('/orders', [BuyerOrderController::class, 'index']);
         Route::get('/orders/purchases', [BuyerOrderController::class, 'index']);
         Route::get('/orders/{id}', [BuyerOrderController::class, 'show']);
         Route::post('/orders/{id}/cancel', [BuyerOrderController::class, 'cancel'])

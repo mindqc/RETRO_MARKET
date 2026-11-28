@@ -26,7 +26,7 @@ class MockQrPaymentService
      */
     public function getPaymentSession(User $user, int $paymentId): Payment
     {
-        $payment = Payment::with(['order.items', 'order.seller.sellerProfile', 'order.buyer'])->findOrFail($paymentId);
+        $payment = Payment::with(['order.items', 'order.seller.profile', 'order.seller.sellerProfile', 'order.buyer.profile', 'order.shipment'])->findOrFail($paymentId);
 
         if ($user->id !== $payment->payer_id && $user->id !== $payment->order->seller_id && ! $user->isInternalStaff()) {
             throw new RolePermissionDeniedException('Bạn không có quyền truy cập phiên thanh toán này.');
@@ -68,7 +68,7 @@ class MockQrPaymentService
             // BR-FN-03: Idempotent replay check (no double escrow hold)
             if ($paymentStatus === 'PAID' && in_array($orderStatus, ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED'], true)) {
                 return [
-                    'order' => $order->fresh(['items', 'seller.sellerProfile', 'payments']),
+                    'order' => $order->fresh(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment', 'dispute']),
                     'payment' => $payment->fresh(),
                     'idempotent_replay' => true,
                 ];
@@ -102,7 +102,7 @@ class MockQrPaymentService
                 'transaction_code' => $escCode,
                 'order_id' => $order->id,
                 'payment_id' => $payment->id,
-                'buyer_id' => $buyer->id,
+                'buyer_id' => $order->buyer_id,
                 'seller_id' => $order->seller_id,
                 'transaction_type' => 'HOLD',
                 'gross_amount' => (float) $order->total_amount,
@@ -115,17 +115,15 @@ class MockQrPaymentService
                 'note' => 'Giữ tiền trung gian Escrow khi người mua thanh toán QR thành công.',
             ]);
 
-            // 4. Update Seller Profile escrow_held_balance using BCMath
+            // 4. Update Seller Profile escrow_held_balance using BCMath (with safe decimal fallback)
             $sellerProfile = SellerProfile::where('user_id', $order->seller_id)->lockForUpdate()->first();
             if (! $sellerProfile) {
                 throw new EscrowLedgerIntegrityException('Không tìm thấy hồ sơ người bán để ký quỹ Escrow.');
             }
 
-            $sellerProfile->escrow_held_balance = bcadd(
-                (string) $sellerProfile->escrow_held_balance,
-                (string) $order->item_subtotal,
-                2
-            );
+            $sellerProfile->escrow_held_balance = function_exists('bcadd')
+                ? bcadd((string) $sellerProfile->escrow_held_balance, (string) $order->item_subtotal, 2)
+                : number_format((float) $sellerProfile->escrow_held_balance + (float) $order->item_subtotal, 2, '.', '');
             $sellerProfile->save();
 
             // 5. Notify Seller
@@ -141,7 +139,7 @@ class MockQrPaymentService
             ]);
 
             return [
-                'order' => $order->fresh(['items', 'seller.sellerProfile', 'payments']),
+                'order' => $order->fresh(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment', 'dispute']),
                 'payment' => $payment->fresh(),
                 'idempotent_replay' => false,
             ];
@@ -198,7 +196,7 @@ class MockQrPaymentService
             $newPayment = Payment::create([
                 'payment_reference' => $newPaymentRef,
                 'order_id' => $order->id,
-                'payer_id' => $buyer->id,
+                'payer_id' => $order->buyer_id,
                 'amount' => (float) $order->total_amount,
                 'qr_payload' => $qrPayload,
                 'status' => PaymentStatus::PENDING,
@@ -208,7 +206,7 @@ class MockQrPaymentService
             return [
                 'failed_payment' => $payment->fresh(),
                 'new_payment' => $newPayment,
-                'order' => $order->fresh(['items', 'seller.sellerProfile', 'payments']),
+                'order' => $order->fresh(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment', 'dispute']),
             ];
         });
     }

@@ -47,10 +47,12 @@ class HomeDiscoveryService
             ->limit(5)
             ->get();
 
-        // 4. Latest Approved Products
+        // 4. Latest Approved Fixed-Price In-Stock Products (Buy-Now ready)
         $latestProducts = Product::query()
             ->where('status', ProductStatus::APPROVED)
-            ->with(['primaryImage', 'seller.sellerProfile', 'category', 'brand'])
+            ->where('listing_type', 'FIXED_PRICE')
+            ->where('available_quantity', '>', 0)
+            ->with(['primaryImage', 'seller.profile', 'seller.sellerProfile', 'category', 'brand'])
             ->latest('approved_at')
             ->latest('id')
             ->limit(20)

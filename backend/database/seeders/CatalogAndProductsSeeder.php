@@ -94,7 +94,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 750000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
             [
                 'code' => 'PRD-2026-0002',
@@ -109,7 +109,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 550000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
             [
                 'code' => 'PRD-2026-0003',
@@ -124,7 +124,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 380000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
             [
                 'code' => 'PRD-2026-0004',
@@ -139,7 +139,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 250000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
             [
                 'code' => 'PRD-2026-0005',
@@ -154,7 +154,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 320000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
             [
                 'code' => 'PRD-2026-0006',
@@ -169,7 +169,7 @@ class CatalogAndProductsSeeder extends Seeder
                 'type' => 'FIXED_PRICE',
                 'price' => 280000.00,
                 'status' => ProductStatus::APPROVED,
-                'qty' => 1,
+                'qty' => 5,
             ],
 
             // Auction Products (0007..0011)
@@ -347,7 +347,7 @@ class CatalogAndProductsSeeder extends Seeder
                     'listing_type' => $pd['type'],
                     'price' => $pd['price'],
                     'total_quantity' => $pd['qty'],
-                    'available_quantity' => $pd['avail'] ?? ($pd['status'] === ProductStatus::SOLD ? 0 : 1),
+                    'available_quantity' => $pd['avail'] ?? ($pd['status'] === ProductStatus::SOLD ? 0 : $pd['qty']),
                     'verification_level' => 'UNVERIFIED',
                     'status' => $pd['status'],
                     'rejection_reason' => $pd['rejection_reason'] ?? null,

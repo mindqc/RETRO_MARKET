@@ -18,7 +18,8 @@ class ProductDiscoveryService
     {
         $query = Product::query()
             ->where('status', ProductStatus::APPROVED)
-            ->with(['primaryImage', 'seller.sellerProfile', 'category', 'brand', 'activeAuction']);
+            ->where('available_quantity', '>', 0)
+            ->with(['primaryImage', 'seller.profile', 'seller.sellerProfile', 'category', 'brand', 'activeAuction']);
 
         // 1. Text Search (title, description, product_code) - ILIKE on PostgreSQL
         if (! empty($filters['q'])) {
@@ -66,12 +67,16 @@ class ProductDiscoveryService
             $query->where('price', '<=', (float) $filters['max_price']);
         }
 
-        // 8. Sorting
+        // 8. Sorting (prioritize FIXED_PRICE on default newest listing when listing_type is unspecified)
         match ($filters['sort'] ?? 'newest') {
             'price_asc' => $query->orderBy('price', 'asc')->orderByDesc('id'),
             'price_desc' => $query->orderBy('price', 'desc')->orderByDesc('id'),
             'popular' => $query->orderByDesc('favorite_count')->orderByDesc('id'),
-            default => $query->orderByDesc('approved_at')->orderByDesc('id'),
+            default => (empty($filters['listing_type'])
+                ? $query->orderByRaw("CASE WHEN listing_type = 'FIXED_PRICE' THEN 0 ELSE 1 END")
+                    ->orderByDesc('approved_at')
+                    ->orderByDesc('id')
+                : $query->orderByDesc('approved_at')->orderByDesc('id')),
         };
 
         $products = $query->paginate($perPage);
@@ -130,12 +135,14 @@ class ProductDiscoveryService
         $isFavorited = $viewer ? $viewer->favorites()->where('product_id', $product->id)->exists() : false;
         $canViewLogs = $isOwner || ($viewer && $viewer->isInternalStaff());
 
-        // Related Products (up to 4 approved products in the same category)
+        // Related Products (up to 4 approved in-stock products in the same category & listing type)
         $relatedProducts = Product::query()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', ProductStatus::APPROVED)
-            ->with(['primaryImage', 'seller.sellerProfile'])
+            ->where('listing_type', $product->listing_type)
+            ->where('available_quantity', '>', 0)
+            ->with(['primaryImage', 'seller.profile', 'seller.sellerProfile'])
             ->latest('approved_at')
             ->limit(4)
             ->get();

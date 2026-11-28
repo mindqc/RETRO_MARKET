@@ -59,9 +59,28 @@ class OrderResource extends JsonResource
                 ];
             }),
             'latest_payment' => $this->whenLoaded('payments', function () {
-                $p = $this->payments->last();
+                $p = $this->payments->sortBy('id')->last();
 
                 return $p ? new PaymentResource($p) : null;
+            }),
+            'shipment' => $this->whenLoaded('shipment', function () {
+                if (! $this->shipment) {
+                    return null;
+                }
+
+                return [
+                    'id' => $this->shipment->id,
+                    'order_id' => $this->shipment->order_id,
+                    'carrier_name' => $this->shipment->carrier_name,
+                    'tracking_code' => $this->shipment->tracking_code,
+                    'shipping_note' => $this->shipment->shipping_note,
+                    'status' => $this->shipment->status,
+                    'shipped_at' => $this->shipment->shipped_at?->toIso8601String(),
+                    'delivered_at' => $this->shipment->delivered_at?->toIso8601String(),
+                ];
+            }),
+            'active_dispute_id' => $this->whenLoaded('dispute', function () {
+                return $this->dispute?->id;
             }),
         ];
     }

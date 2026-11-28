@@ -828,7 +828,7 @@ class OrdersPaymentsAndEscrowSeeder extends Seeder
                 'product_title_snapshot' => $product->title,
                 'condition_snapshot' => $product->condition,
                 'defect_info_snapshot' => $product->defect_info ?? 'Không có lỗi',
-                'primary_image_snapshot' => $product->images()->first()?->image_path ?? '/assets/images/placeholder.jpg',
+                'primary_image_snapshot' => $product->primaryImage?->image_url ?? $product->images()->first()?->image_url ?? '/assets/images/placeholder.jpg',
                 'unit_price_snapshot' => $price,
                 'quantity' => 1,
                 'line_total' => $price,

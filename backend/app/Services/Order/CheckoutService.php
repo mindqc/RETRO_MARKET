@@ -43,10 +43,11 @@ class CheckoutService
     {
         $source = strtoupper($payload['source'] ?? 'CART');
 
-        // 1. Resolve Address
+        // 1. Resolve Address (supports both address_id and shipping_address_id)
+        $addressId = $payload['address_id'] ?? $payload['shipping_address_id'] ?? null;
         $address = null;
-        if (! empty($payload['address_id'])) {
-            $address = UserAddress::where('id', $payload['address_id'])
+        if (! empty($addressId)) {
+            $address = UserAddress::where('id', $addressId)
                 ->where('user_id', $buyer->id)
                 ->first();
         }
@@ -61,15 +62,21 @@ class CheckoutService
             $productId = (int) ($payload['product_id'] ?? 0);
             $qty = max(1, (int) ($payload['quantity'] ?? 1));
 
-            $product = Product::with(['primaryImage', 'seller.sellerProfile'])->findOrFail($productId);
+            $product = Product::with(['primaryImage', 'seller.profile', 'seller.sellerProfile'])->findOrFail($productId);
 
             if ($product->seller_id === $buyer->id) {
                 throw new SelfTransactionForbiddenException('Bạn không thể tự mua sản phẩm của chính mình (BR-AC-02).');
             }
 
             $productStatus = $product->status instanceof ProductStatus ? $product->status->value : (string) $product->status;
-            if ($product->listing_type !== 'FIXED_PRICE' || $productStatus !== 'APPROVED') {
-                throw new InvalidStateTransitionException("Sản phẩm '{$product->title}' không khả dụng để mua ngay.");
+            if ($product->listing_type !== 'FIXED_PRICE') {
+                throw new InvalidStateTransitionException("Sản phẩm '{$product->title}' là sản phẩm đấu giá, không khả dụng để mua ngay.");
+            }
+            if ($productStatus === 'SOLD' || $product->available_quantity <= 0) {
+                throw new ProductOutOfStockException("Sản phẩm '{$product->title}' đã hết hàng hoặc đã được bán.");
+            }
+            if ($productStatus !== 'APPROVED') {
+                throw new InvalidStateTransitionException("Sản phẩm '{$product->title}' hiện chưa được phê duyệt để mua ngay.");
             }
 
             if ($product->available_quantity < $qty) {
@@ -85,8 +92,13 @@ class CheckoutService
             // Source is CART
             $cart = Cart::firstOrCreate(['user_id' => $buyer->id]);
             $cartQuery = CartItem::where('cart_id', $cart->id)
-                ->where('is_selected', true)
-                ->with(['product.primaryImage', 'seller.sellerProfile']);
+                ->with(['product.primaryImage', 'product.seller.profile', 'product.seller.sellerProfile']);
+
+            if (! empty($payload['cart_item_ids']) && is_array($payload['cart_item_ids'])) {
+                $cartQuery->whereIn('id', $payload['cart_item_ids']);
+            } else {
+                $cartQuery->where('is_selected', true);
+            }
 
             if (! empty($payload['seller_id'])) {
                 $cartQuery->where('seller_id', $payload['seller_id']);
@@ -101,8 +113,24 @@ class CheckoutService
 
             foreach ($cartItems as $ci) {
                 $p = $ci->product;
+                if (! $p) {
+                    throw new ProductOutOfStockException('Một sản phẩm trong giỏ hàng không còn tồn tại.');
+                }
                 if ($p->seller_id === $buyer->id) {
                     throw new SelfTransactionForbiddenException("Bạn không thể tự mua sản phẩm '{$p->title}' của chính mình (BR-AC-02).");
+                }
+                $pStatus = $p->status instanceof ProductStatus ? $p->status->value : (string) $p->status;
+                if ($p->listing_type !== 'FIXED_PRICE') {
+                    throw new InvalidStateTransitionException("Sản phẩm '{$p->title}' là sản phẩm đấu giá, không khả dụng để mua ngay.");
+                }
+                if ($pStatus === 'SOLD' || $p->available_quantity <= 0) {
+                    throw new ProductOutOfStockException("Sản phẩm '{$p->title}' đã hết hàng hoặc đã được bán.");
+                }
+                if ($pStatus !== 'APPROVED') {
+                    throw new InvalidStateTransitionException("Sản phẩm '{$p->title}' không còn khả dụng để thanh toán.");
+                }
+                if ($p->available_quantity < $ci->quantity) {
+                    throw new ProductOutOfStockException("Sản phẩm '{$p->title}' không đủ tồn kho (Còn lại: {$p->available_quantity}).");
                 }
                 $itemsToCheckout[] = [
                     'product' => $p,
@@ -212,10 +240,11 @@ class CheckoutService
         return DB::transaction(function () use ($buyer, $payload) {
             $source = strtoupper($payload['source'] ?? 'CART');
 
-            // 1. Validate & Snapshot Shipping Address (BR-OR-02)
+            // 1. Validate & Snapshot Shipping Address (BR-OR-02, supports both address_id and shipping_address_id)
+            $addressId = $payload['address_id'] ?? $payload['shipping_address_id'] ?? null;
             $address = null;
-            if (! empty($payload['address_id'])) {
-                $address = UserAddress::find($payload['address_id']);
+            if (! empty($addressId)) {
+                $address = UserAddress::find($addressId);
                 if (! $address) {
                     throw ValidationException::withMessages([
                         'address_id' => ['Địa chỉ nhận hàng đã chọn không tồn tại.'],
@@ -253,7 +282,12 @@ class CheckoutService
                 $requestedQuantities[$pid] = $qty;
             } else {
                 $cart = Cart::firstOrCreate(['user_id' => $buyer->id]);
-                $cartQuery = CartItem::where('cart_id', $cart->id)->where('is_selected', true);
+                $cartQuery = CartItem::where('cart_id', $cart->id);
+                if (! empty($payload['cart_item_ids']) && is_array($payload['cart_item_ids'])) {
+                    $cartQuery->whereIn('id', $payload['cart_item_ids']);
+                } else {
+                    $cartQuery->where('is_selected', true);
+                }
                 if (! empty($payload['seller_id'])) {
                     $cartQuery->where('seller_id', $payload['seller_id']);
                 }
@@ -276,6 +310,7 @@ class CheckoutService
 
             /** @var \Illuminate\Database\Eloquent\Collection<int, Product> $products */
             $products = Product::whereIn('id', $productIds)
+                ->with(['primaryImage'])
                 ->orderBy('id', 'asc')
                 ->lockForUpdate()
                 ->get()
@@ -295,7 +330,13 @@ class CheckoutService
                 }
 
                 $status = $product->status instanceof ProductStatus ? $product->status->value : (string) $product->status;
-                if ($product->listing_type !== 'FIXED_PRICE' || $status !== 'APPROVED') {
+                if ($product->listing_type !== 'FIXED_PRICE') {
+                    throw new InvalidStateTransitionException("Sản phẩm '{$product->title}' là sản phẩm đấu giá, không hỗ trợ đặt mua ngay.");
+                }
+                if ($status === 'SOLD' || $product->available_quantity <= 0) {
+                    throw new ProductOutOfStockException("Sản phẩm '{$product->title}' đã hết hàng hoặc đã được bán.");
+                }
+                if ($status !== 'APPROVED') {
                     throw new InvalidStateTransitionException("Sản phẩm '{$product->title}' không còn khả dụng để đặt mua.");
                 }
 
@@ -388,7 +429,7 @@ class CheckoutService
                     'expires_at' => $paymentExpiresAt,
                 ]);
 
-                $createdOrders[] = $order->load(['items', 'seller.sellerProfile', 'payments']);
+                $createdOrders[] = $order->load(['items', 'seller.profile', 'seller.sellerProfile', 'buyer.profile', 'payments', 'shipment']);
                 $createdPayments[] = $payment;
             }
 
