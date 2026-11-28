@@ -140,7 +140,7 @@ class RetroShopAvatar extends StatelessWidget {
     switch (palette) {
       case ShopAvatarPalette.pine:
         return const _PaletteColors(
-          bgStart: AppColors.pineMid,
+          bgStart: AppColors.pineBannerLight,
           bgEnd: AppColors.pineDeep,
           primaryInk: AppColors.creamBadgeBg,
           accentInk: AppColors.starGold,
@@ -157,7 +157,7 @@ class RetroShopAvatar extends StatelessWidget {
       case ShopAvatarPalette.gold:
         return const _PaletteColors(
           bgStart: Color(0xFFD8B876),
-          bgEnd: AppColors.accentGold,
+          bgEnd: AppColors.brandGold,
           primaryInk: AppColors.pineDeep,
           accentInk: AppColors.creamBadgeBg,
           detailInk: AppColors.creamBadgeBg,
